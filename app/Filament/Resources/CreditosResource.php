@@ -408,6 +408,15 @@ class CreditosResource extends Resource
                     ->query(fn($query) => $query->where('saldo_actual', '>', 0)),
             ])
             ->actions([
+
+                Tables\Actions\Action::make('view_abonos_history')
+                    ->label('') // No label, just icon
+                    ->icon('heroicon-o-eye') // Icon for Abonos, adjust as needed
+                    ->url(fn (Creditos $record): string => CreditosResource::getUrl('view', ['record' => $record->id_credito])) // Pass the primary key
+                    ->color('info')
+                    ->tooltip('Ver Historial de Abonos')
+                    ->button(), // Display as a button
+
                 Tables\Actions\Action::make('view_comprobantes')
                     ->label('')
                     ->icon('heroicon-o-eye')
@@ -527,7 +536,8 @@ class CreditosResource extends Resource
             'index' => Pages\ListCreditos::route('/'),
             'create' => Pages\CreateCreditos::route('/create'),
             'edit' => Pages\EditCreditos::route('/{record}/edit'),
-            //   'view' => Pages\ViewCredito::route('/{record}'),
+            'view' => Pages\ViewCredito::route('/{record}'), // Ensure this is active
+
 
         ];
     }

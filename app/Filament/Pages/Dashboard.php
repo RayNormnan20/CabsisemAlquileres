@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\FinancialStatsWidget;
-
+use App\Filament\Widgets\YapeClientesTableWidget;
 use Filament\Pages\Dashboard as BasePage;
 
 class Dashboard extends BasePage
@@ -20,6 +20,7 @@ class Dashboard extends BasePage
     {
         return [
                    FinancialStatsWidget::class,
+                   YapeClientesTableWidget::class,
 
         ];
     }

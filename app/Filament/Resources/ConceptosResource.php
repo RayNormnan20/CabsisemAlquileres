@@ -29,7 +29,7 @@ class ConceptosResource extends Resource
 
     protected static function getNavigationLabel(): string
     {
-        return __('Ingresos y gastos');
+        return __('Conceptos');
     }
 
     public static function getPluralLabel(): ?string

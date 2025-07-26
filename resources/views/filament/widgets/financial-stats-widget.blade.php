@@ -41,54 +41,53 @@
             </div>
         </div>
 -->
-        <!-- Tercera fila: Secciones adicionales -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-            <!-- Botón de CLIENTES mejorado -->
-            <div class="bg-white p-6 rounded-xl shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-4 border-primary-500"
+            <!-- Tercera fila: Secciones adicionales -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
+            <!-- YAPE CLIENTES -->
+            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-primary-500"
                 onclick="window.location.href='{{ route('filament.resources.clientes.index') }}'">
                 <div class="text-center">
-                    <div
-                        class="bg-primary-100 p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-3">
-                        <x-heroicon-o-users class="w-8 h-8 text-primary-600" />
+                    <div class="bg-primary-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                        <x-heroicon-o-users class="w-5 h-5 text-primary-600" />
                     </div>
-                    <h3 class="text-lg font-bold text-gray-800">CLIENTES</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ App\Models\Clientes::count() }} registrados</p>
+                    <h3 class="text-xs font-bold text-gray-800 leading-tight">CLIENTES</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">{{ App\Models\Clientes::count() }} registrados</p>
                 </div>
             </div>
 
-            <!-- Botón de ABONOS mejorado -->
-            <div class="bg-white p-6 rounded-xl shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-4 border-green-500"
+            <!-- ABONOS -->
+            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-green-500"
                 onclick="window.location.href='{{ route('filament.resources.abonos.index') }}'">
                 <div class="text-center">
-                    <div class="bg-green-100 p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-3">
-                        <x-heroicon-o-cash class="w-8 h-8 text-green-600" />
+                    <div class="bg-green-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                        <x-heroicon-o-cash class="w-5 h-5 text-green-600" />
                     </div>
-                    <h3 class="text-lg font-bold text-gray-800">ABONOS</h3>
-                    <p class="text-sm text-gray-500 mt-1">Últimos pagos</p>
+                    <h3 class="text-xs font-bold text-gray-800 leading-tight">ABONOS</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">Últimos pagos</p>
                 </div>
             </div>
 
-            <!-- Botón de CRÉDITOS mejorado -->
-            <div class="bg-white p-6 rounded-xl shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-4 border-indigo-500"
+            <!-- CRÉDITOS -->
+            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-indigo-500"
                 onclick="window.location.href='{{ route('filament.resources.creditos.index') }}'">
                 <div class="text-center">
-                    <div class="bg-indigo-100 p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-3">
-                        <x-heroicon-o-office-building class="w-8 h-8 text-indigo-600" />
+                    <div class="bg-indigo-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                        <x-heroicon-o-office-building class="w-5 h-5 text-indigo-600" />
                     </div>
-                    <h3 class="text-lg font-bold text-gray-800">CRÉDITOS</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ App\Models\Creditos::count() }} activos</p>
-                </div>
+                    <h3 class="text-xs font-bold text-gray-800 leading-tight">CRÉDITOS</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">{{ App\Models\Creditos::count() }} activos</p>
+                    </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-4 border-primary-500"
+            <!-- YAPE CLIENTES duplicado -->
+            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-primary-500"
                 onclick="window.location.href='{{ route('filament.resources.clientes.index') }}'">
                 <div class="text-center">
-                    <div
-                        class="bg-primary-100 p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-3">
-                        <x-heroicon-o-users class="w-8 h-8 text-primary-600" />
+                    <div class="bg-primary-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                        <x-heroicon-o-users class="w-5 h-5 text-primary-600" />
                     </div>
-                    <h3 class="text-lg font-bold text-gray-800">CLIENTES</h3>
-                    <p class="text-sm text-gray-500 mt-1">{{ App\Models\Clientes::count() }} registrados</p>
+                    <h3 class="text-xs font-bold text-gray-800 leading-tight">CLIENTES</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">{{ App\Models\Clientes::count() }} registrados</p>
                 </div>
             </div>
         </div>
