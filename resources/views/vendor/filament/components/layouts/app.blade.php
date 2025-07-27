@@ -2,6 +2,8 @@
     'maxContentWidth' => null,
 ])
 
+@livewire('selected-route-manager')
+
 <x-filament::layouts.base :title="$title">
     <div class="filament-app-layout flex w-full min-h-screen overflow-x-clip">
         <div

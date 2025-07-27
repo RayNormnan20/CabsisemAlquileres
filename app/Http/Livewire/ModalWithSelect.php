@@ -32,7 +32,9 @@ class ModalWithSelect extends Component
 
     public function render()
     {
-        return view('livewire.modal-with-select');
+        return view('livewire.modal-with-select', [
+            'rutas' => $this->rutas,
+        ]);
     }
     
     public function openModal()
@@ -50,15 +52,22 @@ class ModalWithSelect extends Component
 
     public function updatedSelectedOption($value)
     {   
+        $selectedRutaId = null;
         $newLabel = 'Ruta';
+
 
         if (!empty($value)) {
             $selectedRuta = $this->rutas->firstWhere('id_ruta', $value);
             if ($selectedRuta) {
+                $selectedRutaId = $selectedRuta->id_ruta;
                 // Usa el atributo accesorio 'nombre_completo' si lo definiste
                 $newLabel = $selectedRuta->nombre_completo ?? $selectedRuta->nombre;
             }
         }
+
+        $this->emitTo('route-button', 'optionSelectedInModal', $newLabel);
+        
+        $this->emit('routeSelected', $selectedRutaId, $newLabel); 
 
         Notification::make()
             ->title('Opción seleccionada: ' . $newLabel)

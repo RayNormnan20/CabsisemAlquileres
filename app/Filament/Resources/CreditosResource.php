@@ -32,6 +32,7 @@ class CreditosResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-office-building';
     protected static ?int $navigationSort = 3;
 
+
     protected static function getNavigationLabel(): string
     {
         return __('Listar Creditos');

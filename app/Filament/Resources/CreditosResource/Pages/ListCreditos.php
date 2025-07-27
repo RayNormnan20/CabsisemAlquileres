@@ -9,12 +9,40 @@ use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Session;
 
 class ListCreditos extends ListRecords
 {
     protected static string $resource = CreditosResource::class;
 
+    public ?int $currentRutaId = null;
+    public ?string $currentRutaName = null;
+
+    protected $listeners = ['globalRouteChanged' => 'applyRouteFilter']; 
+
     public ?int $clienteId = null;
+    
+    public function mount(): void
+    {
+        parent::mount(); 
+
+        if (Session::has('selected_ruta_id')) {
+            $this->currentRutaId = Session::get('selected_ruta_id');
+            $this->currentRutaName = Session::get('selected_ruta_name');
+        } else {
+            $this->currentRutaId = null;
+            $this->currentRutaName = 'Todas las Rutas';
+        }
+    }
+   
+    public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
+    {
+        $this->currentRutaId = $rutaId;
+        $this->currentRutaName = $rutaName ?? 'Todas las Rutas';
+
+        
+        $this->resetPage();
+    }
 
     protected function getActions(): array
     {
@@ -23,14 +51,35 @@ class ListCreditos extends ListRecords
         ];
     }
 
-    // Mostramos solo los créditos del cliente seleccionado
+    // Opcional: Si quieres mostrar el nombre de la ruta actual en la cabecera de la tabla
+    protected function getTableHeading(): ?string
+    {
+        if ($this->currentRutaName && $this->currentRutaId) {
+            return "Listado de Créditos (Ruta: " . $this->currentRutaName . ")";
+        }
+        return "Listado de Créditos";
+    }
+
     protected function getTableQuery(): Builder
     {
-        return Creditos::query()
-            ->when($this->clienteId, fn ($query) => $query->where('id_cliente', $this->clienteId))
-            ->when(!$this->clienteId, fn ($query) => $query->whereRaw('1=0'))
-            ->orderBy('fecha_credito', 'desc'); // <- Ordenar por fecha descendente
+        $query = parent::getTableQuery();
+
+        // 2. Aplica el filtro por RUTA (si hay una ruta seleccionada)
+        // Esto asegura que siempre se filtren por la ruta si está activa
+        if ($this->currentRutaId) {
+            $query->where('id_ruta', $this->currentRutaId);
+        }
+
+        if ($this->clienteId) {
+            $query->where('id_cliente', $this->clienteId);
+        }
+        
+        // 4. Aplica el ordenamiento
+        $query->orderBy('fecha_credito', 'desc');
+
+        return $query;
     }
+   
 
        protected function getHeader(): View
         {
