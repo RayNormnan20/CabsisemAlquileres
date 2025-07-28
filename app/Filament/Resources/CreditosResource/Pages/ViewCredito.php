@@ -16,7 +16,7 @@ class ViewCredito extends ViewRecord
             // \Filament\Actions\EditAction::make(),
         ];
     }
-    
+
     protected function getTitle(): string
     {
         return 'Historial de Abonos'; // Deja el título vacío
@@ -43,7 +43,7 @@ class ViewCredito extends ViewRecord
     {
         return [
             \App\Filament\Resources\CreditosResource\Widgets\HistorialAbonosWidget::class,
-            
+
         ];
     }
 

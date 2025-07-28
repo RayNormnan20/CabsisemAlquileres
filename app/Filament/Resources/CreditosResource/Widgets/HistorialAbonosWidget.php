@@ -5,25 +5,47 @@ namespace App\Filament\Resources\CreditosResource\Widgets;
 use App\Models\Abonos;
 use App\Models\Creditos;
 use Filament\Tables;
-use Filament\Tables\Contracts\HasTable;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
-class HistorialAbonosWidget extends BaseWidget implements HasTable
+class HistorialAbonosWidget extends BaseWidget
 {
-    // protected static ?string $heading = 'Historial de Abonos'; // Ya lo tienes comentado, ¡bien!
     protected int|string|array $columnSpan = 'full';
-
     public Creditos $record;
 
     public function getTableQuery(): Builder
     {
         return Abonos::query()
-            ->where('id_credito', $this->record->id_credito)
+            ->select([
+                'abonos.id_abono',
+                'abonos.fecha_pago',
+                'abonos.created_at',
+                'conceptos.nombre as concepto_nombre',
+                'abonos.monto_abono',
+                'abonos.saldo_posterior',
+                'abonos.id_usuario',
+                DB::raw("'abono' as tipo_registro")
+            ])
+            ->join('conceptos', 'abonos.id_concepto', '=', 'conceptos.id')
+            ->where('abonos.id_credito', $this->record->id_credito)
+            ->union(
+                DB::table('creditos')
+                    ->select([
+                        'creditos.id_credito as id_abono',
+                        'creditos.fecha_credito as fecha_pago',
+                        'creditos.fecha_credito as created_at',
+                        DB::raw("'Desembolso' as concepto_nombre"),
+                        'creditos.valor_credito as monto_abono',
+                        DB::raw("(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior"),
+                        DB::raw("NULL as id_usuario"),
+                        DB::raw("'credito' as tipo_registro")
+                    ])
+                    ->where('creditos.id_credito', $this->record->id_credito)
+            )
             ->orderBy('fecha_pago', 'asc');
     }
 
-    // <--- AÑADE ESTE MÉTODO PARA DESHABILITAR LA BÚSQUEDA
     public function isTableSearchable(): bool
     {
         return false;
@@ -42,62 +64,85 @@ class HistorialAbonosWidget extends BaseWidget implements HasTable
                 ->time('H:i')
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('concepto.nombre')
+            Tables\Columns\TextColumn::make('concepto_nombre')
                 ->label('Concepto')
-                ->sortable(), // <--- QUITA ->searchable() DE AQUÍ
-                // ->searchable(), // Comenta o elimina esta línea si la tienes
+                ->sortable(),
 
             Tables\Columns\TextColumn::make('monto_abono')
                 ->label('Cantidad')
-                ->money('PEN', true)
-                ->sortable(),
-
-            Tables\Columns\TextColumn::make('saldo_anterior')
-                ->label('Saldo')
-                ->money('PEN', true)
+                ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
                 ->sortable(),
 
             Tables\Columns\TextColumn::make('saldo_posterior')
-                ->label('Saldo Posterior')
-                ->money('PEN', true)
+                ->label('Saldo')
+                ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
                 ->sortable()
-                ->color(fn ($record) => $record->saldo_posterior < 0 ? 'danger' : 'success'),
+                ->color(fn ($record) => $record->saldo_posterior < 0 ? 'danger' : null),
 
-            Tables\Columns\TextColumn::make('usuario.name')
-                ->label('Registrado por')
-                ->sortable(), // <--- QUITA ->searchable() DE AQUÍ
-                // ->searchable(), // Comenta o elimina esta línea si la tienes
+            Tables\Columns\TextColumn::make('metodos_pago')
+                ->label('Métodos')
+                ->formatStateUsing(function ($record) {
+                    if ($record->tipo_registro === 'credito') {
+                        return '---';
+                    }
+
+                    $abono = Abonos::find($record->id_abono);
+                    return $abono
+                        ? $abono->conceptosabonos
+                            ->map(fn($c) => $c->tipo_concepto . ': S/ ' . number_format($c->monto, 2))
+                            ->implode(' | ')
+                        : '';
+                }),
+
         ];
     }
 
-    // <--- ASEGÚRATE DE QUE ESTE MÉTODO RETORNE UN ARRAY VACÍO
     protected function getTableFilters(): array
     {
-        return [
-            // No hay filtros, por lo tanto, no se mostrará el botón de filtro
-        ];
+        return [];
+    }
+
+    protected function getTableRecordClassesUsing(): ?\Closure
+    {
+        return function ($record) {
+            return $record->tipo_registro === 'credito' ? 'bg-gray-100 font-semibold' : null;
+        };
+    }
+
+
+   public function render(): \Illuminate\Contracts\View\View
+    {
+        $abonos = Abonos::where('id_credito', $this->record->id_credito);
+
+        $totalAbonos = $abonos->sum('monto_abono');
+        $ultimoSaldoPosterior = $this->record->saldo_actual;
+
+        return view('filament.resources.creditos-resource.widgets.historial-abonos', [
+            'totalCantidad' => $totalAbonos,
+            'ultimoSaldoPosterior' => $ultimoSaldoPosterior,
+        ]);
     }
  /*
     protected function getTableActions(): array
     {
         return [
-           
+
 
             Tables\Actions\DeleteAction::make()
                 ->label('')
                 ->icon('heroicon-o-trash')
                 ->tooltip('Eliminar Abono'),
-               
+
         ];
     }
- 
+
     protected function getTableBulkActions(): array
     {
         return [
           //  Tables\Actions\DeleteBulkAction::make(),
         ];
     }
-       
+
     protected function getTableBulkActions(): array
     {
         return [
@@ -105,4 +150,5 @@ class HistorialAbonosWidget extends BaseWidget implements HasTable
         ];
     }
     */
+
 }

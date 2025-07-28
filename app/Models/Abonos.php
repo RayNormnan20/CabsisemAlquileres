@@ -126,10 +126,10 @@ class Abonos extends Model
     public function actualizarSaldos()
     {
         $this->saldo_posterior = $this->saldo_anterior - $this->total_abonado;
-        
+
         // Marcar como completo si el saldo posterior es coherente
         $this->estado = abs($this->saldo_posterior - ($this->saldo_anterior - $this->total_abonado)) < 0.01;
-        
+
         $this->save();
 
         $this->credito->actualizarSaldo();

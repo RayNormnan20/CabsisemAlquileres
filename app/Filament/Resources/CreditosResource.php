@@ -411,9 +411,9 @@ class CreditosResource extends Resource
             ->actions([
 
                 Tables\Actions\Action::make('view_abonos_history')
-                    ->label('') // No label, just icon
-                    ->icon('heroicon-o-eye') // Icon for Abonos, adjust as needed
-                    ->url(fn (Creditos $record): string => CreditosResource::getUrl('view', ['record' => $record->id_credito])) // Pass the primary key
+                    ->label('')
+                    ->icon('heroicon-o-document-text') // Puedes usar 'heroicon-o-eye' o 'heroicon-o-document-text'
+                    ->url(fn (Creditos $record): string => CreditosResource::getUrl('view', ['record' => $record->id_credito]))
                     ->color('info')
                     ->tooltip('Ver Historial de Abonos')
                     ->button(), // Display as a button
