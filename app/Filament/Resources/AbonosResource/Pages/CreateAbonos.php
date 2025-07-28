@@ -5,6 +5,7 @@ namespace App\Filament\Resources\AbonosResource\Pages;
 use App\Filament\Resources\AbonosResource;
 use App\Models\Clientes;
 use App\Models\Concepto;
+use App\Models\ConceptoAbono;
 use App\Models\Creditos;
 use App\Models\Ruta;
 use Filament\Resources\Pages\CreateRecord;
@@ -16,6 +17,7 @@ class CreateAbonos extends CreateRecord
 
     public $cliente_id;
     public $clientes;
+    public $metodo_pago; // Nueva propiedad para el método de pago
 
     public function mount(): void
     {
@@ -25,6 +27,9 @@ class CreateAbonos extends CreateRecord
         $this->clientes = Clientes::whereHas('creditos', fn($q) => $q->where('saldo_actual', '>', 0))
             ->orderBy('nombre')
             ->get();
+
+        // Obtener método de pago de la URL si existe
+        $this->metodo_pago = request()->query('metodo_pago');
 
         // Precargar datos si viene con cliente_id
         $this->cliente_id = request()->query('cliente_id');
@@ -42,7 +47,7 @@ class CreateAbonos extends CreateRecord
             ->first();
 
         if ($credito) {
-            $this->form->fill([
+            $formData = [
                 'id_cliente' => $clienteId,
                 'id_credito' => $credito->id_credito,
                 'cliente_nombre' => $cliente->nombre,
@@ -50,9 +55,23 @@ class CreateAbonos extends CreateRecord
                 'fecha_vencimiento' => $credito->fecha_vencimiento->format('d/m/Y'),
                 'saldo_anterior' => $credito->saldo_actual,
                 'monto_abono' => $credito->valor_cuota,
-                'valor_cuota' => $credito->valor_cuota, 
+                'valor_cuota' => $credito->valor_cuota,
                 'cuota' => $credito->cuota_diaria,
-            ]);
+            ];
+
+            // Si hay un método de pago específico, agregar datos iniciales
+            if ($this->metodo_pago) {
+                $formData['conceptosabonos'] = [
+                    [
+                        'tipo_concepto' => $this->metodo_pago,
+                        'monto' => $credito->valor_cuota,
+                        'referencia' => '',
+                        'foto_comprobante' => null
+                    ]
+                ];
+            }
+
+            $this->form->fill($formData);
         }
     }
 
@@ -119,6 +138,11 @@ class CreateAbonos extends CreateRecord
         if ($credito) {
             $credito->saldo_actual = $this->record->saldo_posterior;
             $credito->save();
+        }
+
+        // Si se creó con un método de pago específico, podemos agregar lógica adicional aquí
+        if ($this->metodo_pago) {
+            // Por ejemplo, registrar en logs o notificar al sistema
         }
     }
 

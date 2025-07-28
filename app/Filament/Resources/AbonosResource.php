@@ -16,9 +16,9 @@ use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\Action; 
-use Filament\Tables\Filters\Filter; 
-use Filament\Tables\Filters\SelectFilter; 
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 class AbonosResource extends Resource
 {
@@ -43,6 +43,8 @@ class AbonosResource extends Resource
 
   public static function form(Form $form): Form
 {
+
+     $metodoPago = request('metodo_pago');
     return $form
         ->schema([
             // Sección de fechas y montos
@@ -54,13 +56,13 @@ class AbonosResource extends Resource
                                 ->label('Fecha de Crédito')
                                 ->disabled()
                                 ->dehydrated(false),
-                                
+
                             Forms\Components\TextInput::make('fecha_vencimiento')
                                 ->label('Fecha de Vencimiento')
                                 ->disabled()
                                 ->dehydrated(false),
                         ]),
-                        
+
                     Forms\Components\Grid::make(3)
                         ->schema([
                             Forms\Components\TextInput::make('saldo_anterior')
@@ -68,13 +70,13 @@ class AbonosResource extends Resource
                                 ->numeric()
                                 ->disabled()
                                 ->prefix('S/'),
-                                
+
                             Forms\Components\TextInput::make('valor_cuota')
                                 ->label('Cuota')
                                 ->numeric()
                                 ->disabled()
                                 ->prefix('S/'),
-                                
+
                             Forms\Components\TextInput::make('monto_abono')
                                 ->label('Abono *')
                                 ->numeric()
@@ -90,24 +92,24 @@ class AbonosResource extends Resource
                         ]),
                 ])
                 ->columns(1),
-                
+
             // Campos ocultos
             Forms\Components\Hidden::make('id_cliente')
                 ->required(),
-                
+
             Forms\Components\Hidden::make('id_credito'),
             Forms\Components\Hidden::make('id_ruta'),
             Forms\Components\Hidden::make('id_usuario'),
             Forms\Components\Hidden::make('saldo_posterior'),
-                
+
             // Sección de métodos de pago
-            Forms\Components\Section::make('Métodos de Pago')
+             Forms\Components\Section::make('Métodos de Pago')
                 ->schema([
                     Repeater::make('conceptosabonos')
                         ->label('')
                         ->relationship('conceptosabonos')
                         ->schema([
-                            Select::make('tipo_concepto') 
+                            Select::make('tipo_concepto')
                                 ->options([
                                     'Efectivo' => 'Efectivo',
                                     'Transferencia' => 'Transferencia',
@@ -115,16 +117,18 @@ class AbonosResource extends Resource
                                     'Plin' => 'Plin',
                                     'Tarjeta' => 'Tarjeta',
                                 ])
+                                ->default($metodoPago) // Establecer el valor por defecto
+                                ->disabled($metodoPago !== null) // Deshabilitar si viene de la URL
                                 ->required()
                                 ->columnSpan(1),
-                               
+
                             TextInput::make('monto')
                                 ->label('Monto')
                                 ->numeric()
                                 ->required()
                                 ->prefix('S/')
                                 ->columnSpan(1),
-    
+
                             Forms\Components\FileUpload::make('foto_comprobante')
                                 ->label('Comprobante')
                                 ->image()
@@ -132,17 +136,26 @@ class AbonosResource extends Resource
                                 ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']))
                                 ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']))
                                 ->columnSpan(2),
-                                
-                            Forms\Components\TextInput::make('referencia')
+
+                           Forms\Components\TextInput::make('referencia')
                                 ->label('N° Operación')
-                                ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']))
-                                ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']))
-                                ->columnSpan(2),
+                                ->visible(function ($get, $livewire) {
+                                    // Mostrar para métodos digitales o si viene de un enlace específico
+                                    return in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']) ||
+                                        ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
+                                })
+                                ->required(function ($get, $livewire) {
+                                    // Requerido para métodos digitales o si viene de un enlace específico
+                                    return in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']) ||
+                                        ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
+                                })
+                                ->columnSpan(2)
                         ])
                         ->columns(2)
                         ->defaultItems(1)
                         ->minItems(1)
-                        ->createItemButtonLabel('Agregar método de pago'),
+                        ->createItemButtonLabel('Agregar método de pago')
+                        ->disabled(fn () => $metodoPago !== null),
                 ]),
         ]);
 }
@@ -158,7 +171,7 @@ public static function table(Table $table): Table
 
             TextColumn::make('usuario.name')
                 ->label('Usuario'),
-    
+
             TextColumn::make('cliente.nombre')
                 ->label('Cliente')
                 ->searchable(),
@@ -169,7 +182,7 @@ public static function table(Table $table): Table
                 TextColumn::make('credito.tipoPago.nombre')
                     ->label('Forma de Pago')
                     ->searchable(),
-                    
+
                 TextColumn::make('monto_abono')
                     ->label('Cantidad')
                     ->money('PEN', true)
@@ -179,7 +192,7 @@ public static function table(Table $table): Table
                 Tables\Filters\SelectFilter::make('cliente')
                     ->relationship('cliente', 'nombre')
                     ->searchable(),
-                    
+
                 Filter::make('fecha_pago') // Usando la clase importada directamente
                     ->form([
                         Forms\Components\DatePicker::make('desde'),
@@ -208,7 +221,7 @@ public static function table(Table $table): Table
                         'title' => 'Editar',
                         'class' => 'hover:bg-primary-50 rounded-full'
                     ]),
-                
+
                 Action::make('view') // Usando la clase importada directamente
                     ->label('')
                     ->icon('heroicon-o-eye')
@@ -251,7 +264,7 @@ public static function table(Table $table): Table
                             // igual que en la tabla principal cuando no se eligen fechas.
                             $abonosQuery->whereDate('fecha_pago', \Carbon\Carbon::today()->format('Y-m-d'));
                         }
-                        
+
                         $abonosQuery->orderBy('fecha_pago', 'desc');
 
                         $abonosIds = $abonosQuery->pluck('id_abono')->toArray();
@@ -261,7 +274,7 @@ public static function table(Table $table): Table
                         $siguienteId = isset($abonosIds[$currentIndex + 1]) ? $abonosIds[$currentIndex + 1] : 'null';
 
                         $comprobante = $record->conceptosabonos->firstWhere('foto_comprobante', '!=', null);
-                        
+
                         // Información compacta en 3 columnas
                         $infoHtml = <<<HTML
                             <div class="space-y-1 p-2">
@@ -295,7 +308,7 @@ public static function table(Table $table): Table
                         // Botones de navegación - **¡Emitiendo evento a Livewire!**
                         $anteriorDisabledAttribute = $anteriorId === 'null' ? 'disabled' : '';
                         $siguienteDisabledAttribute = $siguienteId === 'null' ? 'disabled' : '';
-                        
+
                         // Pre-calcular el contenido del span para evitar errores de sintaxis
                         $posicionTexto = "Comprobante " . ($currentIndex + 1) . " de " . count($abonosIds);
 
@@ -393,7 +406,7 @@ public static function table(Table $table): Table
             //
         ];
     }
-    
+
     public static function getPages(): array
     {
         return [
