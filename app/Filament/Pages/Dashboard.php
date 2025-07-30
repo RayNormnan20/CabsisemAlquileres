@@ -10,6 +10,8 @@ class Dashboard extends BasePage
 {
     protected static bool $shouldRegisterNavigation = false;
 
+    
+
     protected function getColumns(): int | array
     {
         return 1;

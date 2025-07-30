@@ -19,20 +19,9 @@ class ModalWithSelect extends Component
 
     public function mount()
     {
+        $user = auth()->user();
 
-        $usuario = auth()->user();
-
-        if ($usuario->hasRole('Administrador')) {
-            $this->rutas = $usuario->ruta()->get();
-        } else {
-            $ruta = $usuario?->ruta_principal; // Ajusta esto según tu relación
-            $this->rutas = $ruta ? (new Ruta)->newCollection([$ruta]) : (new Ruta)->newCollection();
-        }
-
-        $selectedRutaIdInSession = session('selected_ruta_id');
-        if ($selectedRutaIdInSession && $this->rutas->contains('id_ruta', $selectedRutaIdInSession)) {
-            $this->selectedOption = $selectedRutaIdInSession;
-        }
+        $this->rutas = $user->rutas()->where('activa', true)->get();
     }
 
     
@@ -63,6 +52,8 @@ class ModalWithSelect extends Component
                 'name' => $ruta->nombre_completo ?? $ruta->nombre,
             ]);
 
+
+            
             session([
                 'selected_ruta_id' => $ruta->id_ruta,
                 'selected_ruta_name' => $ruta->nombre_completo ?? $ruta->nombre,

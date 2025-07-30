@@ -60,7 +60,7 @@ class ListCreditos extends ListRecords
         return "Listado de Créditos";
     }
 
-    protected function getTableQuery(): Builder
+    /* protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery();
 
@@ -78,19 +78,77 @@ class ListCreditos extends ListRecords
         $query->orderBy('fecha_credito', 'desc');
 
         return $query;
-    }
-   
+    } */
+    /* protected function getTableQuery(): Builder
+    {
+        // Start with the base query for Creditos
+        $query = parent::getTableQuery();
 
-       protected function getHeader(): View
-        {
-            return view('filament.resources.creditos-resource.header', [
-                'clientes' => Clientes::where('activo', true)->get()->pluck('nombre_completo', 'id_cliente'),
-                'clienteId' => $this->clienteId,
-                'cliente' => $this->clienteId ? Clientes::with('creditos')->find($this->clienteId) : null,
-            ]);
+        // 1. Join with the 'clientes' table to access client-specific properties
+        $query->join('clientes', 'creditos.id_cliente', '=', 'clientes.id_cliente')
+            ->where('clientes.activo', true); // Filter for active clients
+
+        // 2. Apply the route filter if a route is selected in the session
+        // This ensures only credits for clients in the selected route are shown
+        if ($this->currentRutaId) {
+            $query->where('clientes.id_ruta', $this->currentRutaId);
         }
 
+        // 3. Apply the specific client filter if 'clienteId' is set
+        // This will filter credits for a specific client within the selected route
+        if ($this->clienteId) {
+            $query->where('creditos.id_cliente', $this->clienteId);
+        }
 
+        // 4. Order the results
+        $query->orderBy('creditos.fecha_credito', 'desc');
+
+        // Make sure to select creditos.* to avoid column name conflicts
+        // if there are columns with the same name in 'clientes' and 'creditos'
+        $query->select('creditos.*');
+
+        return $query;
+    } */
+   
+    protected function getTableQuery(): Builder
+    {
+        $query = parent::getTableQuery();
+
+        $query->join('clientes', 'creditos.id_cliente', '=', 'clientes.id_cliente');
+
+        if ($this->currentRutaId) {
+            $query->where('clientes.id_ruta', $this->currentRutaId);
+        }
+
+        $query->where('clientes.activo', true);
+
+        if ($this->clienteId) {
+            $query->where('creditos.id_cliente', $this->clienteId);
+        }
+
+        $query->orderBy('creditos.fecha_credito', 'desc');
+
+        $query->select('creditos.*');
+
+        return $query;
+    }
+
+    protected function getHeader(): View
+    {
+        $selectedRutaId = session('selected_ruta_id');
+
+        $clientesQuery = Clientes::where('activo', true);
+
+        if ($selectedRutaId) {
+            $clientesQuery->where('id_ruta', $selectedRutaId);
+        }
+
+        return view('filament.resources.creditos-resource.header', [
+            'clientes' => $clientesQuery->get()->pluck('nombre_completo', 'id_cliente'),
+            'clienteId' => $this->clienteId,
+            'cliente' => $this->clienteId ? Clientes::with('creditos')->find($this->clienteId) : null,
+        ]);
+    }
 
     public function updated($property)
     {
@@ -99,7 +157,6 @@ class ListCreditos extends ListRecords
             $this->resetPage();
         }
     }
-
 
     protected function shouldPersistTableFiltersInSession(): bool
     {
