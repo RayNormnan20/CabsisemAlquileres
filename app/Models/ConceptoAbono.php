@@ -11,6 +11,7 @@ class ConceptoAbono extends Model
 
     protected $fillable = [
         'id_abono',
+        'id_usuario',
         'tipo_concepto',
         'monto',
         'foto_comprobante',
@@ -21,6 +22,12 @@ class ConceptoAbono extends Model
     public function abono()
     {
         return $this->belongsTo(Abonos::class, 'id_abono');
+    }
+
+
+     public function usuario()
+    {
+        return $this->belongsTo(User::class, 'id_usuario');
     }
 /*
     public function caja()

@@ -78,7 +78,7 @@ class AbonosResource extends Resource
                                 ->prefix('S/'),
 
                             Forms\Components\TextInput::make('monto_abono')
-                                ->label('Abono *')
+                                ->label('Abono')
                                 ->numeric()
                                 ->required()
                                 ->prefix('S/')
@@ -112,10 +112,16 @@ class AbonosResource extends Resource
                             Select::make('tipo_concepto')
                                 ->options([
                                     'Efectivo' => 'Efectivo',
-                                    'Transferencia' => 'Transferencia',
                                     'Yape' => 'Yape',
-                                    'Plin' => 'Plin',
-                                    'Tarjeta' => 'Tarjeta',
+                                    'Abono completar p.' => 'Abono completar p.',
+                                    'Abono sin firma Chis' => 'Abono sin firma Chis',
+                                    'otros egresos' => 'otros egresos',
+                                    'otro ingresos' => 'otro ingresos',
+                                    'Abono Sobrante COB' => 'Abono Sobrante COB',
+                                    'Abono Faltante COB' => 'Abono Faltante COB',
+                                    'Entrega Caja COBRADOR' => 'Entrega Caja COBRADOR',
+                                    'Abono de Descuento' => 'Abono de Descuento',
+
                                 ])
                                 ->default($metodoPago) // Establecer el valor por defecto
                                 ->disabled($metodoPago !== null) // Deshabilitar si viene de la URL
@@ -133,20 +139,20 @@ class AbonosResource extends Resource
                                 ->label('Comprobante')
                                 ->image()
                                 ->directory('comprobantes/abonos')
-                                ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']))
-                                ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']))
+                                ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
+                                ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
                                 ->columnSpan(2),
 
                            Forms\Components\TextInput::make('referencia')
-                                ->label('N° Operación')
+                                ->label('Observacione')
                                 ->visible(function ($get, $livewire) {
                                     // Mostrar para métodos digitales o si viene de un enlace específico
-                                    return in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']) ||
+                                    return in_array($get('tipo_concepto'), ['Yape', 'Efectivo']) ||
                                         ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
                                 })
                                 ->required(function ($get, $livewire) {
                                     // Requerido para métodos digitales o si viene de un enlace específico
-                                    return in_array($get('tipo_concepto'), ['Yape', 'Plin', 'Transferencia']) ||
+                                    return in_array($get('tipo_concepto'), ['Yape', 'Efectivo']) ||
                                         ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
                                 })
                                 ->columnSpan(2)
@@ -187,6 +193,16 @@ public static function table(Table $table): Table
                     ->label('Cantidad')
                     ->money('PEN', true)
                     ->sortable(),
+
+                    Tables\Columns\TextColumn::make('conceptosabonos')
+                    ->label('Detalle Entrega')
+                    ->formatStateUsing(function ($record) {
+                        return $record->conceptosabonos
+                            ->map(fn($c) => "{$c->tipo_concepto}: S/ " . number_format($c->monto, 2))
+                            ->join(' | ');
+                    })
+                    ->wrap() // para que no se desborde si es muy largo
+                    ->searchable(false),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('cliente')

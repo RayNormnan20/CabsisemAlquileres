@@ -13,6 +13,7 @@
             </select>
         </div>
 
+        @role('Administrador')
         <div class="flex-6">
             <select wire:model="rutaId"
                 wire:change="$set('rutaId', $event.target.value === '' ? null : parseInt($event.target.value))"
@@ -23,6 +24,7 @@
                 @endforeach
             </select>
         </div>
+        @endrole
 
         <!-- Contenedor para filtro y botón - SIEMPRE visible -->
         <div class="flex items-center space-x-">
@@ -98,75 +100,70 @@
                             wire:navigate @if(!$clienteId) onclick="return false;" @endif>
                             Efectivo
                         </a>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                Abono completar p.
-                            </a>
-                        </div>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                otros egresos
-                            </a>
-                        </div>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                otro ingresos
-
-                            </a>
-                        </div>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                Abono sobrante cob
-                            </a>
-                        </div>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                Abono faltante cob
-                            </a>
-                        </div>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                Abono sin firma Chis
-                            </a>
-                        </div>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                Entrega caja COBRADOR
-                            </a>
-                        </div>
-                        <div class="py-1" role="none">
-                            <!-- Única opción: Crear Crédito -->
-                            <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId]) : '#' }}"
-                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                wire:navigate @if(!$clienteId) onclick="return false;" @endif>
-                                ABONO DE DESCUENTO
-                            </a>
-                        </div>
                     </div>
+                    <div class="py-1" role="none">
+                        <!-- Única opción: Crear Crédito -->
+                        <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono completar p.']) : '#' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            wire:navigate @if(!$clienteId) onclick="return false;" @endif>
+                            Abono completar p.
+                        </a>
+                    </div>
+                    <div class="py-1" role="none">
+                        <!-- Única opción: Crear Crédito -->
+                        <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono sin firma Chis']) : '#' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            wire:navigate @if(!$clienteId) onclick="return false;" @endif>
+                            Abono sin firma Chis
+                        </a>
+                    </div>
+                    <!-- Ejemplo para "otros egresos" -->
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'OTROS EGRESOS']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Otros egresos
+                        </a>
+                    </div>
+
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'OTROS INGRESOS']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Otros ingresos
+                        </a>
+                    </div>
+
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO SOBRANTE COB']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Abono sobrante cob
+                        </a>
+                    </div>
+
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO FALTANTE COB']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Abono faltante cob
+                        </a>
+                    </div>
+
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ENTREGA CAJA COBRADOR']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            Entrega caja COBRADOR
+                        </a>
+                    </div>
+
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO DE DESCUENTO']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            ABONO DE DESCUENTO
+                        </a>
+                    </div>
+
                 </div>
             </div>
         </div>
+
     </div>
     <!-- Información del cliente seleccionado -->
     @if($clienteId)
