@@ -23,6 +23,10 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Form;
+use Livewire\TemporaryUploadedFile;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
+
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
@@ -305,7 +309,7 @@ class CreditosResource extends Resource
                                                     ->numeric()
                                                     ->required(),
 
-                                                Forms\Components\FileUpload::make('foto_comprobante')
+                                               FileUpload::make('foto_comprobante')
                                                     ->label(fn ($get) => match ($get('tipo_concepto')) {
                                                         'Yape' => 'Comprobante Yape',
                                                         'Efectivo' => 'Comprobante Efectivo',
@@ -318,8 +322,27 @@ class CreditosResource extends Resource
                                                     })
                                                     ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
                                                     ->image()
-                                                    ->maxSize(2048)
+                                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                                    //->maxSize(2048) // 2MB máximo
                                                     ->columnSpanFull()
+                                                    ->afterStateUpdated(function (TemporaryUploadedFile $state, $get) {
+                                                        $directory = match ($get('tipo_concepto')) {
+                                                            'Yape' => 'comprobantes/yape',
+                                                            'Efectivo' => 'comprobantes/efectivo',
+                                                            default => 'comprobantes/generales'
+                                                        };
+
+                                                        $image = Image::make($state->getRealPath())
+                                                            ->resize(800, null, function ($constraint) {
+                                                                $constraint->aspectRatio();
+                                                            })
+                                                            ->encode('jpg', 70); // 70% de calidad
+
+                                                        Storage::disk('public')->put(
+                                                            $directory . '/' . $state->getFilename(),
+                                                            $image->stream()
+                                                        );
+                                                    }),
                                             ])
                                             ->defaultItems(1)
                                             ->minItems(1)

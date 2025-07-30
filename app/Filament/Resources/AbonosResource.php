@@ -55,12 +55,13 @@ class AbonosResource extends Resource
                             Forms\Components\TextInput::make('fecha_credito')
                                 ->label('Fecha de Crédito')
                                 ->disabled()
-                                ->dehydrated(false),
+                                ->required(),
 
                             Forms\Components\TextInput::make('fecha_vencimiento')
                                 ->label('Fecha de Vencimiento')
                                 ->disabled()
-                                ->dehydrated(false),
+                                ->required(),
+
                         ]),
 
                     Forms\Components\Grid::make(3)
@@ -76,25 +77,41 @@ class AbonosResource extends Resource
                                 ->numeric()
                                 ->disabled()
                                 ->prefix('S/'),
+                                
                             TextInput::make('monto_abono')
                                 ->label('Abono')
                                 ->numeric()
                                 ->required()
                                 ->prefix('S/')
                                 ->reactive()
+                                ->afterStateHydrated(function (callable $get, callable $set, $state) {
+                                    if ($get('id_credito') && is_numeric($state)) {
+                                        $saldoAnterior = $get('saldo_anterior');
+                                        $set('saldo_posterior', $saldoAnterior - $state);
+                                    }
+
+                                    // Inicializar el monto en el Repeater al cargar
+                                    $conceptos = $get('conceptosabonos') ?? [];
+                                    if (isset($conceptos[0])) {
+                                        $conceptos[0]['monto'] = $state;
+                                        $set('conceptosabonos', $conceptos);
+                                    }
+                                })
                                 ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                     if ($get('id_credito') && is_numeric($state)) {
                                         $saldoAnterior = $get('saldo_anterior');
                                         $set('saldo_posterior', $saldoAnterior - $state);
                                     }
 
-                                    // Copiar el abono como monto del primer método de pago (índice 0)
+                                    // Actualizar el monto en el primer método de pago
                                     $conceptos = $get('conceptosabonos') ?? [];
                                     if (isset($conceptos[0])) {
                                         $conceptos[0]['monto'] = $state;
                                         $set('conceptosabonos', $conceptos);
                                     }
                                 }),
+
+
 
                         ]),
                 ])
@@ -110,28 +127,51 @@ class AbonosResource extends Resource
             Forms\Components\Hidden::make('saldo_posterior'),
 
             // Sección de métodos de pago
-             Forms\Components\Section::make('Métodos de Pago')
+           Forms\Components\Section::make('Métodos de Pago')
                 ->schema([
                     Repeater::make('conceptosabonos')
+                        ->reactive()
                         ->label('')
                         ->relationship('conceptosabonos')
                         ->schema([
                             Select::make('tipo_concepto')
-                                ->options([
-                                    'Efectivo' => 'Efectivo',
-                                    'Yape' => 'Yape',
-                                    'Abono completar p.' => 'Abono completar p.',
-                                    'Abono sin firma Chis' => 'Abono sin firma Chis',
-                                    'otros egresos' => 'otros egresos',
-                                    'otro ingresos' => 'otro ingresos',
-                                    'Abono Sobrante COB' => 'Abono Sobrante COB',
-                                    'Abono Faltante COB' => 'Abono Faltante COB',
-                                    'Entrega Caja COBRADOR' => 'Entrega Caja COBRADOR',
-                                    'Abono de Descuento' => 'Abono de Descuento',
-                                ])
+                                ->options(function ($livewire) {
+                                    // Solo mostrar 4 opciones si estás en edición
+                                     if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\EditAbonos) {
+                                        return [
+                                            'Efectivo' => 'Efectivo',
+                                            'Yape' => 'Yape',
+                                            'Abono completar p.' => 'Abono completar p.',
+                                            'Abono sin firma Chis' => 'Abono sin firma Chis',
+                                        ];
+                                    }
+
+                                    // Mostrar todas en creación
+                                    return [
+                                        'Efectivo' => 'Efectivo',
+                                        'Yape' => 'Yape',
+                                        'Abono completar p.' => 'Abono completar p.',
+                                        'Abono sin firma Chis' => 'Abono sin firma Chis',
+                                        'otros egresos' => 'otros egresos',
+                                        'otro ingresos' => 'otro ingresos',
+                                        'Abono Sobrante COB' => 'Abono Sobrante COB',
+                                        'Abono Faltante COB' => 'Abono Faltante COB',
+                                        'Entrega Caja COBRADOR' => 'Entrega Caja COBRADOR',
+                                        'Abono de Descuento' => 'Abono de Descuento',
+                                    ];
+                                })
                                 ->required()
-                                //->disablePlaceholderSelection()
-                                ->disabled(fn ($livewire) => filled($livewire->metodo_pago)),
+                                ->disabled(function ($livewire) {
+                                    if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos) {
+                                        return filled($livewire->metodo_pago);
+                                    }
+                                    /*
+                                    if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\EditAbonos) {
+                                        return filled(optional($livewire->record)->conceptosabonos);
+                                    }
+                                    */
+                                    return false;
+                                }),
 
                             TextInput::make('monto')
                                 ->label('Monto')
@@ -140,11 +180,12 @@ class AbonosResource extends Resource
                                 ->prefix('S/')
                                 ->columnSpan(1)
                                 ->disabled(true)
+                                ->reactive()
                                 ->suffixIcon('heroicon-s-exclamation')
                                 ->extraAttributes([
                                     'class' => 'border-red-500 focus:border-red-500 focus:ring-red-500',
                                 ]),
-
+                                
 
 
                             Forms\Components\FileUpload::make('foto_comprobante')
@@ -156,7 +197,6 @@ class AbonosResource extends Resource
                             ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
                             ->columnSpan(2),
 
-
                             TextInput::make('referencia')
                                 ->label('Observaciones')
                                 ->visible(function ($get, $livewire) {
@@ -164,7 +204,6 @@ class AbonosResource extends Resource
                                         ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
                                 })
                                 ->columnSpan(2)
-
                         ])
                         ->columns(2)
                         ->defaultItems(1)
@@ -172,11 +211,21 @@ class AbonosResource extends Resource
                         ->disableItemCreation()
                         //->createItemButtonLabel('Agregar método de pago')
                         ->visible(function ($get, $livewire) {
-                            return in_array($get('tipo_concepto'), ['Yape', 'Efectivo']) ||
-                                ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
-                        })
+                            $tipo = $get('tipo_concepto');
 
+                            if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos) {
+                                return in_array($tipo, ['Yape', 'Efectivo']) || filled($livewire->metodo_pago);
+                            }
+
+                            if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\EditAbonos) {
+                                $tieneConceptos = optional($livewire->record)->conceptosabonos->isNotEmpty();
+                                return in_array($tipo, ['Yape', 'Efectivo', 'Abono completar p.', 'Abono sin firma Chis' ]) || $tieneConceptos;
+                            }
+
+                            return false;
+                        })
                 ]),
+
 
         ]);
 }

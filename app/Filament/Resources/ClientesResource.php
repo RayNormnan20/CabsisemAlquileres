@@ -23,6 +23,9 @@ use Filament\Tables;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Livewire\TemporaryUploadedFile;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 
 class ClientesResource extends Resource
 {
@@ -77,16 +80,45 @@ class ClientesResource extends Resource
                                 ->required()
                                 ->maxLength(100),
 
-                            FileUpload::make('foto1_path')
-                                ->label('Foto 1 del Cliente')
-                                ->directory('clientes/fotos') // Carpeta donde se guardarán
-                                ->image(),
-                                /* ->required(), */
 
-                            FileUpload::make('foto2_path')
-                                ->label('Foto 2 del Cliente')
+                            // Campo para Foto 1 (requerida)
+                            FileUpload::make('foto1_path')
+                                ->label('Foto del Cliente')
                                 ->directory('clientes/fotos')
-                                /* ->image(), */
+                                ->image()
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->afterStateUpdated(function (TemporaryUploadedFile $state) {
+                                    $image = Image::make($state->getRealPath())
+                                        ->resize(800, null, function ($constraint) {
+                                            $constraint->aspectRatio(); // Mantiene proporciones
+                                        })
+                                        ->encode('jpg', 70); // 70% de calidad
+
+                                    Storage::disk('public')->put(
+                                        'clientes/fotos/' . $state->getFilename(),
+                                        $image->stream()
+                                    );
+                                })
+                                ->required(),
+
+                            // Campo para Foto 2 (opcional)
+                            FileUpload::make('foto2_path')
+                                ->label('Foto del Cliente')
+                                ->directory('clientes/fotos')
+                                ->image()
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->afterStateUpdated(function (TemporaryUploadedFile $state) {
+                                    $image = Image::make($state->getRealPath())
+                                        ->resize(800, null, function ($constraint) {
+                                            $constraint->aspectRatio();
+                                        })
+                                        ->encode('jpg', 70);
+
+                                    Storage::disk('public')->put(
+                                        'clientes/fotos/' . $state->getFilename(),
+                                        $image->stream()
+                                    );
+                                }),         // Opcional: Convertir a WebP para reducir peso
                         ])->columns(2),
 
                     // Sección 2: Información de contacto

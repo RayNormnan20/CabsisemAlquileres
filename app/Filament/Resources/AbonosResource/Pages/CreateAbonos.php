@@ -10,11 +10,13 @@ use App\Models\Creditos;
 use App\Models\Ruta;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Session;
 
 class CreateAbonos extends CreateRecord
 {
     protected static string $resource = AbonosResource::class;
 
+    public ?int $currentRutaId = null;                                                                                                                                                                                                                                                   
     public $cliente_id;
     public $clientes;
     public $metodo_pago; // Nueva propiedad para el método de pago
@@ -22,6 +24,7 @@ class CreateAbonos extends CreateRecord
     public function mount(): void
     {
         parent::mount();
+            $this->currentRutaId = Session::get('selected_ruta_id');
 
         // Obtener lista de clientes con créditos activos
         $this->clientes = Clientes::whereHas('creditos', fn($q) => $q->where('saldo_actual', '>', 0))
@@ -98,7 +101,7 @@ class CreateAbonos extends CreateRecord
             throw new \Exception('El cliente no tiene créditos activos');
         }
 
-        $id_ruta = $this->obtenerIdRutaUsuario();
+       // $id_ruta = $this->obtenerIdRutaUsuario();
         $montoAbono = $data['monto_abono'] ?? 0;
 
         // Obtener el concepto "Abono" de la tabla conceptos
@@ -113,7 +116,7 @@ class CreateAbonos extends CreateRecord
 
         // Calcular los saldos
         $data['id_credito'] = $credito->id_credito;
-        $data['id_ruta'] = $id_ruta;
+         $data['id_ruta'] = $this->currentRutaId;
         $data['saldo_anterior'] = $credito->saldo_actual;
         $data['saldo_posterior'] = $credito->saldo_actual - $montoAbono;
         $data['id_usuario'] = auth()->id();
@@ -122,9 +125,7 @@ class CreateAbonos extends CreateRecord
         // Actualizar el crédito con el nuevo saldo y ruta
         $credito->saldo_actual = $data['saldo_posterior'];
 
-        if ($credito->id_ruta != $id_ruta) {
-            $credito->id_ruta = $id_ruta;
-        }
+       
 
         $credito->save();
 
@@ -146,26 +147,7 @@ class CreateAbonos extends CreateRecord
         }
     }
 
-    protected function obtenerIdRutaUsuario()
-    {
-        $usuario = auth()->user();
-
-        if ($usuario->hasRole('Administrador')) {
-            $ruta = Ruta::activas()->first();
-            if (!$ruta) {
-                throw new \Exception('No hay rutas activas disponibles');
-            }
-            return $ruta->id_ruta;
-        }
-
-        $rutaUsuario = $usuario->ruta()->first();
-
-        if (!$rutaUsuario) {
-            throw new \Exception('El usuario no tiene una ruta asignada');
-        }
-
-        return $rutaUsuario->id_ruta;
-    }
+   
 
     protected function getRedirectUrl(): string
     {
