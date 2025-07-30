@@ -20,43 +20,25 @@ class SelectedRouteManager extends Component
 
     public function mount()
     {
-        
-        if (Session::has('selected_ruta_id')) {
-            $id = Session::get('selected_ruta_id');
-            $name = Session::get('selected_ruta_name');
-            
-            // Opcional: Verifica que la ruta todavía exista y sea activa si es necesario
-            // $ruta = Ruta::find($id); // O Ruta::activas()->find($id);
-            // if ($ruta && ($ruta->nombre_completo ?? $ruta->nombre) === $name) { 
-            //     $this->selectedRutaId = $ruta->id_ruta;
-            //     $this->selectedRutaName = $name;
-            // } else {
-            //     // Si la ruta no es válida o el nombre ha cambiado, la limpiamos de la sesión
-            //     $this->clearSelectedRoute();
-            // }
+        $this->selectedRutaId = session('selected_ruta_id');
+        $this->selectedRutaName = session('selected_ruta_name', 'Ruta');
 
-            
-            $this->selectedRutaId = $id;
-            $this->selectedRutaName = $name;
-        } else {
-            // Si no hay nada en sesión, asegúrate de que esté vacío (o un valor predeterminado)
-            $this->selectedRutaId = null;
-            $this->selectedRutaName = 'Ruta'; // O el texto predeterminado inicial del botón
+        // Emitir evento si hay una ruta seleccionada en sesión
+        if ($this->selectedRutaId && $this->selectedRutaName && $this->selectedRutaName !== 'Ruta') {
+            $this->emit('globalRouteChanged', $this->selectedRutaId, $this->selectedRutaName);
         }
     }
 
-     // Este método se llama cuando el evento 'routeSelected' es emitido
-    public function onRouteSelected(int $rutaId, string $rutaName)
+    public function onRouteSelected($data)
     {
-        $this->selectedRutaId = $rutaId;
-        $this->selectedRutaName = $rutaName;
+        $this->selectedRutaId = $data['id'];
+        $this->selectedRutaName = $data['name'];
 
-        
-        Session::put('selected_ruta_id', $rutaId);
-        Session::put('selected_ruta_name', $rutaName);
-
-        
-        $this->emit('globalRouteChanged', $this->selectedRutaId, $this->selectedRutaName);
+        session([
+            'selected_ruta_id' => $data['id'],
+            'selected_ruta_name' => $data['name'],
+        ]);
+        $this->emit('globalRouteChanged', $data['id'], $data['name']);
     }
 
     // Método para limpiar la ruta seleccionada
@@ -64,11 +46,13 @@ class SelectedRouteManager extends Component
     {
         $this->selectedRutaId = null;
         $this->selectedRutaName = 'Ruta'; 
-        Session::forget('selected_ruta_id');
-        Session::forget('selected_ruta_name');
+        session([
+            'selected_ruta_id' => null,
+            'selected_ruta_name' => 'Ruta',
+        ]);
         $this->emit('globalRouteChanged', null, 'Ruta');
     }
-    
+
     public function render()
     {
         return view('livewire.selected-route-manager');

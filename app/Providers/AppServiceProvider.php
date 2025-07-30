@@ -33,7 +33,8 @@ class AppServiceProvider extends ServiceProvider
      * @return void
      */
     public function boot()
-    {
+    {   
+
         // Configure application
         $this->configureApp();
 

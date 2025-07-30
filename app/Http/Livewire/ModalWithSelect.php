@@ -6,8 +6,8 @@ use App\Models\Ruta;
 
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use PhpParser\ErrorHandler\Collecting;
 
 class ModalWithSelect extends Component
 {   
@@ -19,43 +19,72 @@ class ModalWithSelect extends Component
 
     public function mount()
     {
-        $this->rutas = Ruta::activas()->get(); 
 
-        if ($this->rutas->isNotEmpty()) {
-            // Opcional: Si quieres que el botón muestre la primera ruta activa por defecto al cargar el componente,
-            // descomenta la siguiente línea y asegúrate de que RouteButton tenga una lógica de mount para esto
-            // $this->selectedOption = $this->rutas->first()->id_ruta;
-            // $this->updatedSelectedOption($this->selectedOption); // Para actualizar el botón inmediatamente
+        $usuario = auth()->user();
+
+        if ($usuario->hasRole('Administrador')) {
+            $this->rutas = $usuario->ruta()->get();
+        } else {
+            $ruta = $usuario?->ruta_principal; // Ajusta esto según tu relación
+            $this->rutas = $ruta ? (new Ruta)->newCollection([$ruta]) : (new Ruta)->newCollection();
+        }
+
+        $selectedRutaIdInSession = session('selected_ruta_id');
+        if ($selectedRutaIdInSession && $this->rutas->contains('id_ruta', $selectedRutaIdInSession)) {
+            $this->selectedOption = $selectedRutaIdInSession;
         }
     }
 
-
-    public function render()
-    {
-        return view('livewire.modal-with-select', [
-            'rutas' => $this->rutas,
-        ]);
-    }
     
     public function openModal()
     {
         $this->showModal = true;
     }
-
+    
     public function closeModal()
     {
         $this->showModal = false;
-
+        
         $this->dispatchBrowserEvent('close-modal', ['id' => 'modal-con-select']);
     }
+    
 
+    public function confirmSelection()
+    {
+        if (!$this->selectedOption) {
+            return;
+        }
 
-    public function updatedSelectedOption($value)
+        $ruta = Ruta::find($this->selectedOption);
+
+        if ($ruta) {
+            $this->emit('routeSelected', [
+                'id' => $ruta->id_ruta,
+                'name' => $ruta->nombre_completo ?? $ruta->nombre,
+            ]);
+
+            session([
+                'selected_ruta_id' => $ruta->id_ruta,
+                'selected_ruta_name' => $ruta->nombre_completo ?? $ruta->nombre,
+            ]);
+
+            Notification::make()
+                ->title('Opción seleccionada: ' . ($ruta->nombre_completo ?? $ruta->nombre))
+                ->success()
+                ->send();
+
+            $this->emitTo('route-button', 'optionSelectedInModal', $ruta->nombre_completo ?? $ruta->nombre);
+        }
+
+        $this->closeModal();
+    }
+    
+    /* public function updatedSelectedOption($value)
     {   
         $selectedRutaId = null;
         $newLabel = 'Ruta';
-
-
+        
+        
         if (!empty($value)) {
             $selectedRuta = $this->rutas->firstWhere('id_ruta', $value);
             if ($selectedRuta) {
@@ -64,23 +93,30 @@ class ModalWithSelect extends Component
                 $newLabel = $selectedRuta->nombre_completo ?? $selectedRuta->nombre;
             }
         }
-
+        
         $this->emitTo('route-button', 'optionSelectedInModal', $newLabel);
         
         $this->emit('routeSelected', $selectedRutaId, $newLabel); 
-
+        
         Notification::make()
-            ->title('Opción seleccionada: ' . $newLabel)
-            ->success()
-            ->send();
-
+        ->title('Opción seleccionada: ' . $newLabel)
+        ->success()
+        ->send();
+        
         if ($this->routeButtonComponentId) {
             $this->emitTo('route-button', 'optionSelectedInModal', $newLabel);
         } else {
-
+            
             $this->emit('optionSelectedInModal', $newLabel);
         }
-
+        
         $this->closeModal(); 
+    } */
+    
+    public function render()
+    {
+        return view('livewire.modal-with-select', [
+            'rutas' => $this->rutas,
+        ]);
     }
 }

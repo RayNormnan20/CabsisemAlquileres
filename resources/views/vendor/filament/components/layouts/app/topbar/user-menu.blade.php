@@ -10,7 +10,15 @@ $logoutItem = $items['logout'] ?? null;
 
 {{ \Filament\Facades\Filament::renderHook('user-menu.start') }}
 
+{{-- Componente del botón --}}
+@livewire('route-button')
+
+{{-- Componente del modal --}}
 @livewire('modal-with-select')
+
+{{-- Componente gestor para guardar en sesión --}}
+@livewire('selected-route-manager')
+
 
 
 <x-filament::dropdown placement="bottom-end">

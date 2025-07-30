@@ -62,6 +62,16 @@
     </div>
 
     <x-filament::button
+        wire:click="confirmSelection"
+        color="primary"
+        class="mt-4"
+        :disabled="!$selectedOption"
+    >
+        Seleccionar
+    </x-filament::button>
+
+
+    <x-filament::button
         wire:click="closeModal" {{-- Llama al método closeModal de ModalWithSelect --}}
         color="secondary"
         class="mt-4"

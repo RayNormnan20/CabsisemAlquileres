@@ -1,4 +1,6 @@
 
+
+
 <div>
 
     <button
@@ -13,8 +15,7 @@
             dark:hover:bg-gray-700
         "
     >
-        <span x-text="$wire.buttonText">Ruta</span> 
+        <span>{{ $buttonText ?? 'Ruta' }}</span>
     </button>
 
-    @livewire('modal-with-select', ['routeButtonComponentId' => $this->id])
 </div>

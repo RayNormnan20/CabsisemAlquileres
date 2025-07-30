@@ -1,4 +1,4 @@
-<div
+<!-- <div
     x-data="{ showModal: false }"
     x-on:close-modal.window="showModal = false" {{-- Escucha el evento para cerrar el modal --}}
 >
@@ -76,4 +76,4 @@
         {{-- Si el modal tiene un formulario, aquí lo renderizarías --}}
         {{-- {{ $this->form }} --}}
     </x-filament::modal>
-</div>
+</div> -->
