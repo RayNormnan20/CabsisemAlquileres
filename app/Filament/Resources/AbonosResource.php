@@ -76,8 +76,7 @@ class AbonosResource extends Resource
                                 ->numeric()
                                 ->disabled()
                                 ->prefix('S/'),
-
-                            Forms\Components\TextInput::make('monto_abono')
+                            TextInput::make('monto_abono')
                                 ->label('Abono')
                                 ->numeric()
                                 ->required()
@@ -88,7 +87,15 @@ class AbonosResource extends Resource
                                         $saldoAnterior = $get('saldo_anterior');
                                         $set('saldo_posterior', $saldoAnterior - $state);
                                     }
+
+                                    // Copiar el abono como monto del primer método de pago (índice 0)
+                                    $conceptos = $get('conceptosabonos') ?? [];
+                                    if (isset($conceptos[0])) {
+                                        $conceptos[0]['monto'] = $state;
+                                        $set('conceptosabonos', $conceptos);
+                                    }
                                 }),
+
                         ]),
                 ])
                 ->columns(1),
@@ -121,48 +128,56 @@ class AbonosResource extends Resource
                                     'Abono Faltante COB' => 'Abono Faltante COB',
                                     'Entrega Caja COBRADOR' => 'Entrega Caja COBRADOR',
                                     'Abono de Descuento' => 'Abono de Descuento',
-
                                 ])
-                                ->default($metodoPago) // Establecer el valor por defecto
-                                ->disabled($metodoPago !== null) // Deshabilitar si viene de la URL
                                 ->required()
-                                ->columnSpan(1),
+                                //->disablePlaceholderSelection()
+                                ->disabled(fn ($livewire) => filled($livewire->metodo_pago)),
 
                             TextInput::make('monto')
                                 ->label('Monto')
                                 ->numeric()
                                 ->required()
                                 ->prefix('S/')
-                                ->columnSpan(1),
+                                ->columnSpan(1)
+                                ->disabled(true)
+                                ->suffixIcon('heroicon-s-exclamation')
+                                ->extraAttributes([
+                                    'class' => 'border-red-500 focus:border-red-500 focus:ring-red-500',
+                                ]),
+
+
 
                             Forms\Components\FileUpload::make('foto_comprobante')
-                                ->label('Comprobante')
-                                ->image()
-                                ->directory('comprobantes/abonos')
-                                ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
-                                ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
-                                ->columnSpan(2),
+                            ->label('Comprobante')
+                            ->image()
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg']) // <- formatos aceptados
+                            ->directory('comprobantes/abonos')
+                            ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
+                            ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
+                            ->columnSpan(2),
 
-                           Forms\Components\TextInput::make('referencia')
-                                ->label('Observacione')
+
+                            TextInput::make('referencia')
+                                ->label('Observaciones')
                                 ->visible(function ($get, $livewire) {
-                                    // Mostrar para métodos digitales o si viene de un enlace específico
-                                    return in_array($get('tipo_concepto'), ['Yape', 'Efectivo']) ||
-                                        ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
-                                })
-                                ->required(function ($get, $livewire) {
-                                    // Requerido para métodos digitales o si viene de un enlace específico
                                     return in_array($get('tipo_concepto'), ['Yape', 'Efectivo']) ||
                                         ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
                                 })
                                 ->columnSpan(2)
+
                         ])
                         ->columns(2)
                         ->defaultItems(1)
                         ->minItems(1)
-                        ->createItemButtonLabel('Agregar método de pago')
-                        ->disabled(fn () => $metodoPago !== null),
+                        ->disableItemCreation()
+                        //->createItemButtonLabel('Agregar método de pago')
+                        ->visible(function ($get, $livewire) {
+                            return in_array($get('tipo_concepto'), ['Yape', 'Efectivo']) ||
+                                ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos && $livewire->metodo_pago);
+                        })
+
                 ]),
+
         ]);
 }
 

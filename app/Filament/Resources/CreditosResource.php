@@ -327,7 +327,7 @@ class CreditosResource extends Resource
                                             ->columns(2),
                                     ])
                                     ->columnSpanFull(),
-                            ]), 
+                            ]),
                         ]),
                 ])
             ]);
@@ -413,13 +413,13 @@ class CreditosResource extends Resource
                     ->label('Solo créditos activos')
                     ->query(fn($query) => $query->where('saldo_actual', '>', 0)),
             ])
-            ->actions([ 
+            ->actions([
 
                 Tables\Actions\Action::make('view_abonos_history')
                     ->label('')
                     ->icon('heroicon-o-document-text') // Puedes usar 'heroicon-o-eye' o 'heroicon-o-document-text'
                     ->url(fn(Creditos $record): string => CreditosResource::getUrl('view', ['record' => $record->id_credito]))
-                    ->color('info')
+                    ->color('primary')
                     ->tooltip('Ver Historial de Abonos')
                     ->button(), // Display as a button
 
