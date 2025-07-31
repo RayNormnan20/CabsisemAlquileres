@@ -47,7 +47,7 @@ class ListAbonos extends ListRecords
     }
 
     protected function getActions(): array
-    {
+    {   
         return [
             Actions\CreateAction::make()
                 ->label('Agregar Abono')
@@ -58,7 +58,7 @@ class ListAbonos extends ListRecords
                         return '#';
                     }
 
-                    $tieneCreditos = Creditos::where('id_cliente', $this->clienteId)
+                    $tieneCreditos = \App\Models\Creditos::where('id_cliente', $this->clienteId)
                         ->where('saldo_actual', '>', 0)
                         ->exists();
 
@@ -132,15 +132,14 @@ class ListAbonos extends ListRecords
         $query = parent::getTableQuery()
             ->with(['cliente', 'credito', 'usuario', 'ruta']);
 
-        // Filtrar por cliente si se ha seleccionado
         if (!empty($this->clienteId)) {
             $query->where('id_cliente', $this->clienteId);
         }
 
-        // Filtrar por ruta si se ha seleccionado
-        if (!empty($this->rutaId)) {
-            $query->whereHas('cliente', function($q) {
-                $q->where('id_ruta', $this->rutaId);
+        $rutaId = session('selected_ruta_id');
+        if (!empty($rutaId)) {
+            $query->whereHas('cliente', function($q) use ($rutaId) {
+                $q->where('id_ruta', $rutaId);
             });
         }
 
@@ -162,8 +161,17 @@ class ListAbonos extends ListRecords
 
     protected function getHeader(): View
     {
+
+        $rutaId = session('selected_ruta_id');
+
+        $clientesQuery = \App\Models\Clientes::where('activo', true);
+
+        if ($rutaId) {
+            $clientesQuery->where('id_ruta', $rutaId);
+        }
+
         return view('filament.resources.abonos-resource.header', [
-            'clientes' => Clientes::where('activo', true)->get()->pluck('nombre_completo', 'id_cliente'),
+            'clientes' => $clientesQuery->get()->pluck('nombre_completo', 'id_cliente'),
             'rutas' => Ruta::all()->pluck('nombre', 'id_ruta'),
             'clienteId' => $this->clienteId,
             'cliente' => $this->clienteId ? Clientes::with(['creditos', 'abonos'])->find($this->clienteId) : null,
@@ -174,6 +182,9 @@ class ListAbonos extends ListRecords
     {
         if (in_array($property, ['clienteId', 'rutaId', 'fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
             $this->resetPage();
+        }
+        if ($property === 'rutaId') {
+            $this->clienteId = null;
         }
     }
 
