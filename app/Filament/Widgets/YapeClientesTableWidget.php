@@ -9,7 +9,8 @@ use Filament\Tables\Columns\TextColumn;
 
 class YapeClientesTableWidget extends BaseWidget
 {
-    protected int | string | array $columnSpan = 'full';
+protected int|string|array $columnSpan = 1;
+
 
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {

@@ -54,7 +54,7 @@ class JiraImport extends Page implements HasForms
 
     protected static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->can('Import from Jira');
+    return false; // Cambiado de auth()->user()->can('Import from Jira') a false
     }
 
     protected function getSubheading(): string|Htmlable|null

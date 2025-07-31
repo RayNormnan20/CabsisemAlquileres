@@ -78,8 +78,7 @@ return [
     | ahead and set this to a sensible default for you out of the box.
     |
     */
-
-    'timezone' => 'UTC',
+    'timezone' => 'America/Lima',
 
     /*
     |--------------------------------------------------------------------------
@@ -91,8 +90,7 @@ return [
     | to any of the locales which will be supported by the application.
     |
     */
-
-    'locale' => 'en',
+    'locale' => 'es',
 
     /*
     |--------------------------------------------------------------------------
@@ -104,8 +102,7 @@ return [
     | the language folders that are provided through your application.
     |
     */
-
-    'fallback_locale' => 'en',
+    'fallback_locale' => 'es',
 
     /*
     |--------------------------------------------------------------------------
@@ -117,8 +114,7 @@ return [
     | localized telephone numbers, street address information and more.
     |
     */
-
-    'faker_locale' => 'en_US',
+    'faker_locale' => 'es_PE',
 
     /*
     |--------------------------------------------------------------------------

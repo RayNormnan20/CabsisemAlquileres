@@ -395,7 +395,13 @@ class CreditosResource extends Resource
                 Tables\Columns\TextColumn::make('fecha_vencimiento')
                     ->label('Vencimiento')
                     ->date('d/m/Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->color(function ($record) {
+                        return now()->gt($record->fecha_vencimiento) ? 'danger' : null;
+                    })
+                    ->weight(function ($record) {
+                        return now()->gt($record->fecha_vencimiento) ? 'bold' : null;
+                    }),
 
 
                 Tables\Columns\TextColumn::make('conceptosCredito')

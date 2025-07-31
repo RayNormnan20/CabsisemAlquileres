@@ -26,7 +26,13 @@ class Creditos extends Model
         'valor_cuota',
         'numero_cuotas',
         'fecha_vencimiento',
-        'fecha_proximo_pago'
+        'fecha_proximo_pago',
+        'llamada_cliente',
+        'revisado',
+        'analizado',
+        'por_renovar',
+        'segundo_recorrido',
+        'segundo_cobrador'
     ];
 
     protected $casts = [
@@ -36,7 +42,12 @@ class Creditos extends Model
         'saldo_actual' => 'decimal:2',
         'valor_cuota' => 'decimal:2',
         'fecha_vencimiento' => 'date',
-        'fecha_proximo_pago' => 'date'
+        'fecha_proximo_pago' => 'date',
+        'llamada_cliente' => 'boolean',
+        'revisado' => 'boolean',
+        'analizado' => 'boolean',
+        'por_renovar' => 'boolean',
+        'segundo_recorrido' => 'boolean'
     ];
 // En el modelo Credito
     public function concepto()
@@ -113,5 +124,4 @@ class Creditos extends Model
         $this->saldo_actual = $this->valor_credito - $this->abonos()->sum('monto_abono');
         $this->save();
     }
-    
 }
