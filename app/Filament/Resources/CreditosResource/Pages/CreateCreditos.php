@@ -11,9 +11,12 @@ use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class CreateCreditos extends CreateRecord
-{
+{   
+
+    public ?int $currentRutaId = null;    
     protected static string $resource = CreditosResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
@@ -26,15 +29,16 @@ class CreateCreditos extends CreateRecord
             throw new \Exception('Todos los campos requeridos deben estar completos');
         }
 
+        $this->currentRutaId = Session::get('selected_ruta_id');
         // Obtener la ruta del usuario autenticado
         $user = Auth::user();
-        $ruta = $user->ruta()->first(); // Obtenemos la primera ruta asignada
+        //$ruta = $user->ruta()->first(); // Obtenemos la primera ruta asignada
 
-        if (!$ruta) {
+        if (!$this->currentRutaId) {
             throw new \Exception('El usuario no tiene una ruta asignada.');
         }
 
-        $data['id_ruta'] = $ruta->id_ruta;
+        $data['id_ruta'] = $this->currentRutaId;
         // Obtener el concepto "Desembolso" de la tabla conceptos
         $conceptoDesembolso = Concepto::where('nombre', 'Desembolso')->first();
 

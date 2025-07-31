@@ -85,30 +85,18 @@ class AbonosResource extends Resource
                                 ->prefix('S/')
                                 ->reactive()
                                 ->afterStateHydrated(function (callable $get, callable $set, $state) {
-                                    if ($get('id_credito') && is_numeric($state)) {
-                                        $saldoAnterior = $get('saldo_anterior');
-                                        $set('saldo_posterior', $saldoAnterior - $state);
-                                    }
-
-                                    // Inicializar el monto en el Repeater al cargar
                                     $conceptos = $get('conceptosabonos') ?? [];
-                                    if (isset($conceptos[0])) {
-                                        $conceptos[0]['monto'] = $state;
-                                        $set('conceptosabonos', $conceptos);
+                                    foreach ($conceptos as $i => $item) {
+                                        $conceptos[$i]['monto'] = $state;
                                     }
+                                    $set('conceptosabonos', $conceptos);
                                 })
                                 ->afterStateUpdated(function ($state, callable $get, callable $set) {
-                                    if ($get('id_credito') && is_numeric($state)) {
-                                        $saldoAnterior = $get('saldo_anterior');
-                                        $set('saldo_posterior', $saldoAnterior - $state);
-                                    }
-
-                                    // Actualizar el monto en el primer método de pago
                                     $conceptos = $get('conceptosabonos') ?? [];
-                                    if (isset($conceptos[0])) {
-                                        $conceptos[0]['monto'] = $state;
-                                        $set('conceptosabonos', $conceptos);
+                                    foreach ($conceptos as $i => $item) {
+                                        $conceptos[$i]['monto'] = $state;
                                     }
+                                    $set('conceptosabonos', $conceptos);
                                 }),
 
 
