@@ -3,36 +3,73 @@
     <div class="w-full space-y-6">
 
         <!-- Primera fila: Cards con valores principales (CUA, Clientes de la Ruta, Total Créditos) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-            <!-- Card CUA Actual -->
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            <!-- Card CUA Actual 
+             
             <div class="p-4 bg-white rounded-lg shadow w-full">
-                <h3 class="text-lg font-semibold text-gray-700">CUA ACTUAL</h3>
-                <p class="text-2xl font-bold {{ $cuaActual < 0 ? 'text-red-500' : 'text-green-500' }}">
-                    {{ $cuaActual }}
+                <h3 class="text-lg font-semibold text-gray-700">TOTAL CRÉDITOS OTORGADOS</h3>
+                <p class="text-2xl font-bold text-purple-500">
+                     {{ $totalCreditosRutaCount }}
                 </p>
-            </div>
+            </div>-->
 
             <!-- Card CUA Anterior -->
+
             <div class="p-4 bg-white rounded-lg shadow w-full">
-                <h3 class="text-lg font-semibold text-gray-700">CUA ANTERIOR</h3>
-                <p class="text-2xl font-bold {{ $cuaAnterior < 0 ? 'text-red-500' : 'text-green-500' }}">
-                    {{ $cuaAnterior }}
+                <h3 class="text-lg font-semibold text-gray-700">POR COBRAR</h3>
+                <p class="text-2xl font-bold text-purple-500">
+                    S/ {{ $totalCuotasHoySum }}
+                </p>
+            </div>
+            <div class="p-4 bg-white rounded-lg shadow w-full">
+                <h3 class="text-lg font-semibold text-gray-700">PAGOS HOY</h3>
+                <p class="text-2xl font-bold text-purple-500">
+                    S/ {{ $totalAbonosHoySum }}
                 </p>
             </div>
 
-            <!-- Card Clientes en Ruta Actual -->
+            <!-- Card Clientes en Ruta Actual 
             <div class="p-4 bg-white rounded-lg shadow w-full">
                 <h3 class="text-lg font-semibold text-gray-700">CLIENTES EN RUTA</h3>
                 <p class="text-2xl font-bold text-blue-500">
                     {{ $totalClientesRuta }} {{-- ¡CORREGIDO! Usar la variable filtrada por ruta --}}
                 </p>
-            </div>
+            </div>-->
 
-            <!-- Card Total de Créditos Otorgados en Ruta -->
+            <!-- Card Total de Créditos Otorgados en Ruta 
             <div class="p-4 bg-white rounded-lg shadow w-full">
                 <h3 class="text-lg font-semibold text-gray-700">CRÉDITOS OTORGADOS</h3>
                 <p class="text-2xl font-bold text-purple-500">
                     S/ {{ $totalCreditosRutaSum }}
+                </p>
+            </div>-->
+
+            <!--
+            <div class="p-4 bg-white rounded-lg shadow w-full">
+                <h3 class="text-lg font-semibold text-gray-700">Cuotas Pendientes</h3>
+                <p class="text-2xl font-bold text-purple-500">
+                     {{ $cuotasPendientes }}
+                </p>
+            </div>
+        
+            <div class="p-4 bg-white rounded-lg shadow w-full">
+                <h3 class="text-lg font-semibold text-gray-700">Cuotas Vencidas</h3>
+                <p class="text-2xl font-bold text-purple-500">
+                     {{ $cuotasVencidas }}
+                </p>
+            </div>
+            -->
+            <div class="p-4 bg-white rounded-lg shadow w-full">
+                <h3 class="text-lg font-semibold text-gray-700">Cuotas Hoy</h3>
+                <p class="text-2xl font-bold text-purple-500">
+                    {{ $cuotasHoy }}
+                </p>
+            </div>
+            
+            <div class="p-4 bg-white rounded-lg shadow w-full">
+                <h3 class="text-lg font-semibold text-gray-700">Pagadas Hoy</h3>
+                <p class="text-2xl font-bold text-green-500">
+                    {{ $cuotasPagadasHoy }}
                 </p>
             </div>
         </div>

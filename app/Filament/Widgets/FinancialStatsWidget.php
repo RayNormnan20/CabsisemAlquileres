@@ -36,6 +36,12 @@ class FinancialStatsWidget extends Widget
         $totalCreditosRutaSum = 0;
         $totalAbonosRutaCount = 0;
         $totalAbonosRutaSum = 0;
+        $cuotasPendientes = 0;
+        $cuotasVencidas = 0;
+        $cuotasHoy = 0;
+        $cuotasPagadasHoy = 0;
+        $totalAbonosHoyCount = 0;
+        $totalCuotasHoySum = 0; // Nueva variable para sumar el valor de cuotas de hoy
 
         // --- Lógica para Clientes por Ruta ---
         $clientesQuery = Clientes::query();
@@ -65,18 +71,59 @@ class FinancialStatsWidget extends Widget
             });
         }
         $totalAbonosRutaCount = $abonosQuery->count();
-        // Asume que la tabla 'abonos' tiene una columna 'monto_abonado' para la suma
-        $totalAbonosRutaSum = $abonosQuery->sum('monto_abono'); 
+        $totalAbonosRutaSum = $abonosQuery->sum('monto_abono');
+
+        $abonosHoyQuery = Abonos::query()->whereDate('created_at', now()->toDateString());
+        if ($selectedRutaId) {
+            $abonosHoyQuery->whereHas('credito.cliente', function ($query) use ($selectedRutaId) {
+                $query->where('id_ruta', $selectedRutaId);
+            });
+        }
+        $totalAbonosHoyCount = $abonosHoyQuery->count();
+        $totalAbonosHoySum = $abonosHoyQuery->sum('monto_abono');
+
+        // Cálculo de cuotas
+        $creditos = $creditosQuery->get();
+        $hoy = now()->toDateString();
+
+        foreach ($creditos as $credito) {
+            // Cuotas pendientes totales
+            $cuotasPendientes += $credito->cuotas_pendientes;
+            
+            // Cuotas vencidas
+            if ($credito->fecha_proximo_pago && $credito->fecha_proximo_pago < now()) {
+                $cuotasVencidas += 1;
+            }
+            
+            // Cuotas programadas para hoy 
+            if ($credito->fecha_proximo_pago && $credito->fecha_proximo_pago->toDateString() == $hoy) {
+                $cuotasHoy += 1;
+                $totalCuotasHoySum += $credito->valor_cuota; // Suma el valor de la cuota
+                
+                // Verificar si ya pagó la cuota de hoy
+                $pagoHoy = $credito->abonos->contains(function($abono) use ($hoy) {
+                    return $abono->created_at->toDateString() == $hoy;
+                });
+                
+                if ($pagoHoy) {
+                    $cuotasPagadasHoy += 1;
+                }
+            }
+        }
 
         return [
-            'cuaActual' => '-439,856', // Se mantienen estos valores fijos
-            'cuaAnterior' => '-442,121', // Se mantienen estos valores fijos
-            'ingresosGastos' => [6000, 3000, 2000, 3000, 2000], // Se mantienen estos valores fijos
             'totalClientesRuta' => $totalClientesRuta,
             'totalCreditosRutaCount' => $totalCreditosRutaCount,
-            'totalCreditosRutaSum' => number_format($totalCreditosRutaSum, 2, ',', '.'), // Formato de moneda
+            'totalCreditosRutaSum' => number_format($totalCreditosRutaSum, 2, ',', '.'),
             'totalAbonosRutaCount' => $totalAbonosRutaCount,
-            'totalAbonosRutaSum' => number_format($totalAbonosRutaSum, 2, ',', '.'),     // Formato de moneda
+            'totalAbonosRutaSum' => number_format($totalAbonosRutaSum, 2, ',', '.'),
+            'cuotasPendientes' => $cuotasPendientes,
+            'cuotasVencidas' => $cuotasVencidas,
+            'cuotasHoy' => $cuotasHoy,
+            'cuotasPagadasHoy' => $cuotasPagadasHoy,
+            'totalAbonosHoyCount' => $totalAbonosHoyCount,
+            'totalAbonosHoySum' => number_format($totalAbonosHoySum, 2, ',', '.'),
+            'totalCuotasHoySum' => number_format($totalCuotasHoySum, 2, ',', '.'),
         ];
     }
 }
