@@ -24,6 +24,8 @@ class ListAbonos extends ListRecords
     public ?string $fechaDesde = null;
     public ?string $fechaHasta = null;
     public string $periodoSeleccionado = 'hoy'; // Cambiado a 'hoy' por defecto
+    public ?string $tipoConcepto = null;
+    
 
     protected $queryString = [
         'clienteId' => ['except' => null],
@@ -31,6 +33,7 @@ class ListAbonos extends ListRecords
         'fechaDesde' => ['except' => null],
         'fechaHasta' => ['except' => null],
         'periodoSeleccionado' => ['except' => 'hoy'],
+        'tipoConcepto' => ['except' => null],
     ];
 
     // 'goToActionRecord' es el evento emitido desde los botones del modal.
@@ -79,35 +82,32 @@ class ListAbonos extends ListRecords
 
         switch ($this->periodoSeleccionado) {
             case 'hoy':
-                $this->fechaDesde = $hoy->format('Y-m-d');
-                $this->fechaHasta = $hoy->format('Y-m-d');
+                $this->fechaDesde = $hoy->copy()->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->format('Y-m-d');
                 break;
             case 'ayer':
-                $this->fechaDesde = $hoy->subDay()->format('Y-m-d');
+                $this->fechaDesde = $hoy->copy()->subDay()->format('Y-m-d');
                 $this->fechaHasta = $this->fechaDesde;
                 break;
             case 'semana_actual':
-                $this->fechaDesde = $hoy->startOfWeek()->format('Y-m-d');
-                $this->fechaHasta = $hoy->endOfWeek()->format('Y-m-d');
+                $this->fechaDesde = $hoy->copy()->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->endOfWeek()->format('Y-m-d');
                 break;
             case 'semana_anterior':
-                $this->fechaDesde = $hoy->subWeek()->startOfWeek()->format('Y-m-d');
-                $this->fechaHasta = $hoy->endOfWeek()->format('Y-m-d');
+                $this->fechaDesde = $hoy->copy()->subWeek()->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->subWeek()->endOfWeek()->format('Y-m-d');
                 break;
             case 'ultimas_2_semanas':
-                $this->fechaDesde = $hoy->subWeeks(2)->format('Y-m-d');
-                $this->fechaHasta = $hoy->format('Y-m-d');
+                $this->fechaDesde = $hoy->copy()->subWeeks(2)->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->endOfWeek()->format('Y-m-d');
                 break;
             case 'mes_actual':
-                $this->fechaDesde = $hoy->startOfMonth()->format('Y-m-d');
-                $this->fechaHasta = $hoy->endOfMonth()->format('Y-m-d');
+                $this->fechaDesde = $hoy->copy()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->endOfMonth()->format('Y-m-d');
                 break;
             case 'mes_anterior':
-                $this->fechaDesde = $hoy->subMonth()->startOfMonth()->format('Y-m-d');
-                $this->fechaHasta = $hoy->endOfMonth()->format('Y-m-d');
-                break;
-            default:
-                // Para 'personalizado' no hacemos nada
+                $this->fechaDesde = $hoy->copy()->subMonth()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->subMonth()->endOfMonth()->format('Y-m-d');
                 break;
         }
 
@@ -143,6 +143,13 @@ class ListAbonos extends ListRecords
             });
         }
 
+        // Filtro por tipo de concepto (Yape - Efectivo)
+        if (!empty($this->tipoConcepto)) {
+            $query->whereHas('conceptosabonos', function($q) {
+                $q->where('tipo_concepto', $this->tipoConcepto);
+            });
+        }
+
         // Aplicar filtros de fecha
         if ($this->fechaDesde && $this->fechaHasta) {
             $query->whereDate('fecha_pago', '>=', $this->fechaDesde)
@@ -173,8 +180,11 @@ class ListAbonos extends ListRecords
         return view('filament.resources.abonos-resource.header', [
             'clientes' => $clientesQuery->get()->pluck('nombre_completo', 'id_cliente'),
             'rutas' => Ruta::all()->pluck('nombre', 'id_ruta'),
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
             'clienteId' => $this->clienteId,
             'cliente' => $this->clienteId ? Clientes::with(['creditos', 'abonos'])->find($this->clienteId) : null,
+            'tipoConcepto' => $this->tipoConcepto,
         ]);
     }
 
@@ -211,6 +221,14 @@ class ListAbonos extends ListRecords
         if ($newRecord) {
 
             $this->mountedTableActionRecord = $newRecord->getKey();
+        }
+    }
+
+    public function aplicarRango()
+    {   
+        if ($this->fechaDesde && $this->fechaHasta) {
+            $this->periodoSeleccionado = 'personalizado';
+            $this->resetPage(); // Aplicar directamente la paginación
         }
     }
 }

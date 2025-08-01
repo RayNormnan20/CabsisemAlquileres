@@ -13,6 +13,14 @@
             </select>
         </div>
 
+        <div class="flex-1">
+            <select wire:model="tipoConcepto"
+                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                <option value="">Todos los métodos</option>
+                <option value="Yape">Yape</option>
+                <option value="Efectivo">Efectivo</option>
+            </select>
+        </div>
         @role('Administrador')
         <div class="flex-6">
             <select wire:model="rutaId"
@@ -26,41 +34,52 @@
         </div>
         @endrole
 
-        <!-- Contenedor para filtro y botón - SIEMPRE visible -->
-        <div class="flex items-center space-x-">
+        <div class="flex items-center gap-5 space-x-">
             <!-- Componente unificado de filtro de fechas -->
-            <div class="flex items-center bg-white rounded-md border border-gray-300 overflow-hidden">
-                <!-- Selector de período -->
-                <select wire:model="periodoSeleccionado" wire:change="aplicarPeriodo"
-                    class="border-none focus:ring-0 py-1 pl-2 pr-6 text-sm bg-gray-50">
-                    <option value="hoy">Hoy</option> <!-- Opción por defecto -->
-                    <option value="ayer">Ayer</option>
-                    <option value="semana_actual">Esta semana</option>
-                    <option value="semana_anterior">Semana pasada</option>
-                    <option value="ultimas_2_semanas">Últimas 2 semanas</option>
-                    <option value="mes_actual">Este mes</option>
-                    <option value="mes_anterior">Mes pasado</option>
-                    <option value="personalizado">Personalizado</option>
-                </select>
-
-                <!-- Divisor visual -->
-                <div class="h-6 w-px bg-gray-300"></div>
-
-                <!-- Inputs de fecha integrados -->
-                <div class="flex items-center px-2">
-                    <input type="date" wire:model="fechaDesde" class="border-none focus:ring-0 p-0 text-sm w-28"
-                        placeholder="Desde">
-                    <span class="text-gray-500 mx-1">-</span>
-                    <input type="date" wire:model="fechaHasta" class="border-none focus:ring-0 p-0 text-sm w-28"
-                        placeholder="Hasta">
-                </div>
-
-                <!-- Botón para limpiar -->
-                @if($this->fechaDesde || $this->fechaHasta)
-                <button wire:click="resetFechas" class="px-2 text-gray-400 hover:text-red-500 h-full flex items-center">
-                    ×
+            <div class="relative inline-block text-left" x-data="{ open: false }">
+                <!-- Botón desplegable -->
+                <button @click="open = !open"
+                    class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md bg-white text-sm hover:bg-gray-50">
+                    <x-heroicon-o-calendar class="w-4 h-4 text-gray-600" />
+                    {{ $fechaDesde ? \Carbon\Carbon::parse($fechaDesde)->format('d M Y') : 'Desde' }}
+                    -
+                    {{ $fechaHasta ? \Carbon\Carbon::parse($fechaHasta)->format('d M Y') : 'Hasta' }}
+                    <svg class="w-4 h-4 ml-1 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </button>
-                @endif
+
+                <!-- Dropdown -->
+                <div x-show="open" @click.away="open = false"
+                    class="absolute z-50 mt-2 w-90 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-4 space-y-3">
+                    <!-- Selector de período -->
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Período:</label>
+                        <select wire:model="periodoSeleccionado" wire:change="aplicarPeriodo"
+                            class="w-full border-gray-300 rounded-md shadow-sm text-sm">
+                            <option value="hoy">Hoy</option>
+                            <option value="ayer">Ayer</option>
+                            <option value="semana_actual">Esta semana</option>
+                            <option value="semana_anterior">Semana pasada</option>
+                            <option value="ultimas_2_semanas">Últimas 2 semanas</option>
+                            <option value="mes_actual">Este mes</option>
+                            <option value="mes_anterior">Mes pasado</option>
+                            <option value="personalizado">Personalizado</option>
+                        </select>
+                    </div>
+
+                    <!-- Rango de fechas -->
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Rango personalizado:</label>
+                        <div class="flex items-center gap-2">
+                            <input type="date" wire:model="fechaDesde"
+                                class="w-full border-gray-300 rounded-md shadow-sm text-sm" />
+                            <span class="text-gray-500">-</span>
+                            <input type="date" wire:model="fechaHasta"
+                                class="w-full border-gray-300 rounded-md shadow-sm text-sm" />
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- Botón Crear Abono -->
             <div class="relative inline-block text-left" x-data="{ open: false }">
