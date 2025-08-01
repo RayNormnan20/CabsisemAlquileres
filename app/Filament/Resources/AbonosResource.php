@@ -50,7 +50,7 @@ class AbonosResource extends Resource
             // Sección de fechas y montos
             Forms\Components\Section::make('Datos del Abono')
                 ->schema([
-                    Forms\Components\Grid::make(2)
+                    Forms\Components\Grid::make(3)
                         ->schema([
                             Forms\Components\TextInput::make('fecha_credito')
                                 ->label('Fecha de Crédito')
@@ -62,6 +62,26 @@ class AbonosResource extends Resource
                                 ->disabled()
                                 ->required(),
 
+                            Forms\Components\TextInput::make('nombre_yape')
+                                ->label('Nombre Yape')
+                                ->dehydrated(false) // No guardar este campo en la tabla abonos
+                                ->disabled()
+                                ->reactive()
+                                ->afterStateHydrated(function ($component, $get, $state) {
+                                    $idCliente = $get('id_cliente');
+                                    if ($idCliente) {
+                                        // Buscar en yape_clientes primero
+                                        $yapeCliente = \App\Models\YapeCliente::where('id_cliente', $idCliente)->first();
+                                        
+                                        if ($yapeCliente) {
+                                            $component->state($yapeCliente->nombre);
+                                        } else {
+                                            // Si no tiene en yape_clientes, mostrar el nombre del cliente
+                                            $cliente = \App\Models\Clientes::find($idCliente);
+                                            $component->state($cliente->nombre_completo);
+                                        }
+                                    }
+                                })
                         ]),
 
                     Forms\Components\Grid::make(3)

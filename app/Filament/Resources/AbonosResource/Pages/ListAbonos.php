@@ -188,6 +188,14 @@ class ListAbonos extends ListRecords
         ]);
     }
 
+    protected function getFooterWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\AbonosResource\Widgets\AbonosFooter::class 
+            
+        ];
+    }
+   
     public function updated($property)
     {
         if (in_array($property, ['clienteId', 'rutaId', 'fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
@@ -196,6 +204,10 @@ class ListAbonos extends ListRecords
         if ($property === 'rutaId') {
             $this->clienteId = null;
         }
+    }
+        protected function getFooterWidgetsColumns(): int|array
+    {
+        return 1; // Esto hará que el widget ocupe todo el ancho
     }
 
 

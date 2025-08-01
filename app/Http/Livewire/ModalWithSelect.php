@@ -68,6 +68,8 @@ class ModalWithSelect extends Component
         }
 
         $this->closeModal();
+        return redirect()->to(request()->header('Referer'));
+
     }
     
     /* public function updatedSelectedOption($value)

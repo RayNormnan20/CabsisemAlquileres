@@ -28,6 +28,9 @@ class CreateAbonos extends CreateRecord
 
         // Obtener lista de clientes con créditos activos
         $this->clientes = Clientes::whereHas('creditos', fn($q) => $q->where('saldo_actual', '>', 0))
+            ->when($this->currentRutaId, function($query) {
+                $query->where('id_ruta', $this->currentRutaId);
+            })
             ->orderBy('nombre')
             ->get();
 
@@ -43,11 +46,28 @@ class CreateAbonos extends CreateRecord
 
     public function cargarDatosCliente($clienteId)
     {
+        // Validar que el cliente pertenezca a la ruta actual
+        $cliente = Clientes::where('id_cliente', $clienteId)
+            ->when($this->currentRutaId, function($query) {
+                $query->where('id_ruta', $this->currentRutaId);
+            })
+            ->first();
+
+        if (!$cliente) {
+            $this->notify('error', 'El cliente no existe o no pertenece a tu ruta actual');
+            $this->cliente_id = null;
+            $this->form->fill([]);
+            return;
+        }
+
         $this->cliente_id = $clienteId;
-        $cliente = Clientes::find($clienteId);
         $credito = Creditos::where('id_cliente', $clienteId)
             ->where('saldo_actual', '>', 0)
             ->first();
+        
+        // Obtener nombre Yape o nombre completo del cliente
+        $yapeCliente = \App\Models\YapeCliente::where('id_cliente', $clienteId)->first();
+        $nombreYape = $yapeCliente ? $yapeCliente->nombre : $cliente->nombre_completo;
 
         if ($credito) {
             $formData = [
@@ -60,6 +80,7 @@ class CreateAbonos extends CreateRecord
                 'monto_abono' => $credito->valor_cuota,
                 'valor_cuota' => $credito->valor_cuota,
                 'cuota' => $credito->cuota_diaria,
+                'nombre_yape' => $nombreYape,
             ];
 
             // Si hay un método de pago específico, agregar datos iniciales
@@ -75,9 +96,15 @@ class CreateAbonos extends CreateRecord
             }
 
             $this->form->fill($formData);
+        } else {
+            $this->notify('warning', 'El cliente no tiene créditos activos');
+            $this->form->fill([
+                'id_cliente' => $clienteId,
+                'cliente_nombre' => $cliente->nombre,
+                'nombre_yape' => $nombreYape,
+            ]);
         }
     }
-
     protected function getHeader(): View
     {
         return view('filament.resources.abonos-resource.selector-cliente', [
@@ -124,10 +151,24 @@ class CreateAbonos extends CreateRecord
 
         // Actualizar el crédito con el nuevo saldo y ruta
         $credito->saldo_actual = $data['saldo_posterior'];
-
-       
-
         $credito->save();
+
+        // Guardar/actualizar el nombre Yape si existe en los datos
+        if (!empty($data['nombre_yape'])) {
+            \App\Models\YapeCliente::updateOrCreate(
+                ['id_cliente' => $data['id_cliente']],
+                [
+                    'nombre' => $data['nombre_yape'],
+                    'user_id' => auth()->id(),
+                    // Puedes agregar valores por defecto para otros campos si es necesario
+                    'monto' => 0, // O el valor que corresponda
+                    'entregar' => false // O el valor que corresponda
+                ]
+            );
+        } else {
+            // Opcional: Si no hay nombre Yape, puedes eliminar el registro existente
+            // \App\Models\YapeCliente::where('id_cliente', $data['id_cliente'])->delete();
+        }
 
         return $data;
     }
