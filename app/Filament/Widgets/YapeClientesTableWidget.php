@@ -42,6 +42,9 @@ class YapeClientesTableWidget extends BaseWidget
 
             TextColumn::make('Total Crédito')
                 ->getStateUsing(function (YapeCliente $record) {
+                    if (!$record->cliente) {
+                        return 0;
+                    }
                     $totalCapital = $record->cliente->creditos->sum('valor_credito');
                     $totalIntereses = $record->cliente->creditos->sum(function ($credito) {
                         return $credito->valor_credito * ($credito->porcentaje_interes / 100);
