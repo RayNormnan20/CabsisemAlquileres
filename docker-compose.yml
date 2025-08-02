@@ -7,6 +7,8 @@ services:
   sqldb:
     image: mysql:5.7
     container_name: helper-mysql
+    ports:
+      - "3307:3306" # <--- AÑADE ESTA LÍNEA para exponer MySQL al VPS en el puerto 3307
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
@@ -38,10 +40,17 @@ services:
       - MAIL_USERNAME=your_username
       - MAIL_PASSWORD=your_password
       - MAIL_ENCRYPTION=tls
+      - APP_URL=https://servenvicava.com # Asegúrate de tener esto también
+      - ASSET_URL=https://servenvicava.com
+      - APP_ENV=production # Opcional
     depends_on:
-      - sqldb
-    restart: "no"
+      sqldb:
+        condition: service_healthy
+    restart: "unless-stopped" # O 'unless-stopped'
     ports:
       - 8001:8000
     volumes:
-      - /etc/localtime:/etc/localtime
+      - /etc/localtime:/etc/localtime:ro
+      - ./src:/var/www/html # O .:/var/www/html si el código está en la raíz
+      - ./storage:/var/www/html/storage
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache

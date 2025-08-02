@@ -50,11 +50,11 @@ class YapesTotalesDelDiaWidget extends BaseWidget
                 ->label('Monto Total Yapes')
                 ->money('PEN', true)
                 ->sortable(),
-
+            /*
             TextColumn::make('ultima_fecha')
                 ->label('Última Fecha')
                 ->dateTime('d/m/Y H:i'),
-            /*
+
             TextColumn::make('total_usuario')
                 ->label('Total Yapes')
                 ->money('PEN', true)
