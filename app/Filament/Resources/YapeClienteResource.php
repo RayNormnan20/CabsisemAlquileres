@@ -18,25 +18,23 @@ class YapeClienteResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-collection';
     protected static ?string $navigationLabel = 'Yape Clientes';
     protected static ?string $modelLabel = 'Yape Cliente';
-
-   public static function form(Form $form): Form
+public static function form(Form $form): Form
 {
-    return $form
-        ->schema([
-           Forms\Components\Select::make('id_cliente') // Cambiado de 'cliente_id' a 'id_cliente'
-    ->label('Cliente')
-    ->options(function () {
-        $user = Auth::user();
-        $ruta = $user->rutaPrincipal;
+    return $form->schema([
+        Forms\Components\Select::make('id_cliente')
+            ->label('Cliente')
+            ->options(function () {
+                $rutaId = session('selected_ruta_id');
 
-        if (!$ruta) {
-            return [];
-        }
+                if (!$rutaId) {
+                    return [];
+                }
 
-        return \App\Models\Clientes::listarPorRuta($ruta->id_ruta);
-    })
-    ->searchable()
-    ->required(),
+                return \App\Models\Clientes::listarPorRuta($rutaId);
+            })
+            ->searchable()
+            ->required()
+            ->hidden(fn () => !session('selected_ruta_id')),
 
             Forms\Components\TextInput::make('nombre')
                 ->required()
@@ -65,33 +63,48 @@ class YapeClienteResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('cliente.nombre')
+                Tables\Columns\TextColumn::make('cliente.nombre_completo')
                     ->label('Cliente')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('nombre')
-                    ->label('Nombre Yape'),
+                    ->label('Nombre Yape')
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('usuario.name')
-                    ->label('Cobrador'),
+                    ->label('Cobrador')
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('monto')
-                    ->money('PEN',true)
-                    ->label('Monto'),
+                    ->money('PEN', true)
+                    ->label('Monto')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('entregar')
                     ->money('PEN', true)
-                    ->label('Entregar'),
-
+                    ->label('Entregar')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->label('Fecha de Registro'),
+                    ->dateTime('d/m/Y H:i')
+                    ->label('Fecha de Registro')
+                    ->sortable(),
             ])
-            ->filters([])
+
+            ->filters([
+                // Filtros adicionales pueden ir aquí
+                Tables\Filters\Filter::make('recientes')
+                    ->query(fn ($query) => $query->where('created_at', '>=', now()->subDays(7)))
+            ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->icon('heroicon-o-pencil')
+                    ->color('primary'),
+
+                Tables\Actions\DeleteAction::make()
+                    ->icon('heroicon-o-trash')
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

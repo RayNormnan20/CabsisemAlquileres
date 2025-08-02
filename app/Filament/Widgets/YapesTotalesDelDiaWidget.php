@@ -8,11 +8,18 @@ use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class YapesTotalesDelDiaWidget extends BaseWidget
 {
-protected int|string|array $columnSpan = 1;
+    protected int|string|array $columnSpan = 1;
+
+    public static function canView(): bool
+    {
+        // Solo mostrar si el usuario tiene el rol "Administrador"
+        return Auth::user()?->hasRole('Administrador');
+    }
 
 
     protected function getTableQuery(): Builder
@@ -23,13 +30,13 @@ protected int|string|array $columnSpan = 1;
             ->where('conceptos_abono.tipo_concepto', 'Yape')
             ->whereDate('abonos.created_at', Carbon::today())
             ->select([
-                'conceptos_abono.id_concepto_abono',
-                'conceptos_abono.monto',
-                'users.name as usuario_nombre',
-                'abonos.created_at',
+                DB::raw('CONCAT("usuario_", abonos.id_usuario) as id'), // id único
                 'abonos.id_usuario',
-                DB::raw('CONCAT(conceptos_abono.id_concepto_abono, "_", abonos.id_usuario) as id')
-            ]);
+                'users.name as usuario_nombre',
+                DB::raw('SUM(conceptos_abono.monto) as total_yapes'),
+                DB::raw('MAX(abonos.created_at) as ultima_fecha')
+            ])
+            ->groupBy('abonos.id_usuario', 'users.name');
     }
 
     protected function getTableColumns(): array
@@ -39,15 +46,15 @@ protected int|string|array $columnSpan = 1;
                 ->label('Usuario')
                 ->searchable(),
 
-            TextColumn::make('monto')
-                ->label('Monto Yape')
+            TextColumn::make('total_yapes')
+                ->label('Monto Total Yapes')
                 ->money('PEN', true)
                 ->sortable(),
 
-            TextColumn::make('created_at')
-                ->label('Fecha')
+            TextColumn::make('ultima_fecha')
+                ->label('Última Fecha')
                 ->dateTime('d/m/Y H:i'),
-
+            /*
             TextColumn::make('total_usuario')
                 ->label('Total Yapes')
                 ->money('PEN', true)
@@ -60,6 +67,7 @@ protected int|string|array $columnSpan = 1;
                         ->whereDate('abonos.created_at', Carbon::today())
                         ->sum('conceptos_abono.monto');
                 }),
+                */
         ];
     }
 
@@ -79,5 +87,10 @@ protected int|string|array $columnSpan = 1;
                         ->sum('conceptos_abono.monto');
                 }),
         ];
+    }
+
+    public function getTableRecordKey($record): string
+    {
+        return (string) $record->id;
     }
 }
