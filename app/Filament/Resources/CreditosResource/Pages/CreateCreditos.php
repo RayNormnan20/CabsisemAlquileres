@@ -40,22 +40,23 @@ class CreateCreditos extends CreateRecord
 
         if ($tipoCredito) {
             $cuotaDiaria = (float) $data['porcentaje_interes'];
-            $valorTotal = (float) $data['valor_credito'];
+            $valorCredito = (float) $data['valor_credito'];
 
-            $data['numero_cuotas'] = ceil($valorTotal / $cuotaDiaria);
-            $data['valor_cuota'] = $cuotaDiaria;
-            $data['saldo_actual'] = $valorTotal;
+            $data['saldo_actual'] = $valorCredito;
+            $data['porcentaje_interes'] = $cuotaDiaria;
 
-            $data['dias_plazo'] = 0; // No aplica
-            $data['saldo_actual'] = $data['valor_credito']; 
+            $data['dias_plazo'] = 0; // no aplica
+            $data['numero_cuotas'] = 0; // no aplica
+            $data['valor_cuota'] = 0; // no aplica
+            $data['es_adicional'] = true;
 
-            $fechaInicio = Carbon::parse($data['fecha_credito']);
-            $fechasPago = FechaHelper::calcularFechasDePago($fechaInicio, $data['numero_cuotas']);
+            // Proximo día laborable desde mañana
+            $data['fecha_proximo_pago'] = FechaHelper::siguienteDiaLaborable(
+                Carbon::parse($data['fecha_credito'])->addDay()
+            )->format('Y-m-d');
 
             $data['fecha_vencimiento'] = Carbon::parse('2099-12-31');
-            $data['fecha_proximo_pago'] = $fechasPago[0]->format('Y-m-d');
-
-            // Asignar forma de pago como Diario automáticamente
+            
             $data['forma_pago'] = TipoPago::where('nombre', 'Diario')->value('id_forma_pago');
 
             $conceptoAdicional = Concepto::where('nombre', 'Adicional')->first();
@@ -71,6 +72,8 @@ class CreateCreditos extends CreateRecord
             $porcentaje = (float)$data['porcentaje_interes'];
             $dias = (int)$data['dias_plazo'];
             $formaPago = TipoPago::find($data['forma_pago'])->nombre;
+
+            $data['es_adicional'] = false;
 
             // Calcular valor total con interés
             $valorTotal = $valorCredito * (1 + ($porcentaje / 100));
@@ -127,6 +130,8 @@ class CreateCreditos extends CreateRecord
             if (!$concepto) {
                 throw new \Exception('El concepto "Desembolso" no existe en la tabla de conceptos.');
             }
+
+
 
             $data['id_concepto'] = $concepto->id;
         }

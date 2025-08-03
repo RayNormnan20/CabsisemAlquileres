@@ -32,7 +32,8 @@ class Creditos extends Model
         'analizado',
         'por_renovar',
         'segundo_recorrido',
-        'segundo_cobrador'
+        'segundo_cobrador',
+        'es_adicional'
     ];
 
     protected $casts = [
@@ -47,7 +48,8 @@ class Creditos extends Model
         'revisado' => 'boolean',
         'analizado' => 'boolean',
         'por_renovar' => 'boolean',
-        'segundo_recorrido' => 'boolean'
+        'segundo_recorrido' => 'boolean',
+        'es_adicional' => 'boolean'
     ];
 // En el modelo Credito
     public function concepto()

@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call(OrdenCobroSeeder::class);
         $this->call(ConceptosSeeder::class);
 
+        $this->call(DiasNoLaborablesSeeder::class);
 
 
 

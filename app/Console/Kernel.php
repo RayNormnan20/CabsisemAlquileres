@@ -6,7 +6,12 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
-{
+{   
+
+    protected $commands = [
+        \App\Console\Commands\ActualizarSaldoCreditoAdicional::class,
+    ];
+
     /**
      * Define the application's command schedule.
      *
@@ -16,13 +21,14 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+        $schedule->command('creditos:aplicar-cuota-diaria')->dailyAt('05:00');
     }
 
 
     protected $routeMiddleware = [
 
-    'check.ruta.access' => \App\Http\Middleware\CheckRutaAccess::class,
-];
+        'check.ruta.access' => \App\Http\Middleware\CheckRutaAccess::class,
+    ];
 
     /**
      * Register the commands for the application.
@@ -32,6 +38,7 @@ class Kernel extends ConsoleKernel
     protected function commands()
     {
         $this->load(__DIR__.'/Commands');
+        
 
         require base_path('routes/console.php');
     }
