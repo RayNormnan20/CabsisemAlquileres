@@ -430,6 +430,11 @@ $cliente->loadMissing('creditos');
                 class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 Crear Crédito
             </a>
+            <a href="{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente, 'tipo' => 'adicional']) }}"
+                class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                Adicional
+            </a>
+
             @endif
 
             {{-- Modal de Confirmación para Baja de Cuenta --}}

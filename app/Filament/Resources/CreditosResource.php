@@ -19,6 +19,7 @@ use Filament\Forms\Components\Image as ImageComponent;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -123,13 +124,19 @@ class CreditosResource extends Resource
     }
 
     public static function form(Form $form): Form
-    {
+    {   
+
+        $isAdicional = request()->query('tipo') === 'adicional';
+
         return $form
             ->schema([
                 Card::make()->schema([
                     // Grid para dividir en dos columnas
                     Forms\Components\Grid::make(2)
                         ->schema([
+                            Hidden::make('es_adicional')
+                            ->default(fn () => request()->query('tipo') === 'adicional')
+                            ->reactive(),
                             // Columna izquierda (Datos de entrada)
                             Forms\Components\Group::make([
                                 Forms\Components\Section::make('')
@@ -166,7 +173,7 @@ class CreditosResource extends Resource
                                             ->displayFormat('d/m/Y')
                                             ->columnSpanFull()
                                             ->reactive()
-                                            ->extraAttributes(['class' => 'h-[24px]'])
+
                                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                                 $valorCredito = (float) $get('valor_credito');
                                                 $porcentaje = (float) $get('porcentaje_interes');
@@ -193,61 +200,80 @@ class CreditosResource extends Resource
                                                 static::calculateCreditValues((float) $state, $porcentaje, $dias, $formaPagoNombre, $fechaCreditoStr, $set);
                                             }),
 
-                                        TextInput::make('porcentaje_interes')
-                                            ->label('Porcentaje *')
+                                        TextInput::make('porcentaje_interes') // reutilizado como cuota diaria si es adicional
+                                            ->label(fn (callable $get) => $get('es_adicional') ? 'Cuota Diaria *' : 'Porcentaje *')
                                             ->numeric()
                                             ->required()
                                             ->minValue(0)
                                             ->maxValue(100)
                                             ->columnSpanFull()
+                                            ->helperText(fn (callable $get) => $get('es_adicional') ? 'Ingresa el monto fijo por cuota diaria' : null)
                                             ->reactive()
-                                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
-                                                $valorCredito = (float) $get('valor_credito');
-                                                $dias = (int) $get('dias_plazo');
-                                                $formaPagoId = $get('forma_pago');
-                                                $formaPagoNombre = $formaPagoId ? TipoPago::find($formaPagoId)->nombre : null;
-                                                $fechaCreditoStr = $get('fecha_credito');
-                                                static::calculateCreditValues($valorCredito, (float) $state, $dias, $formaPagoNombre, $fechaCreditoStr, $set);
+                                            ->afterStateUpdated(function ($state, callable $get, callable $set) use ($isAdicional) {
+                                                if (!$get('es_adicional')) {
+                                                    $valorCredito = (float) $get('valor_credito');
+                                                    $dias = (int) $get('dias_plazo');
+                                                    $formaPagoId = $get('forma_pago');
+                                                    $formaPagoNombre = $formaPagoId ? TipoPago::find($formaPagoId)->nombre : null;
+                                                    $fechaCreditoStr = $get('fecha_credito');
+                                                    static::calculateCreditValues($valorCredito, (float) $state, $dias, $formaPagoNombre, $fechaCreditoStr, $set);
+                                                }
                                             }),
+
 
                                         Select::make('forma_pago')
                                             ->label('Forma de Pago *')
                                             ->options(TipoPago::where('activo', true)->pluck('nombre', 'id_forma_pago'))
+                                            ->default(function () {
+                                                return TipoPago::where('nombre', 'Diario')->value('id_forma_pago');
+                                            })
+                                            ->disabled($isAdicional)
                                             ->required()
                                             ->searchable()
                                             ->columnSpanFull()
                                             ->reactive()
-                                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
-                                                $valorCredito = (float) $get('valor_credito');
-                                                $porcentaje = (float) $get('porcentaje_interes');
-                                                $dias = (int) $get('dias_plazo');
-                                                $formaPagoNombre = $state ? TipoPago::find($state)->nombre : null;
-                                                $fechaCreditoStr = $get('fecha_credito');
-                                                static::calculateCreditValues($valorCredito, $porcentaje, $dias, $formaPagoNombre, $fechaCreditoStr, $set);
+                                            ->afterStateUpdated(function ($state, callable $get, callable $set) use ($isAdicional) {
+                                                if (!$isAdicional) {
+                                                    $valorCredito = (float) $get('valor_credito');
+                                                    $porcentaje = (float) $get('porcentaje_interes');
+                                                    $dias = (int) $get('dias_plazo');
+                                                    $formaPagoNombre = $state ? TipoPago::find($state)->nombre : null;
+                                                    $fechaCreditoStr = $get('fecha_credito');
+                                                    static::calculateCreditValues($valorCredito, $porcentaje, $dias, $formaPagoNombre, $fechaCreditoStr, $set);
+                                                }
                                             }),
 
                                         TextInput::make('dias_plazo')
-                                            ->label('Días *')
-                                            ->numeric()
-                                            ->required()
-                                            ->minValue(1)
-                                            ->columnSpanFull()
-                                            ->reactive()
-                                            ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                        ->label('Días *')
+                                        ->numeric()
+                                        ->required()
+                                        ->minValue(1)
+                                        ->columnSpanFull()
+                                        ->reactive()
+                                        ->afterStateUpdated(function ($state, callable $get, callable $set) use ($isAdicional) {
+                                            if (!$isAdicional) {
                                                 $valorCredito = (float) $get('valor_credito');
                                                 $porcentaje = (float) $get('porcentaje_interes');
                                                 $formaPagoId = $get('forma_pago');
                                                 $formaPagoNombre = $formaPagoId ? TipoPago::find($formaPagoId)->nombre : null;
                                                 $fechaCreditoStr = $get('fecha_credito');
                                                 static::calculateCreditValues($valorCredito, $porcentaje, (int) $state, $formaPagoNombre, $fechaCreditoStr, $set);
-                                            }),
+                                            }
+                                        }) 
+                                        ->visible(fn (callable $get) => !$get('es_adicional')),
+
 
                                         Select::make('orden_cobro')
                                             ->label('Orden de Cobro')
                                             ->options(OrdenCobro::where('activo', true)->pluck('nombre', 'id_orden_cobro'))
                                             ->default(2) // Asumiendo que 2 es "Último"
                                             ->required()
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+
+
+                                        
+
+
                                     ])
                                     ->columnSpanFull(),
                             ]),
@@ -260,33 +286,38 @@ class CreditosResource extends Resource
                                             ->label('Saldo')
                                             ->numeric()
                                             ->disabled()
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+                                            ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         TextInput::make('valor_cuota')
                                             ->label('Valor de la Cuota')
                                             ->numeric()
                                             ->disabled()
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+                                            ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         TextInput::make('numero_cuotas')
                                             ->label('No. de Cuotas')
                                             ->numeric()
                                             ->disabled()
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+                                            ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         DatePicker::make('fecha_vencimiento')
                                             ->label('Fecha de Vencimiento')
                                             ->disabled()
                                             ->displayFormat('d/m/Y')
                                             ->columnSpanFull()
-                                            ->extraAttributes(['class' => 'h-[24px]']),
+                                            ->extraAttributes(['class' => 'h-[24px]'])
+                                            ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         DatePicker::make('fecha_proximo_pago')
                                             ->label('Fecha de Próximo Pago')
                                             ->disabled()
                                             ->displayFormat('d/m/Y')
                                             ->columnSpanFull()
-                                            ->extraAttributes(['class' => 'h-[24px]']),
+                                            ->extraAttributes(['class' => 'h-[24px]'])
+                                            ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         Forms\Components\Repeater::make('conceptosCredito')
                                             ->label('Desglose del Crédito')
@@ -350,7 +381,7 @@ class CreditosResource extends Resource
                                             ->columns(2),
                                     ])
                                     ->columnSpanFull(),
-                            ]),
+                            ]) 
                         ]),
                 ])
             ]);

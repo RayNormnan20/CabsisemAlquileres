@@ -21,6 +21,12 @@ class ConceptosSeeder extends Seeder
                 'tipo' => 'Gastos',
                 'created_at' => now(),
                 'updated_at' => now()
+            ],
+            [
+                'nombre' => 'Adicional',
+                'tipo' => 'Gastos',
+                'created_at' => now(),
+                'updated_at' => now()
             ]
         ]);
     }
