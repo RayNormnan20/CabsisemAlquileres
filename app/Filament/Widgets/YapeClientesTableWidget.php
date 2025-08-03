@@ -2,9 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Clientes;
 use App\Models\ConceptoAbono;
 use App\Models\ConceptoCredito;
-use App\Models\YapeCliente;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -16,71 +16,120 @@ class YapeClientesTableWidget extends BaseWidget
 
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        $query = YapeCliente::with(['cliente', 'cliente.creditos']);
+        $query = Clientes::with([
+            'creditos' => function ($q) {
+                $q->where('saldo_actual', '>', 0)
+                ->whereHas('conceptosCredito', function ($cc) {
+                    $cc->where('tipo_concepto', 'Yape');
+                });
+            },
+            'yapeCliente'
+        ])
+        ->whereHas('creditos', function ($q) {
+            $q->where('saldo_actual', '>', 0)
+            ->whereHas('conceptosCredito', function ($cc) {
+                $cc->where('tipo_concepto', 'Yape');
+            });
+        })
+        ->where(function ($q) {
+            $q->whereRaw("
+                (
+                    SELECT COALESCE(SUM(cc.monto), 0)
+                    FROM conceptos_credito cc
+                    INNER JOIN creditos c ON cc.id_credito = c.id_credito
+                    WHERE c.id_cliente = clientes.id_cliente
+                    AND c.saldo_actual > 0
+                    AND cc.tipo_concepto = 'Yape'
+                ) != (
+                    SELECT COALESCE(SUM(ca.monto), 0)
+                    FROM conceptos_abono ca
+                    INNER JOIN abonos a ON ca.id_abono = a.id_abono
+                    INNER JOIN creditos c2 ON a.id_credito = c2.id_credito
+                    WHERE c2.id_cliente = clientes.id_cliente
+                    AND c2.saldo_actual > 0
+                    AND ca.tipo_concepto = 'Yape'
+                )
+            ");
+        });
 
         // Filtrar por ruta desde la sesión
         $rutaId = Session::get('selected_ruta_id');
         if ($rutaId) {
-            $query->whereHas('cliente', function($q) use ($rutaId) {
-                $q->where('id_ruta', $rutaId);
-            });
+            $query->where('id_ruta', $rutaId);
         }
 
         return $query;
     }
 
+
+
     protected function getTableColumns(): array
     {
         return [
-            TextColumn::make('cliente.nombre_completo')
+            // Nombre del cliente
+            TextColumn::make('nombre_completo')
                 ->label('Cliente')
                 ->searchable(),
 
-            TextColumn::make('nombre')
+            // Nombre Yape (si existe, sino nombre del cliente)
+            TextColumn::make('nombre_yape')
                 ->label('Nombre Yape')
+                ->getStateUsing(function (Clientes $record) {
+                    return $record->yapeCliente->first()->nombre ?? $record->nombre_completo;
+                })
                 ->searchable(),
 
-            TextColumn::make('Total Crédito')
-                ->getStateUsing(function (YapeCliente $record) {
-                    if (!$record->cliente) {
-                        return 0;
-                    }
-                    $totalCapital = $record->cliente->creditos->sum('valor_credito');
-                    $totalIntereses = $record->cliente->creditos->sum(function ($credito) {
-                        return $credito->valor_credito * ($credito->porcentaje_interes / 100);
-                    });
-                    $totalConIntereses = $totalCapital + $totalIntereses;
-                    return $totalConIntereses ?: 0;
+            // Total Crédito (solo de créditos activos)
+            TextColumn::make('total_credito')
+                ->label('Total Crédito')
+                ->getStateUsing(function (Clientes $record) {
+                    $totalCapital = $record->creditos->sum('valor_credito');
+                    $totalIntereses = $record->creditos->sum(fn($credito) => $credito->valor_credito * ($credito->porcentaje_interes / 100));
+                    return $totalCapital + $totalIntereses;
                 })
                 ->money('PEN', true),
 
-            TextColumn::make('Yapear')
-                ->getStateUsing(function (YapeCliente $record) {
-                    return ConceptoCredito::whereHas('credito', function ($query) use ($record) {
-                            $query->where('id_cliente', $record->id_cliente);
+            // Yapear
+            TextColumn::make('yapear')
+                ->label('Yapear')
+                ->getStateUsing(function (Clientes $record) {
+                    return ConceptoCredito::whereHas('credito', function ($q) use ($record) {
+                            $q->where('id_cliente', $record->id_cliente)
+                              ->where('saldo_actual', '>', 0); // Solo créditos activos
                         })
                         ->where('tipo_concepto', 'Yape')
                         ->sum('monto');
                 })
                 ->money('PEN', true),
 
-            TextColumn::make('Yapeado')
-                ->getStateUsing(function (YapeCliente $record) {
-                    return ConceptoAbono::whereHas('abono', function ($query) use ($record) {
-                            $query->where('id_cliente', $record->id_cliente);
+            // Yapeado
+            TextColumn::make('yapeado')
+                ->label('Yapeado')
+                ->getStateUsing(function (Clientes $record) {
+                    return ConceptoAbono::whereHas('abono.credito', function ($q) use ($record) {
+                            $q->where('id_cliente', $record->id_cliente)
+                              ->where('saldo_actual', '>', 0); // Solo créditos activos
                         })
                         ->where('tipo_concepto', 'Yape')
                         ->sum('monto');
                 })
                 ->money('PEN', true),
 
-            TextColumn::make('Faltante')
-                ->getStateUsing(function (YapeCliente $record) {
-                    $yapear = ConceptoCredito::whereHas('credito', fn($q) => $q->where('id_cliente', $record->id_cliente))
+            // Faltante
+            TextColumn::make('faltante')
+                ->label('Faltante')
+                ->getStateUsing(function (Clientes $record) {
+                    $yapear = ConceptoCredito::whereHas('credito', function ($q) use ($record) {
+                            $q->where('id_cliente', $record->id_cliente)
+                              ->where('saldo_actual', '>', 0);
+                        })
                         ->where('tipo_concepto', 'Yape')
                         ->sum('monto');
 
-                    $yapeado = ConceptoAbono::whereHas('abono', fn($q) => $q->where('id_cliente', $record->id_cliente))
+                    $yapeado = ConceptoAbono::whereHas('abono.credito', function ($q) use ($record) {
+                            $q->where('id_cliente', $record->id_cliente)
+                              ->where('saldo_actual', '>', 0);
+                        })
                         ->where('tipo_concepto', 'Yape')
                         ->sum('monto');
 
@@ -88,13 +137,21 @@ class YapeClientesTableWidget extends BaseWidget
                 })
                 ->money('PEN', true),
 
-            TextColumn::make('Devolución')
-                ->getStateUsing(function (YapeCliente $record) {
-                    $yapear = ConceptoCredito::whereHas('credito', fn($q) => $q->where('id_cliente', $record->id_cliente))
+            // Devolución
+            TextColumn::make('devolucion')
+                ->label('Devolución')
+                ->getStateUsing(function (Clientes $record) {
+                    $yapear = ConceptoCredito::whereHas('credito', function ($q) use ($record) {
+                            $q->where('id_cliente', $record->id_cliente)
+                              ->where('saldo_actual', '>', 0);
+                        })
                         ->where('tipo_concepto', 'Yape')
                         ->sum('monto');
 
-                    $yapeado = ConceptoAbono::whereHas('abono', fn($q) => $q->where('id_cliente', $record->id_cliente))
+                    $yapeado = ConceptoAbono::whereHas('abono.credito', function ($q) use ($record) {
+                            $q->where('id_cliente', $record->id_cliente)
+                              ->where('saldo_actual', '>', 0);
+                        })
                         ->where('tipo_concepto', 'Yape')
                         ->sum('monto');
 
