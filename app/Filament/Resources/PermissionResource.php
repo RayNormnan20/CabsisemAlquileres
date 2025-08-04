@@ -21,7 +21,7 @@ class PermissionResource extends Resource
 
     protected static function getNavigationLabel(): string
     {
-        return __('Permissions');
+        return __('Permisos');
     }
 
     public static function getPluralLabel(): ?string
@@ -31,8 +31,9 @@ class PermissionResource extends Resource
 
     protected static function getNavigationGroup(): ?string
     {
-        return static::getPluralLabel();
+        return __('Configuración');
     }
+
 
     public static function form(Form $form): Form
     {

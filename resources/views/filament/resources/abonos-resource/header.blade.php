@@ -187,8 +187,15 @@
     <!-- Información del cliente seleccionado -->
     @if($clienteId)
     @php
-    $cliente = \App\Models\Clientes::withCount(['creditos', 'abonos'])->find($clienteId);
+    $rutaId = session('selected_ruta_id');
+    $cliente = \App\Models\Clientes::withCount(['creditos', 'abonos'])
+                ->where('id_cliente', $clienteId)
+                ->when($rutaId, function($query) use ($rutaId) {
+                    return $query->where('id_ruta', $rutaId);
+                })
+                ->first();
     @endphp
+    @if($cliente)
     <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
         <div class="flex justify-between items-center">
             <div>
@@ -211,5 +218,7 @@
             </div>
         </div>
     </div>
+    @else
     @endif
+@endif
 </div>

@@ -22,7 +22,7 @@ class LogActividadResource extends Resource
 
     protected static function getNavigationLabel(): string
     {
-        return __('Log');
+        return __('Actividades');
     }
 
     public static function getPluralLabel(): ?string

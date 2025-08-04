@@ -25,6 +25,9 @@ class CuadreRecaudadorResource extends Resource
     protected static ?string $pluralModelLabel = 'Cuadre Recaudador';
     protected static ?string $navigationGroup = 'Reportes';
 
+    // Esta línea oculta el recurso completamente del menú
+    protected static bool $shouldRegisterNavigation = false;
+
 
     public static function form(Form $form): Form
     {

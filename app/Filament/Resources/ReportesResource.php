@@ -20,6 +20,9 @@ class ReportesResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-collection';
     protected static ?string $navigationGroup = 'Reportes';
 
+    // Esta línea oculta el recurso completamente del menú
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         return $form

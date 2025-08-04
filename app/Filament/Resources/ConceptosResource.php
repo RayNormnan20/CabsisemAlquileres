@@ -39,7 +39,7 @@ class ConceptosResource extends Resource
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Permissions');
+        return __('Configuración');
     }
 
 
