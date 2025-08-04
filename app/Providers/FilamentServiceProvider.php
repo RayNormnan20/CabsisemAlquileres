@@ -21,7 +21,8 @@ class FilamentServiceProvider extends ServiceProvider
                 'Principal > Reportes',
                 'Principal > Reportes > Recaudador',
                 'Permissions',
-                'Movimientos'
+                'Movimientos',
+                'Clientes'
             ]);
         });
     }

@@ -106,11 +106,12 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
      * Relación muchos-a-muchos con rutas (NUEVA)
      */
     public function rutas()
-{
-    return $this->belongsToMany(Ruta::class, 'usuario_ruta', 'user_id', 'id_ruta')
-               ->withPivot('es_principal')
-               ->withTimestamps();
-}
+    {
+        return $this->belongsToMany(Ruta::class, 'usuario_ruta', 'user_id', 'id_ruta')
+                   ->select('ruta.*')
+                   ->withPivot('es_principal')
+                   ->withTimestamps();
+    }
 
     /**
      * Relación con clientes creados por este usuario (NUEVA)
