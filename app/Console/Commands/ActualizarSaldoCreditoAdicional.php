@@ -15,7 +15,7 @@ class ActualizarSaldoCreditoAdicional extends Command
 
     public function handle()
     {
-        $hoy = Carbon::parse('2025-08-05');;
+        $hoy = Carbon::now();
 
         if ($this->esDiaNoLaborable($hoy)) {
             $this->info("Hoy {$hoy->toDateString()} es día no laborable. No se aplica cuota.");
@@ -65,7 +65,7 @@ class ActualizarSaldoCreditoAdicional extends Command
         $this->info("Proceso finalizado.");
         return Command::SUCCESS;
     }
-   
+
 
     protected function esDiaNoLaborable(Carbon $fecha): bool
     {

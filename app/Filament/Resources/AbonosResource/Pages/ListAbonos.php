@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AbonosResource\Pages;
 
+use App\Exports\AbonosExport;
 use App\Filament\Resources\AbonosResource;
 use App\Models\Clientes;
 use App\Models\Rutas;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
 use Carbon\Carbon;
 use Livewire\Component as LivewireComponent;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ListAbonos extends ListRecords
 {
@@ -25,7 +27,7 @@ class ListAbonos extends ListRecords
     public ?string $fechaHasta = null;
     public string $periodoSeleccionado = 'hoy'; // Cambiado a 'hoy' por defecto
     public ?string $tipoConcepto = null;
-    
+
 
     protected $queryString = [
         'clienteId' => ['except' => null],
@@ -50,7 +52,7 @@ class ListAbonos extends ListRecords
     }
 
     protected function getActions(): array
-    {   
+    {
         return [
             Actions\CreateAction::make()
                 ->label('Agregar Abono')
@@ -191,11 +193,11 @@ class ListAbonos extends ListRecords
     protected function getFooterWidgets(): array
     {
         return [
-            \App\Filament\Resources\AbonosResource\Widgets\AbonosFooter::class 
-            
+            \App\Filament\Resources\AbonosResource\Widgets\AbonosFooter::class
+
         ];
     }
-   
+
     public function updated($property)
     {
         if (in_array($property, ['clienteId', 'rutaId', 'fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
@@ -237,10 +239,25 @@ class ListAbonos extends ListRecords
     }
 
     public function aplicarRango()
-    {   
+    {
         if ($this->fechaDesde && $this->fechaHasta) {
             $this->periodoSeleccionado = 'personalizado';
             $this->resetPage(); // Aplicar directamente la paginación
         }
     }
+    public function exportExcel()
+    {
+        $query = $this->getTableQuery();
+
+        // Verifica que la consulta tenga resultados
+        if ($query->count() === 0) {
+            $this->notify('warning', 'No hay datos para exportar');
+            return;
+        }
+
+        $filename = 'abonos_' . now()->format('Y-m-d_H-i') . '.xlsx';
+
+        return Excel::download(new AbonosExport($query), $filename);
+    }
+
 }
