@@ -198,15 +198,24 @@ class ListAbonos extends ListRecords
         ];
     }
 
-    public function updated($property)
-    {
-        if (in_array($property, ['clienteId', 'rutaId', 'fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
-            $this->resetPage();
-        }
-        if ($property === 'rutaId') {
-            $this->clienteId = null;
-        }
+    protected function getListeners(): array
+{
+    return array_merge(parent::getListeners(), [
+        'goToActionRecord'
+    ]);
+}
+
+public function updated($name)
+{
+    if (in_array($name, ['clienteId', 'fechaDesde', 'fechaHasta', 'tipoConcepto'])) {
+        $this->emit('filter-abonos', [
+            'clienteId' => $this->clienteId,
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
+            'tipoConcepto' => $this->tipoConcepto
+        ]);
     }
+}
         protected function getFooterWidgetsColumns(): int|array
     {
         return 1; // Esto hará que el widget ocupe todo el ancho

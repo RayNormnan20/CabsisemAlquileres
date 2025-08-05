@@ -401,9 +401,17 @@ class CreditosResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('porcentaje_interes')
-                    ->label('Interés')
-                    ->suffix('%')
-                    ->sortable(),
+                    ->label(function ($record) {
+                        return ($record && $record->es_adicional) ? 'Cuota Diaria' : 'Interés';
+                    })
+                    ->prefix(function ($record) {
+
+                        return ($record && $record->es_adicional) ? 'S/' : null;
+                    })
+                    ->suffix(function ($record) {
+                        return ($record && $record->es_adicional) ? null : '%';
+                    })
+                ->sortable(),
 
 
                 Tables\Columns\TextColumn::make('tipoPago.nombre')

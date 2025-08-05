@@ -20,6 +20,8 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+
 class AbonosResource extends Resource
 {
     protected static ?string $model = Abonos::class;
@@ -494,7 +496,34 @@ public static function table(Table $table): Table
                         ])
                     ->action(function () {
                         // Acción vacía necesaria para el modal
-                    })
+                    }),
+                    Action::make('delete')
+                        ->label('')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->button()
+                        ->requiresConfirmation()
+                        ->modalHeading('Eliminar Abono')
+                        ->modalSubheading('¿Está seguro que desea eliminar este abono? Esta acción no se puede deshacer.')
+                        ->modalButton('Sí, eliminar')
+                        ->action(function ($record) {
+                            DB::transaction(function () use ($record) {
+                                $credito = $record->credito()->lockForUpdate()->first();
+
+                                if (! $credito) {
+                                    throw new \Exception('Crédito asociado no encontrado.');
+                                }
+                                $credito->saldo_actual += $record->monto_abono;
+
+                                $credito->save();
+
+                                $record->delete();
+                            });
+                        })
+                        ->extraAttributes([
+                            'title' => 'Eliminar',
+                            'class' => 'hover:bg-danger-50 rounded-full'
+                        ])
 
             ]);
     }
