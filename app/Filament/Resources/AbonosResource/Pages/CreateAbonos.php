@@ -8,6 +8,7 @@ use App\Models\Concepto;
 use App\Models\ConceptoAbono;
 use App\Models\Creditos;
 use App\Models\Ruta;
+use App\Models\LogActividad;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Session;
@@ -182,10 +183,24 @@ class CreateAbonos extends CreateRecord
             $credito->save();
         }
 
-        // Si se creó con un método de pago específico, podemos agregar lógica adicional aquí
-        if ($this->metodo_pago) {
-            // Por ejemplo, registrar en logs o notificar al sistema
-        }
+        // Obtener nombre completo del cliente y nombre de la ruta
+        $clienteNombre = $this->record->cliente?->nombre . ' ' . $this->record->cliente?->apellido;
+        $rutaNombre = $this->record->ruta?->nombre ?? 'Ruta desconocida';
+
+        // Registrar actividad del abono con nombre del cliente y ruta
+        LogActividad::registrar(
+            'Abonos',
+            "Se creó un abono de la ruta {$rutaNombre} para el cliente {$clienteNombre} por un monto de S/" . number_format($this->record->monto_abono, 2),
+            [
+                'id_abono' => $this->record->id,
+                'id_cliente' => $this->record->id_cliente,
+                'id_credito' => $this->record->id_credito,
+                'monto_abono' => $this->record->monto_abono,
+                'saldo_anterior' => $this->record->saldo_anterior,
+                'saldo_posterior' => $this->record->saldo_posterior,
+                'id_ruta' => $this->record->id_ruta,
+            ]
+        );
     }
 
    

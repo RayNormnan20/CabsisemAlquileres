@@ -6,6 +6,7 @@ use App\Filament\Resources\CreditosResource;
 use App\Helpers\FechaHelper;
 use App\Models\Concepto;
 use App\Models\Creditos;
+use App\Models\LogActividad;
 use App\Models\TipoPago;
 use Carbon\Carbon;
 use Filament\Pages\Actions;
@@ -164,5 +165,23 @@ class CreateCreditos extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function afterCreate(): void
+    {
+        $clienteNombre = $this->record->cliente?->nombre . ' ' . $this->record->cliente?->apellido;
+        $rutaNombre = $this->record->cliente?->ruta?->nombre ?? 'Ruta desconocida';
+
+        LogActividad::registrar(
+            'Créditos',
+            "Registró un nuevo crédito de {$clienteNombre} de la ruta {$rutaNombre}",
+            [
+                'credito_id' => $this->record->id_credito,
+                'cliente_id' => $this->record->id_cliente,
+                'valor_credito' => $this->record->valor_credito,
+                'saldo_actual' => $this->record->saldo_actual,
+                'fecha_credito' => $this->record->fecha_credito->format('Y-m-d'),
+            ]
+        );
     }
 }

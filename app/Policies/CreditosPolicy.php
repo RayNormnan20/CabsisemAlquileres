@@ -60,11 +60,9 @@ class CreditosPolicy
      */
     public function update(User $user, Creditos $credito)
     {
-        // Solo permitir actualización si el crédito no tiene abonos
-        return $user->can('Actualizar Creditos') && 
-               $credito->abonos()->count() === 0
+        return $user->can('Actualizar Creditos')
             ? Response::allow()
-            : Response::deny('No tienes permiso para actualizar este crédito o el crédito ya tiene abonos asociados.');
+            : Response::deny('No tienes permiso para actualizar este crédito.');
     }
 
     /**
