@@ -9,6 +9,9 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use App\Filament\Resources\VistaMovimientoResource\Pages;
+use Filament\Tables\Columns\Summarizers\Summarizer;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class VistaMovimientoResource extends Resource
 {
@@ -68,8 +71,10 @@ class VistaMovimientoResource extends Resource
                     'success' => 'Ingresos',
                     'danger' => 'Gastos',
                 ]),
+                
         ])
         ->defaultSort('fecha', 'asc');
+        
 }
     public static function getPages(): array
     {

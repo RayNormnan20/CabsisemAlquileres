@@ -16,13 +16,13 @@ class ListVistaMovimientos extends ListRecords
 
     public ?string $fechaDesde = null;
     public ?string $fechaHasta = null;
+    public string $periodoSeleccionado = 'mes_actual';
     public bool $fechasValidas = true;
 
     public function mount(): void
     {
         parent::mount();
-        $this->fechaDesde = Carbon::today()->subMonth()->toDateString();
-        $this->fechaHasta = Carbon::today()->toDateString();
+        $this->aplicarPeriodo();
     }
 
     protected function getActions(): array
@@ -59,6 +59,51 @@ class ListVistaMovimientos extends ListRecords
             });
     }
 
+    public function aplicarPeriodo(): void
+    {
+        $hoy = Carbon::today();
+
+        switch ($this->periodoSeleccionado) {
+            case 'hoy':
+                $this->fechaDesde = $hoy->toDateString();
+                $this->fechaHasta = $hoy->toDateString();
+                break;
+            case 'ayer':
+                $ayer = $hoy->copy()->subDay();
+                $this->fechaDesde = $ayer->toDateString();
+                $this->fechaHasta = $ayer->toDateString();
+                break;
+            case 'semana_actual':
+                $this->fechaDesde = $hoy->startOfWeek()->toDateString();
+                $this->fechaHasta = $hoy->endOfWeek()->toDateString();
+                break;
+            case 'semana_anterior':
+                $start = $hoy->copy()->subWeek()->startOfWeek();
+                $end = $hoy->copy()->subWeek()->endOfWeek();
+                $this->fechaDesde = $start->toDateString();
+                $this->fechaHasta = $end->toDateString();
+                break;
+            case 'ultimas_2_semanas':
+                $this->fechaDesde = $hoy->copy()->subWeeks(2)->startOfWeek()->toDateString();
+                $this->fechaHasta = $hoy->endOfWeek()->toDateString();
+                break;
+            case 'mes_actual':
+                $this->fechaDesde = $hoy->startOfMonth()->toDateString();
+                $this->fechaHasta = $hoy->endOfMonth()->toDateString();
+                break;
+            case 'mes_anterior':
+                $this->fechaDesde = $hoy->subMonth()->startOfMonth()->toDateString();
+                $this->fechaHasta = $hoy->copy()->endOfMonth()->toDateString();
+                break;
+            case 'personalizado':
+            default:
+                // No se tocan las fechas
+                break;
+        }
+
+        $this->resetPage();
+    }
+
     public function validarFechas()
     {
         $this->fechasValidas = true;
@@ -84,7 +129,26 @@ class ListVistaMovimientos extends ListRecords
     public function limpiarFiltros()
     {
         $this->reset(['fechaDesde', 'fechaHasta']);
+        $this->aplicarPeriodo();
         $this->fechasValidas = true;
         $this->resetPage();
+    }
+
+    protected function getFooter(): ?\Illuminate\View\View
+    {
+        $records = $this->getFilteredTableQuery()->get();
+
+        $totalIngresos = $records
+            ->where('tipo_concepto', 'Ingresos')
+            ->sum('monto');
+
+        $totalGastos = $records
+            ->where('tipo_concepto', 'Gastos')
+            ->sum('monto');
+
+        return view('filament.resources.vista-movimiento-resource.resumen', [
+            'totalIngresos' => $totalIngresos,
+            'totalGastos' => $totalGastos,
+        ]);
     }
 }
