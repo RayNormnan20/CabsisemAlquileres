@@ -7,30 +7,34 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithDrawings;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use Illuminate\Support\Facades\Log;
 
 class AbonosExport implements FromQuery, WithHeadings, WithMapping, WithDrawings, WithEvents, ShouldAutoSize
 {
     protected $query;
     protected $rows = [];
+    protected $allRecords;
 
     public function __construct($query)
     {
         $this->query = $query;
+        $this->allRecords = $this->query
+            ->with(['usuario', 'cliente', 'concepto', 'credito.tipoPago', 'conceptosabonos'])
+            ->orderBy('fecha_pago', 'desc')
+            ->get();
+
+        Log::info("AbonosExport: registros cargados: " . $this->allRecords->count());
     }
 
     public function query()
     {
-        return $this->query->with([
-            'usuario',
-            'cliente',
-            'concepto',
-            'credito.tipoPago',
-            'conceptosabonos'
-        ]);
+        return $this->query
+            ->with(['usuario', 'cliente', 'concepto', 'credito.tipoPago', 'conceptosabonos'])
+            ->orderBy('fecha_pago', 'desc');
     }
 
     public function headings(): array
@@ -53,71 +57,93 @@ class AbonosExport implements FromQuery, WithHeadings, WithMapping, WithDrawings
 
         return [
             $record->fecha_pago->format('d/m/Y H:i'),
-            $record->usuario->name,
-            $record->cliente->nombre,
-            optional($record->concepto)->nombre ?? '',
-            optional($record->credito->tipoPago)->nombre ?? '',
-            number_format($record->monto_abono, 2),
+            optional($record->usuario)->name ?? 'N/A',
+            optional($record->cliente)->nombre ?? 'N/A',
+            optional($record->concepto)->nombre ?? 'N/A',
+            optional($record->credito->tipoPago)->nombre ?? 'N/A',
+            'S/ ' . number_format($record->monto_abono, 2),
             $record->conceptosabonos
                 ->map(fn($c) => "{$c->tipo_concepto}: S/ " . number_format($c->monto, 2))
                 ->join(' | '),
-            $record->conceptosabonos->firstWhere('foto_comprobante', '!=', null) ? 'Ver imagen' : ''
+            '' // Columna vacía para que solo aparezca la imagen
         ];
     }
 
     public function drawings()
-{
-    $drawings = [];
-    $row = 2; // Empieza después del encabezado
+    {
+        $drawings = [];
+        $startRow = 2; // Empieza después del encabezado
 
-    foreach ($this->rows as $record) {
-        foreach ($record->conceptosabonos as $concepto) {
-            if ($concepto->foto_comprobante) {
-                // Construye la ruta correcta según el tipo
-                $tipo = strtolower($concepto->tipo_concepto);
-                $path = storage_path("app/public/storage/comprobantes/abonos/{$tipo}/" . basename($concepto->foto_comprobante));
+        // Usar $this->allRecords que ya tiene todos los datos cargados
+        foreach ($this->allRecords as $index => $record) {
+            $currentRow = $startRow + $index;
 
-                if (file_exists($path)) {
-                    $drawing = new Drawing();
-                    $drawing->setName('Comprobante');
-                    $drawing->setDescription('Comprobante de pago');
-                    $drawing->setPath($path);
-                    $drawing->setHeight(80);
-                    $drawing->setWidth(120);
-                    $drawing->setCoordinates("H{$row}");
-                    $drawing->setOffsetX(5);
-                    $drawing->setOffsetY(5);
-                    $drawings[] = $drawing;
+            foreach ($record->conceptosabonos as $concepto) {
+                if ($concepto->foto_comprobante) {
+                    $imagePath = storage_path('app/public/' . $concepto->foto_comprobante);
+
+                    Log::info("Verificando imagen para fila {$currentRow}: {$imagePath}");
+                    Log::info("¿Existe el archivo? " . (file_exists($imagePath) ? 'SÍ' : 'NO'));
+
+                    if (file_exists($imagePath)) {
+                        try {
+                            $drawing = new Drawing();
+                            $drawing->setName('Comprobante');
+                            $drawing->setDescription('Comprobante de pago');
+                            $drawing->setPath($imagePath);
+                            $drawing->setHeight(100);
+                            $drawing->setCoordinates("H{$currentRow}");
+                            $drawing->setOffsetX(5);
+                            $drawing->setOffsetY(5);
+                            $drawings[] = $drawing;
+
+                            Log::info("✓ Imagen agregada en fila {$currentRow} para abono ID: {$record->id_abono}");
+                        } catch (\Exception $e) {
+                            Log::error("Error al agregar imagen en fila {$currentRow}: " . $e->getMessage());
+                        }
+                    } else {
+                        Log::warning("✗ Imagen no encontrada para fila {$currentRow}: {$imagePath}");
+                    }
                     break; // Solo una imagen por fila
                 }
             }
         }
-        $row++;
-    }
 
-    return $drawings;
-}
+        Log::info("Total de imágenes agregadas: " . count($drawings));
+        return $drawings;
+    }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
-                // Ajustar altura de filas con imágenes
+            AfterSheet::class => function (AfterSheet $event) {
                 foreach ($this->rows as $index => $record) {
-                    if ($record->conceptosabonos->firstWhere('foto_comprobante', '!=', null)) {
-                        $event->sheet->getRowDimension($index + 2)->setRowHeight(80);
-                    }
+                    $hasImage = collect($record->conceptosabonos)
+                        ->contains(fn($c) => !empty($c->foto_comprobante));
+
+                    $event->sheet->getRowDimension($index + 2)->setRowHeight($hasImage ? 110 : 20);
                 }
 
-                // Estilos para el encabezado
+                // Configuración de columnas
+                $columns = ['A' => 15, 'B' => 20, 'C' => 25, 'D' => 20, 'E' => 15, 'F' => 12, 'G' => 30, 'H' => 20];
+                foreach ($columns as $col => $width) {
+                    $event->sheet->getColumnDimension($col)->setWidth($width);
+                }
+
+                // Estilo de encabezado
                 $event->sheet->getStyle('A1:H1')->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'color' => ['rgb' => 'FFFFFF'],
+                        'size' => 12,
                     ],
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                         'color' => ['rgb' => '4F81BD'],
+                    ],
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
                     ],
                 ]);
 
@@ -128,6 +154,16 @@ class AbonosExport implements FromQuery, WithHeadings, WithMapping, WithDrawings
                             'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
                             'color' => ['rgb' => '000000'],
                         ],
+                    ],
+                    'alignment' => [
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    ],
+                ]);
+
+                // Alinear cantidades a la derecha
+                $event->sheet->getStyle('F2:F' . (count($this->rows) + 1))->applyFromArray([
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT,
                     ],
                 ]);
             },

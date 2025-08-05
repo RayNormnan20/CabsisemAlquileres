@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Exports\ClienteCreditosAbonosExport;
 use App\Filament\Widgets\ClienteCreditosAbonosWidget;
 use App\Models\User;
 use Filament\Forms\Components\Actions\Modal\Actions\Action;
@@ -10,6 +11,7 @@ use Filament\Pages\Page;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\On;
 use Filament\Navigation\NavigationItem;
+use Illuminate\Support\Facades\Log;
 
 class ClienteCreditosAbonos extends Page
 {
@@ -58,6 +60,25 @@ class ClienteCreditosAbonos extends Page
     public function handleUsuarioSeleccionado($userId): void
     {
         $this->userId = $userId;
+    }
+
+    public function exportToPDF()
+    {
+        try {
+            if (!$this->userId) {
+                $this->notify('warning', 'Debe seleccionar un usuario primero');
+                return;
+            }
+
+            Log::info('Iniciando exportación PDF para usuario: ' . $this->userId);
+
+            $export = new ClienteCreditosAbonosExport($this->userId);
+            return $export->exportToPDF();
+
+        } catch (\Exception $e) {
+            Log::error('Error al generar PDF: ' . $e->getMessage());
+            $this->notify('danger', 'Error al generar el PDF: ' . $e->getMessage());
+        }
     }
 
     /*
