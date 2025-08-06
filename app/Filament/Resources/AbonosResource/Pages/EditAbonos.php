@@ -3,9 +3,10 @@
 namespace App\Filament\Resources\AbonosResource\Pages;
 
 use App\Filament\Resources\AbonosResource;
+use App\Filament\Resources\CreditosResource;
 use App\Models\Creditos;
 use Filament\Pages\Actions;
-    use App\Models\Abonos;
+use App\Models\Abonos;
 use App\Models\LogActividad;
 use Filament\Resources\Pages\EditRecord;
 
@@ -14,6 +15,17 @@ class EditAbonos extends EditRecord
     protected static string $resource = AbonosResource::class;
 
     public ?string $metodo_pago = null;
+
+    public function mount($record): void
+    {
+        parent::mount($record);
+        
+        // Si no hay referer o viene directamente del AbonosResource, limpiar sesión
+        $referer = request()->header('referer');
+        if (!$referer || !str_contains($referer, '/creditos/')) {
+            session()->forget(['return_to_credito_view', 'credito_id_return']);
+        }
+    }
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
@@ -30,8 +42,22 @@ class EditAbonos extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('index');
+        // Verificar si viene desde el historial de abonos usando la sesión
+        if (session('return_to_credito_view') && session('credito_id_return')) {
+            $creditoId = session('credito_id_return');
+            
+            // Limpiar la sesión
+            session()->forget(['return_to_credito_view', 'credito_id_return']);
+            
+            return CreditosResource::getUrl('view', ['record' => $creditoId]);
+        }
+        
+        // Si no viene del historial, regresar a la vista normal de abonos con filtro de cliente
+        return $this->getResource()::getUrl('index', [
+            'cliente_id' => $this->record->id_cliente
+        ]);
     }
+
     protected function afterSave(): void
     {
         $abono = $this->record; // abono actualizado
@@ -67,6 +93,4 @@ class EditAbonos extends EditRecord
             
         }
     }
-
-
 }

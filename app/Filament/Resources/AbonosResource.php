@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AbonosResource\Pages;
 use App\Models\Abonos;
+use App\Models\LogActividad;
 use Illuminate\Support\HtmlString;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
@@ -508,15 +509,31 @@ public static function table(Table $table): Table
                         ->modalButton('Sí, eliminar')
                         ->action(function ($record) {
                             DB::transaction(function () use ($record) {
+                                // Obtener datos para el log antes de eliminar
+                                $clienteNombre = $record->cliente?->nombre . ' ' . $record->cliente?->apellido;
+                                $rutaNombre = $record->ruta?->nombre ?? 'Ruta desconocida';
+                                
                                 $credito = $record->credito()->lockForUpdate()->first();
-
+                                
                                 if (! $credito) {
                                     throw new \Exception('Crédito asociado no encontrado.');
                                 }
                                 $credito->saldo_actual += $record->monto_abono;
-
                                 $credito->save();
-
+                                
+                                // Registrar log de actividad antes de eliminar
+                                LogActividad::registrar(
+                                    'Abonos',
+                                    "Eliminó un abono de la ruta {$rutaNombre} para el cliente {$clienteNombre} del día " . $record->fecha_pago->format('d M Y') . " por S/" . number_format($record->monto_abono, 2),
+                                    [
+                                        'abono_id' => $record->id_abono,
+                                        'cliente_id' => $record->id_cliente,
+                                        'ruta_id' => $record->id_ruta,
+                                        'fecha_pago' => $record->fecha_pago->format('Y-m-d'),
+                                        'monto_abono' => $record->monto_abono
+                                    ]
+                                );
+                                
                                 $record->delete();
                             });
                         })
