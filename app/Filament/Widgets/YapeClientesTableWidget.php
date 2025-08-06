@@ -83,9 +83,14 @@ class YapeClientesTableWidget extends BaseWidget
             TextColumn::make('total_credito')
                 ->label('Total Crédito')
                 ->getStateUsing(function (Clientes $record) {
-                    $totalCapital = $record->creditos->sum('valor_credito');
-                    $totalIntereses = $record->creditos->sum(fn($credito) => $credito->valor_credito * ($credito->porcentaje_interes / 100));
-                    return $totalCapital + $totalIntereses;
+                    return $record->creditos->sum(function($credito) {
+                        // Si es adicional, mostrar solo el saldo actual
+                        if ($credito->es_adicional) {
+                            return $credito->saldo_actual;
+                        }
+                        // Para créditos normales, calcular capital + intereses
+                        return $credito->valor_credito + ($credito->valor_credito * ($credito->porcentaje_interes / 100));
+                    });
                 })
                 ->money('PEN', true),
 

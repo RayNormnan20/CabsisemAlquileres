@@ -21,41 +21,25 @@ class YapeClienteResource extends Resource
 public static function form(Form $form): Form
 {
     return $form->schema([
-        Forms\Components\Select::make('id_cliente')
-            ->label('Cliente')
-            ->options(function () {
-                $rutaId = session('selected_ruta_id');
+        // Campo oculto para el usuario logueado
+        Forms\Components\Hidden::make('user_id')
+            ->default(fn () => Auth::id()),
 
-                if (!$rutaId) {
-                    return [];
-                }
-
-                return \App\Models\Clientes::listarPorRuta($rutaId);
-            })
-            ->searchable()
+        // Solo el nombre del que yapea
+        Forms\Components\TextInput::make('nombre')
             ->required()
-            ->hidden(fn () => !session('selected_ruta_id')),
+            ->label('Nombre del que Yapea'),
 
-            Forms\Components\TextInput::make('nombre')
-                ->required()
-                ->label('Nombre del que Yapea'),
+        // Los dos campos numéricos
+        Forms\Components\TextInput::make('monto')
+            ->numeric()
+            ->required()
+            ->label('Monto'),
 
-                Forms\Components\Select::make('user_id')
-                    ->default(fn () => Auth::id())
-                    ->disabled()
-                    ->label('Cobrador'),
-
-            Forms\Components\TextInput::make('monto')
-                ->numeric()
-                ->required()
-                ->label('Monto'),
-
-            Forms\Components\TextInput::make('entregar')
-                ->numeric()
-                ->label('Entregar'),
-
-
-        ]);
+        Forms\Components\TextInput::make('entregar')
+            ->numeric()
+            ->label('Entregar'),
+    ]);
 }
 
 
@@ -63,10 +47,13 @@ public static function form(Form $form): Form
     {
         return $table
             ->columns([
+                // Remover o modificar la columna de cliente ya que ahora puede ser null
                 Tables\Columns\TextColumn::make('cliente.nombre_completo')
                     ->label('Cliente')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->default('Sin cliente asignado') // Mostrar texto por defecto cuando es null
+                    ->visible(false), // O puedes ocultarla completamente
 
                 Tables\Columns\TextColumn::make('nombre')
                     ->label('Nombre Yape')

@@ -20,6 +20,11 @@ class YapeCliente extends Model
         'entregar',
     ];
 
+    // Agregar este método para permitir que id_cliente sea null
+    protected $attributes = [
+        'id_cliente' => null,
+    ];
+
     // Relaciones
     public function cliente()
     {

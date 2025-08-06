@@ -65,23 +65,57 @@ class AbonosResource extends Resource
                                 ->disabled()
                                 ->required(),
 
-                            Forms\Components\TextInput::make('nombre_yape')
-                                ->label('Nombre Yape')
-                                ->dehydrated(false) // No guardar este campo en la tabla abonos
-                                ->disabled()
-                                ->reactive()
-                                ->afterStateHydrated(function ($component, $get, $state) {
+                            // Campo: Lista de nombres Yape del día (permite seleccionar y crear nuevos)
+                            Forms\Components\Select::make('nombres_yape_del_dia')
+                                ->label('Nombres Yape del Día')
+                                ->options(function () {
+                                    return \App\Models\YapeCliente::whereDate('created_at', today())
+                                        ->pluck('nombre', 'id') // Usar ID como valor
+                                        ->sort();
+                                })
+                                ->searchable()
+                                ->allowHtml()
+                                ->createOptionForm([
+                                    Forms\Components\TextInput::make('nombre')
+                                        ->label('Nombre Yape')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('monto')
+                                        ->label('Monto')
+                                        ->numeric()
+                                        ->prefix('S/')
+                                        ->default(0),
+                                    Forms\Components\TextInput::make('entregar')
+                                        ->label('Entregar')
+                                        ->numeric()
+                                        ->prefix('S/')
+                                        ->default(0),
+                                ])
+                                ->createOptionUsing(function (array $data, callable $get): string {
+                                    // Obtener el id_cliente del abono actual
                                     $idCliente = $get('id_cliente');
-                                    if ($idCliente) {
-                                        // Buscar en yape_clientes primero
-                                        $yapeCliente = \App\Models\YapeCliente::where('id_cliente', $idCliente)->first();
 
+                                    // Crear nuevo registro en yape_clientes con la relación al cliente
+                                    $yapeCliente = \App\Models\YapeCliente::create([
+                                        'nombre' => $data['nombre'],
+                                        'user_id' => auth()->id(),
+                                        'monto' => $data['monto'] ?? 0,
+                                        'entregar' => $data['entregar'] ?? 0,
+                                        'id_cliente' => $idCliente, // Establecer la relación con el cliente del abono
+                                    ]);
+
+                                    return $yapeCliente->id; // Retornar el ID
+                                })
+                                ->placeholder('Seleccionar o escribir nombre Yape')
+                                ->dehydrated(false)
+                                ->reactive()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if ($state) {
+                                        // Buscar el YapeCliente por ID
+                                        $yapeCliente = \App\Models\YapeCliente::find($state);
                                         if ($yapeCliente) {
-                                            $component->state($yapeCliente->nombre);
-                                        } else {
-                                            // Si no tiene en yape_clientes, mostrar el nombre del cliente
-                                            $cliente = \App\Models\Clientes::find($idCliente);
-                                            $component->state($cliente->nombre_completo);
+                                            $set('id_yape_cliente', $yapeCliente->id);
+                                            $set('nombre_yape', $yapeCliente->nombre);
                                         }
                                     }
                                 })
@@ -136,6 +170,10 @@ class AbonosResource extends Resource
             Forms\Components\Hidden::make('id_ruta'),
             Forms\Components\Hidden::make('id_usuario'),
             Forms\Components\Hidden::make('saldo_posterior'),
+
+            // Solo el ID se guarda automáticamente por el Select de arriba
+            Forms\Components\Hidden::make('id_yape_cliente'),
+            Forms\Components\Hidden::make('nombre_yape'),
 
             // Sección de métodos de pago
            Forms\Components\Section::make('Métodos de Pago')
@@ -368,13 +406,30 @@ public static function table(Table $table): Table
 
                         // Generar lista de comprobantes
                         $abonos = $abonosQuery->get()->map(function ($abono) {
-                        $yapeNombre = \App\Models\YapeCliente::where('id_cliente', $abono->id_cliente)
-                            ->value('nombre'); // Solo trae el nombre directamente
+                            // Usar la relación con YapeCliente
+                            $yapeNombre = null;
+
+                            if ($abono->id_yape_cliente) {
+                                // Usar la relación directa
+                                $yapeNombre = $abono->yapeCliente->nombre ?? null;
+                            }
+
+                            // Fallback al campo nombre_yape si no hay relación
+                            if (!$yapeNombre) {
+                                $yapeNombre = $abono->nombre_yape;
+                            }
+
+                            // Último fallback: buscar por cliente
+                            if (!$yapeNombre) {
+                                $yapeNombre = \App\Models\YapeCliente::where('id_cliente', $abono->id_cliente)
+                                    ->value('nombre');
+                            }
 
                             return [
                                 'id' => $abono->id_abono,
                                 'cliente' => $abono->cliente->nombre_completo,
-                                'yape_nombre' => $yapeNombre, // <-- nuevo campo
+                                'yape_nombre' => $yapeNombre,
+                                'yape_id' => $abono->id_yape_cliente, // Nuevo campo con el ID
                                 'fecha' => $abono->fecha_pago->format('d/m/Y H:i'),
                                 'monto' => $abono->monto_abono,
                                 'usuario' => $abono->usuario->name,
@@ -512,15 +567,15 @@ public static function table(Table $table): Table
                                 // Obtener datos para el log antes de eliminar
                                 $clienteNombre = $record->cliente?->nombre . ' ' . $record->cliente?->apellido;
                                 $rutaNombre = $record->ruta?->nombre ?? 'Ruta desconocida';
-                                
+
                                 $credito = $record->credito()->lockForUpdate()->first();
-                                
+
                                 if (! $credito) {
                                     throw new \Exception('Crédito asociado no encontrado.');
                                 }
                                 $credito->saldo_actual += $record->monto_abono;
                                 $credito->save();
-                                
+
                                 // Registrar log de actividad antes de eliminar
                                 LogActividad::registrar(
                                     'Abonos',
@@ -533,7 +588,7 @@ public static function table(Table $table): Table
                                         'monto_abono' => $record->monto_abono
                                     ]
                                 );
-                                
+
                                 $record->delete();
                             });
                         })

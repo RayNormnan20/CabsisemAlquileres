@@ -19,6 +19,7 @@ class Abonos extends Model
         'id_ruta',
         'id_usuario',
         'id_concepto', // Añadido para relación con conceptos
+        'id_yape_cliente', // Solo el ID
         'fecha_pago',
         'monto_abono',
         'saldo_anterior',
@@ -166,5 +167,11 @@ class Abonos extends Model
     {
         $credito = Creditos::findOrFail($creditoId);
         return $monto <= $credito->saldo_actual;
+    }
+
+    // Relación con YapeCliente
+    public function yapeCliente()
+    {
+        return $this->belongsTo(\App\Models\YapeCliente::class, 'id_yape_cliente');
     }
 }
