@@ -114,6 +114,13 @@ class ListAbonos extends ListRecords
         }
 
         $this->aplicarFiltroFecha();
+
+        $this->emit('filter-abonos', [
+                'clienteId' => $this->clienteId,
+                'fechaDesde' => $this->fechaDesde,
+                'fechaHasta' => $this->fechaHasta,
+                'tipoConcepto' => $this->tipoConcepto,
+            ]);
     }
 
     public function aplicarFiltroFecha()

@@ -139,16 +139,32 @@ class ListVistaMovimientos extends ListRecords
         $records = $this->getFilteredTableQuery()->get();
 
         $totalIngresos = $records
-            ->where('tipo_concepto', 'Ingresos')
-            ->sum('monto');
+        ->where('tipo_concepto', 'Ingresos')
+        ->sum(function ($item) {
+            return abs($item->monto);
+        });
 
         $totalGastos = $records
             ->where('tipo_concepto', 'Gastos')
-            ->sum('monto');
+            ->sum(function ($item) {
+                return abs($item->monto);
+            });
 
         return view('filament.resources.vista-movimiento-resource.resumen', [
             'totalIngresos' => $totalIngresos,
             'totalGastos' => $totalGastos,
         ]);
     }
+
+    public function updated($name)
+    {
+        if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
+            if ($name === 'periodoSeleccionado') {
+                $this->aplicarPeriodo();
+            }
+
+            $this->resetPage();
+        }
+    }
+
 }

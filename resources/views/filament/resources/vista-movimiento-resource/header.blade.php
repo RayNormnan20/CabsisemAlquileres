@@ -43,13 +43,6 @@
                 <div class="text-xs text-red-500 mt-1">⚠️ Fechas no válidas</div>
                 @endif
             </div>
-            
-            <div class="flex justify-end">
-                <button @click="open = false" wire:click="validarFechas"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition">
-                    Aplicar
-                </button>
-            </div>
         </div>
     </div>
 </div>
