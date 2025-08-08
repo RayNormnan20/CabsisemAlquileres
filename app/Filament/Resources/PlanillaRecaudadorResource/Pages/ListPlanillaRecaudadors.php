@@ -57,6 +57,9 @@ class ListPlanillaRecaudadors extends ListRecords
             ->when($this->estadoCredito === 'cancelados', function (Builder $query) {
                 return $query->where('saldo_actual', '<=', 0);
             })
+            ->when($this->estadoCredito === 'adicionales', function (Builder $query) {
+                return $query->where('es_adicional', 1);
+            })
             ->when($this->rutaId, function (Builder $query) {
                 return $query->where('id_ruta', $this->rutaId);
             });

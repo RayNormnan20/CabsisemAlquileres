@@ -16,29 +16,52 @@ class YapeClienteResource extends Resource
     protected static ?string $model = YapeCliente::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-collection';
-    protected static ?string $navigationLabel = 'Yape Clientes';
+    protected static ?string $navigationLabel = 'Yapes del día';
     protected static ?string $modelLabel = 'Yape Cliente';
 public static function form(Form $form): Form
 {
     return $form->schema([
-        // Campo oculto para el usuario logueado
-        Forms\Components\Hidden::make('user_id')
-            ->default(fn () => Auth::id()),
+        Forms\Components\Select::make('id_cliente')
+            ->label('Cliente')
+            ->options(function () {
+                $rutaId = session('selected_ruta_id');
 
-        // Solo el nombre del que yapea
-        Forms\Components\TextInput::make('nombre')
+                if (!$rutaId) {
+                    return [];
+                }
+
+                return \App\Models\Clientes::listarPorRuta($rutaId);
+            })
+            ->searchable()
             ->required()
-            ->label('Nombre del que Yapea'),
+            ->hidden(fn () => !session('selected_ruta_id')),
 
-        // Los dos campos numéricos
-        Forms\Components\TextInput::make('monto')
-            ->numeric()
-            ->required()
-            ->label('Monto'),
+            Forms\Components\TextInput::make('nombre')
+                ->required()
+                ->label('Nombre del que Yapea'),
 
-        Forms\Components\TextInput::make('entregar')
-            ->numeric()
-            ->label('Entregar'),
+            Forms\Components\Select::make('user_id')
+                ->label('Cobrador')
+                ->options(function () {
+                    // Obtener todos los usuarios que tienen rutas asignadas
+                    return \App\Models\User::whereHas('rutas')
+                        ->select('id', 'name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                })
+                ->searchable()
+                ->required()
+                ->default(fn () => Auth::id())
+                ->hidden(fn () => !session('selected_ruta_id')),
+
+            Forms\Components\TextInput::make('monto')
+                ->numeric()
+                ->required()
+                ->label('Monto'),
+
+            Forms\Components\TextInput::make('entregar')
+                ->numeric()
+                ->label('Entregar'),
     ]);
 }
 
@@ -51,9 +74,8 @@ public static function form(Form $form): Form
                 Tables\Columns\TextColumn::make('cliente.nombre_completo')
                     ->label('Cliente')
                     ->searchable()
-                    ->sortable()
-                    ->default('Sin cliente asignado') // Mostrar texto por defecto cuando es null
-                    ->visible(false), // O puedes ocultarla completamente
+                    ->sortable(),
+
 
                 Tables\Columns\TextColumn::make('nombre')
                     ->label('Nombre Yape')

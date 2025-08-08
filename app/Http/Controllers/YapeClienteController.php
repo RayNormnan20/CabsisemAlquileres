@@ -1,0 +1,240 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\YapeCliente;
+use App\Models\Abonos;
+use App\Models\Clientes;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+class YapeClienteController extends Controller
+{
+    public function getClienteInfo($id)
+    {
+        $cliente = Clientes::find($id);
+        return response()->json($cliente);
+    }
+
+    public function getCobradoresPorRuta($rutaId)
+    {
+        $cobradores = User::whereHas('rutas', function($query) use ($rutaId) {
+            $query->where('rutas.id', $rutaId);
+        })->get(['id', 'name']);
+
+        return response()->json($cobradores);
+    }
+
+    public function generarPDF($id)
+    {
+        // Obtener el YapeCliente
+        $yapeCliente = YapeCliente::with(['cliente', 'user'])->findOrFail($id);
+        
+        // Obtener todos los abonos para este YapeCliente
+        $abonos = Abonos::where('id_yape_cliente', $id)
+            ->with(['cliente'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Crear el contenido HTML para el PDF
+        $html = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Reporte de Pagos - ' . $yapeCliente->nombre . '</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 20px; 
+                    color: #333;
+                }
+                .header { 
+                    text-align: center; 
+                    margin-bottom: 30px; 
+                    border-bottom: 2px solid #007bff;
+                    padding-bottom: 20px;
+                }
+                .header h1 { 
+                    color: #007bff; 
+                    margin-bottom: 5px; 
+                    font-size: 24px;
+                }
+                .header h2 { 
+                    color: #666; 
+                    margin-top: 5px; 
+                    font-size: 18px;
+                }
+                .info-section {
+                    background-color: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin-bottom: 20px;
+                }
+                .info-item {
+                    margin-bottom: 8px;
+                }
+                .info-label {
+                    font-weight: bold;
+                    color: #495057;
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin-bottom: 20px; 
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                th, td { 
+                    border: 1px solid #dee2e6; 
+                    padding: 12px; 
+                    text-align: left; 
+                }
+                th { 
+                    background-color: #007bff; 
+                    color: white;
+                    font-weight: bold; 
+                }
+                tr:nth-child(even) {
+                    background-color: #f8f9fa;
+                }
+                .totales { 
+                    background-color: #e9ecef; 
+                    padding: 20px; 
+                    border-radius: 8px; 
+                    border-left: 4px solid #28a745;
+                }
+                .total-item { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    margin-bottom: 10px; 
+                    padding: 5px 0;
+                }
+                .total-label { 
+                    font-weight: bold; 
+                    color: #495057;
+                }
+                .total-value { 
+                    color: #28a745; 
+                    font-weight: bold; 
+                    font-size: 16px;
+                }
+                .no-data {
+                    text-align: center;
+                    color: #6c757d;
+                    font-style: italic;
+                    padding: 20px;
+                }
+                .footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #6c757d;
+                    border-top: 1px solid #dee2e6;
+                    padding-top: 15px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Reporte de Pagos</h1>
+                <h2>Nombre Yape: ' . $yapeCliente->nombre . '</h2>
+                <p>Fecha de generación: ' . now()->format('d/m/Y H:i') . '</p>
+            </div>
+            
+            <div class="info-section">
+                <div class="info-item">
+                    <span class="info-label">Cliente Asignado:</span> 
+                    ' . ($yapeCliente->cliente ? $yapeCliente->cliente->nombre_completo : 'Sin cliente asignado') . '
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Cobrador:</span> 
+                    ' . ($yapeCliente->user ? $yapeCliente->user->name : 'Sin asignar') . '
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Monto Objetivo:</span> 
+                    S/ ' . number_format($yapeCliente->monto, 2) . '
+                </div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Monto</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        if ($abonos->count() > 0) {
+            foreach ($abonos as $abono) {
+                $clienteNombre = $abono->cliente ? $abono->cliente->nombre_completo : 'Sin cliente';
+                $monto = 'S/ ' . number_format($abono->monto_abono, 2);
+                $fecha = $abono->created_at->format('d/m/Y H:i');
+                
+                $html .= '<tr>
+                    <td>' . $clienteNombre . '</td>
+                    <td>' . $monto . '</td>
+                    <td>' . $fecha . '</td>
+                </tr>';
+            }
+        } else {
+            $html .= '<tr><td colspan="3" class="no-data">No hay pagos registrados</td></tr>';
+        }
+
+        $totalPagos = $abonos->sum('monto_abono');
+        $faltante = max(0, $yapeCliente->monto - $totalPagos);
+        $devolucion = max(0, $totalPagos - $yapeCliente->monto);
+        
+        $html .= '
+                </tbody>
+            </table>
+            
+            <div class="totales">
+                <div class="total-item">
+                    <span class="total-label">Total de Pagos Recibidos:</span>
+                    <span class="total-value">S/ ' . number_format($totalPagos, 2) . '</span>
+                </div>
+                <div class="total-item">
+                    <span class="total-label">Cantidad de Pagos:</span>
+                    <span class="total-value">' . $abonos->count() . ' pagos</span>
+                </div>
+                <div class="total-item">
+                    <span class="total-label">Monto Objetivo:</span>
+                    <span class="total-value">S/ ' . number_format($yapeCliente->monto, 2) . '</span>
+                </div>';
+                
+        if ($faltante > 0) {
+            $html .= '<div class="total-item">
+                <span class="total-label">Faltante:</span>
+                <span class="total-value" style="color: #dc3545;">S/ ' . number_format($faltante, 2) . '</span>
+            </div>';
+        }
+        
+        if ($devolucion > 0) {
+            $html .= '<div class="total-item">
+                <span class="total-label">Devolución:</span>
+                <span class="total-value" style="color: #17a2b8;">S/ ' . number_format($devolucion, 2) . '</span>
+            </div>';
+        }
+        
+        $html .= '
+            </div>
+            
+            <div class="footer">
+                <p>Reporte generado automáticamente por el Sistema de Gestión</p>
+                <p>© ' . date('Y') . ' - Todos los derechos reservados</p>
+            </div>
+        </body>
+        </html>';
+
+        // Generar el PDF
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('A4', 'portrait');
+        
+        $fileName = 'pagos_' . str_replace(' ', '_', strtolower($yapeCliente->nombre)) . '_' . now()->format('Y-m-d') . '.pdf';
+        
+        return $pdf->download($fileName);
+    }
+}

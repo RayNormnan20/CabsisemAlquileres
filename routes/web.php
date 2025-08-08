@@ -52,7 +52,9 @@ Route::post('/creditos/renovar', [CreditoController::class, 'renovar'])->name('c
 
 Route::get('/clientes/{id}', [YapeClienteController::class, 'getClienteInfo']);
 Route::get('/cobradores-por-ruta/{rutaId}', [YapeClienteController::class, 'getCobradoresPorRuta']);
-/*
+
+// Nueva ruta para generar PDF de pagos de Yape Cliente
+Route::get('/yape-cliente/{id}/pdf', [YapeClienteController::class, 'generarPDF'])->name('yape-cliente.pdf');
 
 Route::middleware(['auth'])->group(function () {
     // Rutas comunes
@@ -76,4 +78,3 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/rutas/{ruta}/reportes', [RutaController::class, 'reportes'])->name('rutas.reports');
     });
 });
-*/

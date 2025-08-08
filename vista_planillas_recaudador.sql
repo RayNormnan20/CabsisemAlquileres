@@ -13,6 +13,7 @@ SELECT
     cr.fecha_proximo_pago,
     cr.fecha_vencimiento,
     cr.id_ruta,
+    cr.es_adicional,
     (
         SELECT a.fecha_pago 
         FROM abonos a 
@@ -27,14 +28,29 @@ SELECT
         ORDER BY a.fecha_pago DESC 
         LIMIT 1
     ) AS ultimo_monto_pagado,
+    (
+        SELECT IFNULL(SUM(a.monto_abono), 0)
+        FROM abonos a 
+        WHERE a.id_credito = cr.id_credito
+    ) AS total_abonos,
     r.nombre AS ruta,
     u.name AS recaudador,
     u.id AS id_recaudador,
     CASE 
         WHEN cr.saldo_actual <= 0 THEN 'PAGADO'
-        WHEN cr.saldo_actual > 0 AND DATEDIFF(CURRENT_DATE, cr.fecha_proximo_pago) > 0 THEN 'MOROSO'
+        WHEN cr.saldo_actual > 0 AND DATEDIFF(CURRENT_DATE, cr.fecha_vencimiento) > 0 THEN 'MOROSO'
         ELSE 'AL DÍA'
-    END AS estado_credito
+    END AS estado_credito,
+    CASE 
+        WHEN cr.es_adicional = 1 THEN 'ADICIONAL'
+        ELSE 'REGULAR'
+    END AS tipo_credito,
+    CASE 
+        WHEN cr.saldo_actual <= 0 THEN 0
+        WHEN cr.fecha_vencimiento IS NULL THEN 0
+        WHEN DATEDIFF(CURRENT_DATE, cr.fecha_vencimiento) > 0 THEN DATEDIFF(CURRENT_DATE, cr.fecha_vencimiento)
+        ELSE 0
+    END AS dias_atraso
 FROM 
     clientes c
 JOIN 

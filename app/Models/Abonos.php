@@ -38,6 +38,48 @@ class Abonos extends Model
         'estado' => 'boolean'
     ];
 
+    // Eventos del modelo
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Cuando se crea un abono
+        static::created(function ($abono) {
+            if ($abono->id_yape_cliente) {
+                $abono->actualizarEntregarYapeCliente();
+            }
+        });
+
+        // Cuando se actualiza un abono
+        static::updated(function ($abono) {
+            if ($abono->id_yape_cliente) {
+                $abono->actualizarEntregarYapeCliente();
+            }
+        });
+
+        // Cuando se elimina un abono
+        static::deleted(function ($abono) {
+            if ($abono->id_yape_cliente) {
+                $abono->actualizarEntregarYapeCliente();
+            }
+        });
+    }
+
+    // Método para actualizar el campo entregar del YapeCliente
+    public function actualizarEntregarYapeCliente()
+    {
+        if ($this->id_yape_cliente) {
+            // Solo contar abonos que tienen conceptos de tipo "Yape"
+            $totalEntregado = self::where('id_yape_cliente', $this->id_yape_cliente)
+                ->whereHas('conceptosabonos', function($query) {
+                    $query->where('tipo_concepto', 'Yape');
+                })
+                ->sum('monto_abono');
+            
+            YapeCliente::where('id', $this->id_yape_cliente)
+                ->update(['entregar' => $totalEntregado]);
+        }
+    }
 
     public function credito()
     {

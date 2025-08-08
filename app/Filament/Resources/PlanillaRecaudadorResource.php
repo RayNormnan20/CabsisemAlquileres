@@ -67,9 +67,16 @@ class PlanillaRecaudadorResource extends Resource
                     ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
                     ->sortable(),
 
+                TextColumn::make('total_abonos')
+                    ->label('Abonos')
+                    ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
+                    ->color('success')
+                    ->sortable(),
+
                 TextColumn::make('saldo_actual')
                     ->label('Saldo')
                     ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
+                    ->color(fn ($record) => $record->saldo_actual > 0 ? 'danger' : 'danger')
                     ->sortable(),
 
                 TextColumn::make('valor_cuota')

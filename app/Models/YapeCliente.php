@@ -31,9 +31,13 @@ class YapeCliente extends Model
         return $this->belongsTo(Clientes::class, 'id_cliente', 'id_cliente');
     }
 
-    public function usuario()
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function abonos()
+    {
+        return $this->hasMany(Abonos::class, 'id_yape_cliente', 'id');
+    }
 }

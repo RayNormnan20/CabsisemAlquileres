@@ -70,6 +70,7 @@
                 <th>Cliente</th>
                 <th>Teléfono</th>
                 <th>Crédito</th>
+                <th>Abonos</th>
                 <th>Saldo</th>
                 <th>Cuota</th>
                 <th>Atraso (días)</th>
@@ -84,6 +85,7 @@
                 <td>{{ $record->cliente_completo }}</td>
                 <td>{{ $record->telefono }}</td>
                 <td class="text-right">S/ {{ number_format($record->valor_credito, 2) }}</td>
+                <td class="text-right">S/ {{ number_format($record->total_abonos, 2) }}</td>
                 <td class="text-right">S/ {{ number_format($record->saldo_actual, 2) }}</td>
                 <td class="text-right">S/ {{ number_format($record->valor_cuota, 2) }}</td>
                 <td>{{ $record->dias_atraso}}</td>
