@@ -477,9 +477,10 @@ class CreditosResource extends Resource
                     ->label('Orden de Cobro')
                     ->relationship('ordenCobro', 'nombre'),
 
-                Tables\Filters\Filter::make('activos')
-                    ->label('Solo créditos activos')
-                    ->query(fn($query) => $query->where('saldo_actual', '>', 0)),
+                // Removido el filtro de activos que aparecía en la URL
+                // Tables\Filters\Filter::make('activos')
+                //     ->label('Solo créditos activos')
+                //     ->query(fn($query) => $query->where('saldo_actual', '>', 0)),
             ])
             ->actions([
 

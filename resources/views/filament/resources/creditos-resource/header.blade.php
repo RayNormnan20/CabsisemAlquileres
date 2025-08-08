@@ -2,35 +2,40 @@
 $clienteIds = array_keys($clientes->toArray());
 $currentIndex = array_search($clienteId, $clienteIds);
 $anteriorId = $currentIndex > 0 ? $clienteIds[$currentIndex - 1] : null;
-$siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex + 1] : null; @endphp
-{{-- SELECTOR DE CLIENTE CON NAVEGACIÓN --}} <div class="mb-6 flex items-center justify-center gap-4">
-    {{-- Botón anterior --}}
-    <button wire:click="$set('clienteId', {{ $anteriorId ?? 'null' }})"
-        class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-sm rounded-md disabled:opacity-50"
-        @disabled($anteriorId===null)>
-        ◀
-    </button>
+$siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex + 1] : null; 
+@endphp
+{{-- SELECTOR DE CLIENTE CON NAVEGACIÓN Y FILTRO --}}
+<div class="mb-6">
+    <!-- Fila superior con selector de cliente -->
+    <div class="flex items-center justify-center gap-4 mb-4">
+        {{-- Botón anterior --}}
+        <button wire:click="$set('clienteId', {{ $anteriorId ?? 'null' }})"
+            class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-sm rounded-md disabled:opacity-50"
+            @disabled($anteriorId===null)>
+            ◀
+        </button>
 
-    {{-- Select en el centro más pequeño --}}
-    <div class="w-1/2">
-        <label for="clienteId" class="block text-base font-semibold text-gray-700 mb-1 text-center">
-            Seleccionar Cliente
-        </label>
-        <select wire:model="clienteId" id="clienteId"
-            class="w-full border border-gray-300 rounded-md shadow-sm px-4 py-2 text-sm focus:ring-primary-500 focus:border-primary-500">
-            <option value="">-- Seleccionar --</option>
-            @foreach ($clientes as $id => $nombre)
-            <option value="{{ $id }}">{{ $nombre }}</option>
-            @endforeach
-        </select>
+        {{-- Select en el centro más pequeño --}}
+        <div class="w-1/2">
+            <label for="clienteId" class="block text-base font-semibold text-gray-700 mb-1 text-center">
+                Seleccionar Cliente
+            </label>
+            <select wire:model="clienteId" id="clienteId"
+                class="w-full border border-gray-300 rounded-md shadow-sm px-4 py-2 text-sm focus:ring-primary-500 focus:border-primary-500">
+                <option value="">-- Seleccionar --</option>
+                @foreach ($clientes as $id => $nombre)
+                <option value="{{ $id }}">{{ $nombre }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- Botón siguiente --}}
+        <button wire:click="$set('clienteId', {{ $siguienteId ?? 'null' }})"
+            class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-sm rounded-md disabled:opacity-50"
+            @disabled($siguienteId===null)>
+            ▶
+        </button>
     </div>
-
-    {{-- Botón siguiente --}}
-    <button wire:click="$set('clienteId', {{ $siguienteId ?? 'null' }})"
-        class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-sm rounded-md disabled:opacity-50"
-        @disabled($siguienteId===null)>
-        ▶
-    </button>
 </div>
 
 
@@ -395,7 +400,7 @@ $cliente->loadMissing('creditos');
                                             saldo: {{ $cliente->creditos->first()->saldo_actual ?? 0 }},
                                             abonos: {{ $cliente->creditos->first()->abonos ?? 0 }},
                                             fechaInicio: '{{ $cliente->creditos->first()->fecha_credito ?? '' }}', // <- FECHA DE INICIO
-                                            fechaVencimiento: '{{ $cliente->creditos->first()->fecha_vencimiento ?? '' }}' // Ajusta el campo de fecha de vencimiento
+                                            fechaVencimiento: '{{ now()->format('Y-m-d') }}' // Fecha actual
                                         },
                                         false
                                     )" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem"
@@ -488,7 +493,7 @@ $cliente->loadMissing('creditos');
                                                 <span x-text="fechaInicio" class="text-lg"></span>
                                             </div>
                                             <div>
-                                                <span class="block text-sm text-gray-600">Fecha de Vencimiento</span>
+                                                <span class="block text-sm text-gray-600">Fecha Actual</span>
                                                 <span x-text="fechaVencimiento" class="text-lg"></span>
                                             </div>
                                             <div>
@@ -705,6 +710,7 @@ $cliente->loadMissing('creditos');
                                 x-text="isRenewal ? 'Confirmar Renovación' : 'Confirmar Baja de Cuenta'">
                             </button>
 
+                                <!--
                             <button type="button" @click="console.log({
                                         saldoActual,
                                         renovacion,
@@ -717,7 +723,7 @@ $cliente->loadMissing('creditos');
                                     })" class="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                                 Ver datos en consola
                             </button>
-
+                        -->
 
                             <button type="button" @click="showDeactivationModal = false"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
@@ -743,7 +749,8 @@ $cliente->loadMissing('creditos');
             <div><span class="font-medium">Celular:</span> {{ $cliente->celular }}</div>
             <div><span class="font-medium">Teléfono:</span> {{ $cliente->telefono }}</div>
             <div><span class="font-medium">Dirección:</span> {{ $cliente->direccion }}</div>
-            <div><span class="font-medium">Negocio/Alias:</span> {{ $cliente->nombre_negocio }}</div>
+           <!-- <div><span class="font-medium">Negocio/Alias:</span> {{ $cliente->nombre_negocio }}</div> -->
+
             <div><span class="font-medium">Ciudad:</span> {{ $cliente->ciudad }}</div>
             <div>
                 <span class="font-medium">Status:</span>

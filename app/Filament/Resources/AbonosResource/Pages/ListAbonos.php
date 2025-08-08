@@ -28,7 +28,8 @@ class ListAbonos extends ListRecords
     public string $periodoSeleccionado = 'hoy'; // Cambiado a 'hoy' por defecto
     public ?string $tipoConcepto = null;
 
-
+    // Comentar o eliminar esta propiedad para que no aparezcan los parámetros en la URL
+    /*
     protected $queryString = [
         'clienteId' => ['except' => null],
         'rutaId' => ['except' => null],
@@ -37,6 +38,7 @@ class ListAbonos extends ListRecords
         'periodoSeleccionado' => ['except' => 'hoy'],
         'tipoConcepto' => ['except' => null],
     ];
+    */
 
     // 'goToActionRecord' es el evento emitido desde los botones del modal.
     protected $listeners = ['goToActionRecord'];

@@ -21,6 +21,7 @@ class ListCreditos extends ListRecords
     protected $listeners = ['globalRouteChanged' => 'applyRouteFilter'];
 
     public ?int $clienteId = null;
+    public bool $mostrarSoloActivos = true; // Nueva propiedad para controlar el filtro
 
     public function mount(): void
     {
@@ -33,6 +34,9 @@ class ListCreditos extends ListRecords
             $this->currentRutaId = null;
             $this->currentRutaName = 'Todas las Rutas';
         }
+
+        // Mantener el estado del filtro en la sesión
+        $this->mostrarSoloActivos = Session::get('creditos_mostrar_solo_activos', true);
     }
 
     public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
@@ -40,7 +44,14 @@ class ListCreditos extends ListRecords
         $this->currentRutaId = $rutaId;
         $this->currentRutaName = $rutaName ?? 'Todas las Rutas';
 
+        $this->resetPage();
+    }
 
+    // Método para alternar el filtro de activos
+    public function toggleMostrarSoloActivos(): void
+    {
+        $this->mostrarSoloActivos = !$this->mostrarSoloActivos;
+        Session::put('creditos_mostrar_solo_activos', $this->mostrarSoloActivos);
         $this->resetPage();
     }
 
@@ -81,6 +92,11 @@ class ListCreditos extends ListRecords
             $query->where('creditos.id_cliente', $this->clienteId);
         }
 
+        // Aplicar filtro de créditos activos si está habilitado
+        if ($this->mostrarSoloActivos) {
+            $query->where('creditos.saldo_actual', '>', 0);
+        }
+
         $query->orderBy('creditos.fecha_credito', 'desc');
 
         $query->select('creditos.*');
@@ -102,6 +118,7 @@ class ListCreditos extends ListRecords
             'clientes' => $clientesQuery->get()->pluck('nombre_completo', 'id_cliente'),
             'clienteId' => $this->clienteId,
             'cliente' => $this->clienteId ? Clientes::with('creditos')->find($this->clienteId) : null,
+            'mostrarSoloActivos' => $this->mostrarSoloActivos, // Pasar el estado al header
         ]);
     }
 
