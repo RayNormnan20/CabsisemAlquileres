@@ -16,7 +16,8 @@ class ListRutas extends ListRecords
         return [
             Actions\CreateAction::make()
                 ->label('Nueva Ruta')
-                ->icon('heroicon-s-plus'),
+                ->icon('heroicon-s-plus')
+                ->url('/rutas/create'),
         ];
     }
 

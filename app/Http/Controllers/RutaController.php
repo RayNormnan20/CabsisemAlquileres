@@ -38,7 +38,7 @@ class RutaController extends Controller
         $this->authorize('manage-rutas');
 
         $oficinas = Oficina::all();
-        $usuarios = User::role(['Cobrador', 'Encargado de oficina'])->get();
+        $usuarios = User::role(['Cobrador'])->get();
 
         return view('rutas.create', compact('oficinas', 'usuarios'));
     }
@@ -84,7 +84,7 @@ class RutaController extends Controller
         $this->authorize('update', $ruta);
 
         $oficinas = Oficina::all();
-        $usuarios = User::role(['Cobrador', 'Encargado de oficina'])->get();
+        $usuarios = User::role(['Cobrador'])->get();
 
         return view('rutas.edit', compact('ruta', 'oficinas', 'usuarios'));
     }

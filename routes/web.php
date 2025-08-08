@@ -65,10 +65,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/rutas/{ruta}/clientes', [RutaController::class, 'clientes'])->name('rutas.clientes');
     });
 
+    // Comentar estas rutas ya que usamos Filament para gestionar rutas
+    /*
     // Rutas de gestión
     Route::middleware(['can:manage-rutas'])->group(function () {
         Route::resource('rutas', RutaController::class)->except(['show', 'index']);
     });
+    */
 
     // Rutas de cobros
     Route::middleware(['can:collect-payments', 'can:access-ruta,ruta'])->post('/rutas/{ruta}/abonos', [RutaController::class, 'storePayment']);
