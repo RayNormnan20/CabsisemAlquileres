@@ -151,11 +151,11 @@ $cliente->loadMissing('creditos');
                         });
                     },
 
-                    calcularDiasEntreFechas(fechaInicio, fechaFin) {
-                        if (!fechaInicio || !fechaFin) return 0;
+                    calcularDiasTranscurridos(fechaInicio) {
+                        if (!fechaInicio) return 0;
                         const inicio = new Date(fechaInicio.replace(' ', 'T'));
-                        const fin = new Date(fechaFin.replace(' ', 'T'));
-                        const diffTime = fin - inicio;
+                        const hoy = new Date();
+                        const diffTime = hoy - inicio;
                         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     },
 
@@ -492,9 +492,8 @@ $cliente->loadMissing('creditos');
                                                 <span x-text="fechaVencimiento" class="text-lg"></span>
                                             </div>
                                             <div>
-                                                <span class="block text-sm text-gray-600">Total de Días</span>
-                                                <span x-text="calcularDiasEntreFechas(fechaInicio, fechaVencimiento)"
-                                                    class="text-lg text-indigo-700"></span>
+                                                <span class="block text-sm text-gray-600">Días Transcurridos</span>
+                                                <span x-text="calcularDiasTranscurridos(fechaInicio)" class="text-lg text-indigo-700"></span>
                                             </div>
                                         </div>
                                     </div>

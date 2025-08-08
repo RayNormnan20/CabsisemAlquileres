@@ -6,6 +6,7 @@ use App\Filament\Resources\ClientesResource;
 use App\Filament\Resources\CreditosResource;
 use App\Models\LogActividad;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Session;
 
 class CreateClientes extends CreateRecord
 {
@@ -13,15 +14,23 @@ class CreateClientes extends CreateRecord
 
     public bool $crearCredito = false;
 
+    public ?int $currentRutaId = null;    
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->currentRutaId = Session::get('selected_ruta_id');
+
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $this->crearCredito = $data['crear_credito'] ?? false;
         unset($data['crear_credito']);
 
-
-        $rutaAsignada = auth()->user()?->rutas()?->first();
-        if ($rutaAsignada) {
-            $data['id_ruta'] = $rutaAsignada->id_ruta;
+        if ($this->currentRutaId) {
+            $data['id_ruta'] = $this->currentRutaId;
         } else {
             // Puedes lanzar una excepción o registrar un error aquí si es obligatorio
             throw new \Exception('El usuario autenticado no tiene una ruta asignada.');
