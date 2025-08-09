@@ -23,6 +23,7 @@ class Creditos extends Model
         'dias_plazo',
         'orden_cobro',
         'saldo_actual',
+        'descuento_aplicado', // Nuevo campo
         'valor_cuota',
         'numero_cuotas',
         'fecha_vencimiento',
@@ -41,6 +42,7 @@ class Creditos extends Model
         'valor_credito' => 'decimal:2',
         'porcentaje_interes' => 'decimal:2',
         'saldo_actual' => 'decimal:2',
+        'descuento_aplicado' => 'decimal:2', // Nuevo cast
         'valor_cuota' => 'decimal:2',
         'fecha_vencimiento' => 'date',
         'fecha_proximo_pago' => 'date',
@@ -125,5 +127,17 @@ class Creditos extends Model
     {
         $this->saldo_actual = $this->valor_credito - $this->abonos()->sum('monto_abono');
         $this->save();
+    }
+
+    /**
+     * Aplicar descuento al crédito
+     */
+    public function aplicarDescuento($montoDescuento)
+    {
+        $this->descuento_aplicado += $montoDescuento;
+        $this->saldo_actual -= $montoDescuento;
+        $this->save();
+        
+        return $this;
     }
 }

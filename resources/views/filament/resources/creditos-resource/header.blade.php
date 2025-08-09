@@ -55,7 +55,7 @@ $cliente->loadMissing('creditos');
                     open: false,
                     showDeactivationModal: false,
                     deactivatingCreditId: null,
-                    isRenewal: false, // <--- NUEVO
+                    isRenewal: false,
                     mostrarRenovacionCompleta: false,
 
                     clientName: '',
@@ -74,6 +74,9 @@ $cliente->loadMissing('creditos');
                     newCuenta: '',
                     newValorCuota: '',
                     newVencimientoDate: '',
+                    
+                    // Nueva variable para el descuento
+                    descuento: 0,
 
                     renovacion: 0,
                     montoTemporal: 0,
@@ -90,11 +93,31 @@ $cliente->loadMissing('creditos');
                     },
 
                     get totalEntregado() {
-                        return this.pagos.reduce((acc, p) => acc + Number(p.monto), 0);
+                        return this.pagos.reduce((acc, pago) => acc + Number(pago.monto), 0);
                     },
 
                     get valorCredito() {
                         return this.aEntregar;
+                    },
+
+                    // Nueva función para calcular la nueva cuenta con descuento
+                    calcularNuevaCuentaConDescuento() {
+                        const saldoActual = parseFloat(this.saldoActual) || 0;
+                        const descuentoAplicado = parseFloat(this.descuento) || 0;
+                        
+                        if (descuentoAplicado > saldoActual) {
+                            alert('El descuento no puede ser mayor al saldo actual');
+                            this.descuento = 0;
+                            return;
+                        }
+                        
+                        const nuevaCuenta = saldoActual - descuentoAplicado;
+                        this.newValorCredito = nuevaCuenta.toFixed(2);
+                        
+                        // Recalcular automáticamente si hay interés y forma de pago
+                        if (this.newInteres && this.newFormaPago) {
+                            this.calcularFormaPagoYVencimiento();
+                        }
                     },
 
                     agregarMedioPago() {
@@ -131,6 +154,9 @@ $cliente->loadMissing('creditos');
                     init() {
                         this.$watch('newInteres', () => this.calcularFormaPagoYVencimiento());
                         this.$watch('newFormaPago', () => this.calcularFormaPagoYVencimiento());
+                        
+                        // Nuevo watcher para el descuento
+                        this.$watch('descuento', () => this.calcularNuevaCuentaConDescuento());
 
                         this.$watch(() => [this.newInteres, this.newFormaPago], ([interes, forma]) => {
                             this.mostrarRenovacionCompleta = interes && forma;
@@ -150,7 +176,6 @@ $cliente->loadMissing('creditos');
                             this.newFechaVencimiento = fechaInicio.toISOString().split('T')[0];
                         });
 
-                        // Forzar el primer cálculo al iniciar
                         this.$nextTick(() => {
                             this.$dispatch('input', { target: { value: this.newFormaPago } });
                         });
@@ -166,8 +191,8 @@ $cliente->loadMissing('creditos');
 
                     formatearFecha(fecha) {
                         if (!fecha) return '';
-                        const date = new Date(fecha.replace(' ', 'T')); // Convertir a formato ISO
-                        return date.toISOString().split('T')[0]; // Solo YYYY-MM-DD
+                        const date = new Date(fecha.replace(' ', 'T'));
+                        return date.toISOString().split('T')[0];
                     },
 
                     setDeactivationCredit(creditId, creditData, isRenewal = false) {
@@ -202,8 +227,11 @@ $cliente->loadMissing('creditos');
                         this.newCuenta = '';
                         this.newValorCuota = '';
                         this.newVencimientoDate = creditData.fechaVencimiento || '';
+                        
+                        // Resetear el descuento
+                        this.descuento = 0;
 
-                         this.isRenewal = isRenewal; // <--- Aquí guardamos el modo
+                        this.isRenewal = isRenewal;
                         this.showDeactivationModal = true;
                         this.open = false;
                     },
@@ -274,10 +302,11 @@ $cliente->loadMissing('creditos');
                                 id: this.deactivatingCreditId,
                                 valor_credito: parseFloat(this.aEntregar),
                                 porcentaje_interes: parseFloat(this.newInteres),
-                                dias_plazo: parseInt(this.newFormaPago), // forma de pago en días
+                                dias_plazo: parseInt(this.newFormaPago),
                                 fecha_vencimiento: this.newVencimientoDate,
                                 valor_cuota: parseFloat(this.newValorCuota),
                                 numero_cuotas: parseInt(this.newNumeroCuotas) || 1,
+                                descuento: parseFloat(this.descuento) || 0, // Agregar descuento
                                 medios_pago: this.pagos
                                     .filter(mp => mp.tipo && mp.monto && !isNaN(parseFloat(mp.monto)))
                                     .map(mp => ({
@@ -324,6 +353,7 @@ $cliente->loadMissing('creditos');
                                     nueva_cuenta: parseFloat(this.newCuenta),
                                     valor_cuota: parseFloat(this.newValorCuota),
                                     fecha_vencimiento: this.newVencimientoDate,
+                                    descuento: parseFloat(this.descuento) || 0, // Agregar descuento
                                 })
                             })
                             .then(r => r.json())
@@ -331,6 +361,7 @@ $cliente->loadMissing('creditos');
                                 if (data.message) {
                                     alert(data.message);
                                     this.showDeactivationModal = false;
+                                    location.reload(); // Recargar para ver los cambios
                                 } else {
                                     alert(data.error || 'Error al actualizar');
                                 }
@@ -633,6 +664,17 @@ $cliente->loadMissing('creditos');
                                                     disabled
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-600 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                             </div>
+                                            
+                                            <!-- Nuevo campo de Descuento -->
+                                            <div class="mb-3">
+                                                <label for="descuento"
+                                                    class="block text-sm font-medium text-gray-700">Descuento</label>
+                                                <input type="number" step="0.01" id="descuento" x-model="descuento"
+                                                    placeholder="Ingrese el descuento"
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                                <!-- <p class="mt-1 text-xs text-gray-500">El descuento se restará del saldo actual para calcular la nueva cuenta</p> -->
+                                            </div>
+                                            
                                             <div class="mb-3">
                                                 <label for="nuevo-interes"
                                                     class="block text-sm font-medium text-gray-700">Nuevo
@@ -792,6 +834,7 @@ $cliente->loadMissing('creditos');
                         -->
 
                             <button type="button" @click="showDeactivationModal = false"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                 Cancelar
                             </button>

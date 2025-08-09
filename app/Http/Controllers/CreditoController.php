@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\ConceptoCredito;
 use App\Models\Creditos;
+use App\Models\Abonos;
+use App\Models\Concepto;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +25,10 @@ class CreditoController extends Controller
                 'nueva_cuenta' => 'required|numeric',
                 'valor_cuota' =>'required|numeric',
                 'fecha_vencimiento' => 'required|date',
+                'descuento' => 'nullable|numeric|min:0', // Nuevo campo
             ]);
+
+            DB::beginTransaction();
 
             $credito = Creditos::find($request->credito_id);
 
@@ -31,6 +36,45 @@ class CreditoController extends Controller
                 return response()->json(['error' => 'Crédito no encontrado'], 404);
             }
 
+            // Aplicar descuento si se proporciona
+            if ($request->descuento && $request->descuento > 0) {
+                // Validar que el descuento no sea mayor al saldo actual
+                if ($request->descuento > $credito->saldo_actual) {
+                    return response()->json([
+                        'error' => 'El descuento no puede ser mayor al saldo actual'
+                    ], 400);
+                }
+
+                // Buscar el concepto "Abono de Descuento"
+                $conceptoDescuento = Concepto::where('nombre', 'Abono de Descuento')->first();
+                if (!$conceptoDescuento) {
+                    // Si no existe, crear el concepto
+                    $conceptoDescuento = Concepto::create([
+                        'nombre' => 'Abono de Descuento',
+                        'descripcion' => 'Descuento aplicado al crédito'
+                    ]);
+                }
+
+                // Crear un abono por el descuento
+                Abonos::create([
+                    'id_credito' => $credito->id_credito,
+                    'id_cliente' => $credito->id_cliente,
+                    'id_ruta' => $credito->id_ruta,
+                    'id_usuario' => auth()->id(),
+                    'fecha_pago' => now(),
+                    'monto_abono' => $request->descuento,
+                    'saldo_anterior' => $credito->saldo_actual,
+                    'saldo_posterior' => $credito->saldo_actual - $request->descuento,
+                    'observaciones' => 'Descuento aplicado en bajo cuenta',
+                    'id_concepto' => $conceptoDescuento->id,
+                    'estado' => true,
+                ]);
+
+                // Aplicar el descuento al crédito
+                $credito->aplicarDescuento($request->descuento);
+            }
+
+            // Actualizar los demás campos
             $credito->porcentaje_interes = $request->nuevo_interes;
             $credito->dias_plazo = $request->forma_pago;
             $credito->valor_cuota = $request->valor_cuota;
@@ -39,11 +83,28 @@ class CreditoController extends Controller
 
             $credito->save();
 
+            // Registrar en el log de actividad
+            \App\Models\LogActividad::registrar(
+                'Actualización de Crédito',
+                "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}" . 
+                ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
+                [
+                    'tabla_afectada' => 'creditos',
+                    'registro_id' => $credito->id_credito,
+                    'descuento_aplicado' => $request->descuento ?? 0,
+                    'cliente_id' => $credito->id_cliente,
+                ]
+            );
+
+            DB::commit();
+
             return response()->json([
-                'message' => 'Datos del crédito actualizados correctamente',
+                'message' => 'Datos del crédito actualizados correctamente' . 
+                           ($request->descuento ? ' con descuento aplicado' : ''),
                 'credito' => $credito
             ], 200);
         } catch (\Throwable $e) {
+            DB::rollBack();
             return response()->json([
                 'error' => 'Error al actualizar crédito',
                 'message' => $e->getMessage(),
@@ -52,70 +113,60 @@ class CreditoController extends Controller
         }
     }
 
-    /* public function renovar(Request $request)
-    {
-        Log::info('Llamada al método renovar');
-
-        $data = $request->json()->all(); // ✅ Lee el JSON enviado por fetch
-        Log::info('Datos recibidos:', $data);
-
-        DB::beginTransaction();
-
-        try {
-            // Buscar el crédito original
-            $credito = Creditos::findOrFail($data['id']);
-
-            // Actualizar datos del crédito
-            $credito->update([
-                'valor_credito'       => $data['valor_credito'],
-                'porcentaje_interes'  => $data['porcentaje_interes'],
-                'saldo_actual'        => $data['valor_credito'],
-                'forma_pago'          => null,
-                'dias_plazo'          => $data['dias_plazo'],
-                'fecha_credito'       => now(),
-                'fecha_vencimiento'   => $data['fecha_vencimiento'],
-                'valor_cuota'         => $data['valor_cuota'] ?? 0,
-                'numero_cuotas'       => $data['numero_cuotas'] ?? 0,
-            ]);
-
-            // Insertar métodos de pago en conceptos_credito
-            foreach ($data['medios_pago'] as $medio) {
-                ConceptoCredito::create([
-                    'id_credito'     => $credito->id_credito,
-                    'tipo_concepto'  => $medio['tipo'],   // ejemplo: 'Yape', 'Efectivo'
-                    'monto'          => $medio['monto'],
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json(['message' => 'Crédito renovado correctamente.'], 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error al renovar crédito: ' . $e->getMessage());
-
-            return response()->json([
-                'message' => 'Error al renovar crédito.',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
-    } */
-
     public function renovar(Request $request)
     {
         try {
+            DB::beginTransaction();
+
             // Buscar el crédito original
             $credito = Creditos::findOrFail($request->id);
+
+            // Aplicar descuento si se proporciona
+            if ($request->descuento && $request->descuento > 0) {
+                // Validar que el descuento no sea mayor al saldo actual
+                if ($request->descuento > $credito->saldo_actual) {
+                    return response()->json([
+                        'error' => 'El descuento no puede ser mayor al saldo actual'
+                    ], 400);
+                }
+
+                // Buscar el concepto "Abono de Descuento"
+                $conceptoDescuento = Concepto::where('nombre', 'Abono de Descuento')->first();
+                if (!$conceptoDescuento) {
+                    // Si no existe, crear el concepto
+                    $conceptoDescuento = Concepto::create([
+                        'nombre' => 'Abono de Descuento',
+                        'descripcion' => 'Descuento aplicado al crédito'
+                    ]);
+                }
+
+                // Crear un abono por el descuento
+                Abonos::create([
+                    'id_credito' => $credito->id_credito,
+                    'id_cliente' => $credito->id_cliente,
+                    'id_ruta' => $credito->id_ruta,
+                    'id_usuario' => auth()->id(),
+                    'fecha_pago' => now(),
+                    'monto_abono' => $request->descuento,
+                    'saldo_anterior' => $credito->saldo_actual,
+                    'saldo_posterior' => $credito->saldo_actual - $request->descuento,
+                    'observaciones' => 'Descuento aplicado en renovación',
+                    'id_concepto' => $conceptoDescuento->id,
+                    'estado' => true,
+                ]);
+
+                // Aplicar el descuento al crédito
+                $credito->aplicarDescuento($request->descuento);
+            }
 
             // Actualizar solo los campos permitidos (excluyendo forma_pago)
             $credito->valor_credito = $request->valor_credito;
             $credito->saldo_actual = $request->valor_credito;
-            /* $credito->valor_cuota = $request->valor_cuota; */
             $credito->numero_cuotas = $request->numero_cuotas;
             $credito->dias_plazo = $request->dias_plazo;
             $credito->porcentaje_interes = $request->porcentaje_interes;
             $credito->fecha_vencimiento = $request->fecha_vencimiento;
-            $credito->fecha_credito = now(); // o el valor que corresponda
+            $credito->fecha_credito = now();
 
             // Calcular días restantes
             $fechaHoy        = Carbon::now();
@@ -148,12 +199,29 @@ class CreditoController extends Controller
                 }
             }
 
+            // Registrar en el log de actividad
+            \App\Models\LogActividad::registrar(
+                'Renovación de Crédito',
+                "Crédito renovado para cliente: {$credito->cliente->nombre_completo}" . 
+                ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
+                [
+                    'tabla_afectada' => 'creditos',
+                    'registro_id' => $credito->id_credito,
+                    'descuento_aplicado' => $request->descuento ?? 0,
+                    'cliente_id' => $credito->id_cliente,
+                ]
+            );
+
+            DB::commit();
+
             return response()->json([
-                'message' => 'Crédito renovado correctamente.',
+                'message' => 'Crédito renovado correctamente' . 
+                           ($request->descuento ? ' con descuento aplicado' : '') . '.',
                 'cuota_diaria_calculada' => $cuotaDiaria,
                 'dias_restantes' => $diasRestantes
             ], 200);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => 'Error al renovar crédito.',
                 'error' => $e->getMessage(),
