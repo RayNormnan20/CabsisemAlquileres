@@ -142,7 +142,7 @@ class CreditosResource extends Resource
                                 Forms\Components\Section::make('')
                                     ->schema([
                                         Select::make('id_cliente')
-                                            ->label('Cliente *')
+                                            ->label('Cliente')
                                             ->options(function () {
                                                 $clienteId = request()->query('cliente_id');
 
@@ -167,7 +167,7 @@ class CreditosResource extends Resource
                                             ->columnSpanFull(),
 
                                         DatePicker::make('fecha_credito')
-                                            ->label('Fecha del Crédito *')
+                                            ->label('Fecha del Crédito')
                                             ->default(now())
                                             ->required()
                                             ->displayFormat('d/m/Y')
@@ -184,13 +184,19 @@ class CreditosResource extends Resource
                                             }),
 
                                         TextInput::make('valor_credito')
-                                            ->label('Valor del Crédito *')
+                                            ->label('Valor del Crédito')
                                             ->numeric()
                                             ->required()
                                             ->minValue(1)
                                             ->columnSpanFull()
+                                            ->placeholder('Ingrese el valor del crédito')
+
                                             ->helperText('Por favor ingresa el valor de Crédito')
                                             ->reactive()
+                                            ->extraInputAttributes([
+                                                'class' => 'bg-cyan-100 text-cyan-900',
+                                                'style' => 'background-color:rgb(114, 237, 241) !important; color:rgb(0, 0, 0) !important;'
+                                            ])
                                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                                 $porcentaje = (float) $get('porcentaje_interes');
                                                 $dias = (int) $get('dias_plazo');
@@ -201,7 +207,7 @@ class CreditosResource extends Resource
                                             }),
 
                                         TextInput::make('porcentaje_interes') // reutilizado como cuota diaria si es adicional
-                                            ->label(fn (callable $get) => $get('es_adicional') ? 'Cuota Diaria *' : 'Porcentaje *')
+                                            ->label(fn (callable $get) => $get('es_adicional') ? 'Cuota Diaria' : 'Porcentaje')
                                             ->numeric()
                                             ->required()
                                             ->default(10) // Valor por defecto: 10%
@@ -223,7 +229,7 @@ class CreditosResource extends Resource
 
 
                                         Select::make('forma_pago')
-                                            ->label('Forma de Pago *')
+                                            ->label('Forma de Pago')
                                             ->options(TipoPago::where('activo', true)->pluck('nombre', 'id_forma_pago'))
                                             ->default(function () {
                                                 return TipoPago::where('nombre', 'Diario')->value('id_forma_pago');
@@ -245,7 +251,7 @@ class CreditosResource extends Resource
                                             }),
 
                                         TextInput::make('dias_plazo')
-                                        ->label('Días *')
+                                        ->label('Días')
                                         ->numeric()
                                         ->required()
                                         ->default(30) // Valor por defecto: 30 días
@@ -284,18 +290,38 @@ class CreditosResource extends Resource
                             Forms\Components\Group::make([
                                 Forms\Components\Section::make('')
                                     ->schema([
-                                        TextInput::make('saldo_actual')
-                                            ->label('Saldo')
-                                            ->numeric()
-                                            ->disabled()
-                                            ->columnSpanFull()
+                                        // Saldo y Valor de Cuota en una sola fila
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('saldo_actual')
+                                                    ->label('Saldo')
+                                                    ->numeric()
+                                                    ->extraInputAttributes([
+                                                        'class' => 'bg-cyan-100 text-cyan-900',
+                                                        'style' => 'background-color:rgb(201, 201, 201) !important; color:rgb(0, 0, 0) !important;'
+                                                    ])
+                                                    ->disabled(),
+
+                                                TextInput::make('valor_cuota')
+                                                    ->label('Valor de la Cuota')
+                                                    ->numeric()
+                                                    ->extraInputAttributes([
+                                                        'class' => 'bg-cyan-100 text-cyan-900',
+                                                        'style' => 'background-color:rgb(201, 201, 201) !important; color:rgb(0, 0, 0) !important;'
+                                                    ])
+                                                    ->disabled(),
+                                            ])
                                             ->visible(fn (callable $get) => !$get('es_adicional')),
 
-                                        TextInput::make('valor_cuota')
-                                            ->label('Valor de la Cuota')
-                                            ->numeric()
-                                            ->disabled()
+                                        // Campo para nombre Yape
+                                        TextInput::make('nombre_yape')
+                                            ->label('Nombre Yape')
+                                            ->placeholder('Ingrese el nombre para Yape')
                                             ->columnSpanFull()
+                                            ->extraInputAttributes([
+                                                'class' => 'bg-cyan-100 text-cyan-900',
+                                                'style' => 'background-color:rgb(114, 237, 241) !important; color:rgb(0, 0, 0) !important;'
+                                            ])
                                             ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         TextInput::make('numero_cuotas')
@@ -303,6 +329,10 @@ class CreditosResource extends Resource
                                             ->numeric()
                                             ->disabled()
                                             ->columnSpanFull()
+                                            ->extraInputAttributes([
+                                                'class' => 'bg-cyan-100 text-cyan-900',
+                                                'style' => 'background-color:rgb(201, 201, 201) !important; color:rgb(0, 0, 0) !important;'
+                                            ])
                                             ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         DatePicker::make('fecha_vencimiento')
@@ -330,19 +360,78 @@ class CreditosResource extends Resource
                                                     ->options([
                                                         'Efectivo' => 'Efectivo',
                                                         'Yape' => 'Yape',
-                                                        'Caja' => 'Caja',
-                                                        'Saldo renovación' => 'Saldo renovación',
-                                                        'Abono para completar préstamo' => 'Abono para completar préstamo',
+                                                     //   'Caja' => 'Caja',
+                                                      //  'Saldo renovación' => 'Saldo renovación',
+                                                      //  'Abono para completar préstamo' => 'Abono para completar préstamo',
                                                     ])
                                                     ->required()
                                                     ->reactive(), // Para mostrar/ocultar foto_comprobante según valor
-
+                                                
                                                 TextInput::make('monto')
                                                     ->label('Monto')
                                                     ->numeric()
-                                                    ->required(),
-
-                                               FileUpload::make('foto_comprobante')
+                                                    ->required()
+                                                    ->reactive()
+                                                    ->afterStateUpdated(function ($state, callable $get, callable $set, $livewire) {
+                                                        // Solo procesar si hay un monto válido
+                                                        if (!$state || !is_numeric($state)) {
+                                                            return;
+                                                        }
+                                                        
+                                                        $valorCredito = (float) ($livewire->data['valor_credito'] ?? 0);
+                                                        $conceptos = $livewire->data['conceptosCredito'] ?? [];
+                                                        
+                                                        $sumaTotal = 0;
+                                                        foreach ($conceptos as $concepto) {
+                                                            if (isset($concepto['monto']) && is_numeric($concepto['monto'])) {
+                                                                $sumaTotal += (float) $concepto['monto'];
+                                                            }
+                                                        }
+                                                        
+                                                        // Solo mostrar notificación si hay diferencia significativa (falta dinero)
+                                                        $diferencia = $valorCredito - $sumaTotal;
+                                                        
+                                                        if ($diferencia > 0.01) { // Falta dinero
+                                                            \Filament\Notifications\Notification::make()
+                                                                ->id('credito-suma-info')
+                                                                ->title('Información')
+                                                                ->body("Falta S/ " . number_format($diferencia, 2) . " para completar el valor del crédito")
+                                                                ->warning()
+                                                                ->send();
+                                                        } elseif ($diferencia < -0.01) { // Excede el valor
+                                                            \Filament\Notifications\Notification::make()
+                                                                ->id('credito-suma-exceso')
+                                                                ->title('Información')
+                                                                ->body("La suma excede el valor del crédito por S/ " . number_format(abs($diferencia), 2))
+                                                                ->warning()
+                                                                ->send();
+                                                        }
+                                                        // No mostrar notificación cuando coincide exactamente para evitar spam
+                                                        
+                                                        // Si el tipo es Yape, registrar en yape_clientes
+                                                        if ($get('tipo_concepto') === 'Yape' && $state) {
+                                                            $nombreYape = $livewire->data['nombre_yape'] ?? null;
+                                                            $clienteId = $livewire->data['id_cliente'] ?? null;
+                                                            
+                                                            if ($nombreYape && $clienteId) {
+                                                                // Crear o actualizar registro en yape_clientes
+                                                                \App\Models\YapeCliente::updateOrCreate(
+                                                                    [
+                                                                        'id_cliente' => $clienteId,
+                                                                        'nombre' => $nombreYape,
+                                                                    ],
+                                                                    [
+                                                                        'monto' => $state,
+                                                                        'entregar' => $state,
+                                                                        'user_id' => auth()->id(),
+                                                                    ]
+                                                                );
+                                                            }
+                                                        }
+                                                    }),
+                                                   
+                                                
+                                                FileUpload::make('foto_comprobante')
                                                     ->label(fn ($get) => match ($get('tipo_concepto')) {
                                                         'Yape' => 'Comprobante Yape',
                                                         'Efectivo' => 'Comprobante Efectivo',

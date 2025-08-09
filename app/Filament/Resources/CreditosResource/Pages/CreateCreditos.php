@@ -8,6 +8,7 @@ use App\Models\Concepto;
 use App\Models\Creditos;
 use App\Models\LogActividad;
 use App\Models\TipoPago;
+use App\Models\YapeCliente;
 use Carbon\Carbon;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
@@ -149,6 +150,7 @@ class CreateCreditos extends CreateRecord
     protected function handleRecordCreation(array $data): Model
     {
         try {
+            // Solo crear el crédito principal, sin manejar yape_clientes aquí
             return parent::handleRecordCreation($data);
         } catch (\DivisionByZeroError $e) {
             throw new \Exception('Error en los cálculos: Verifique los valores ingresados');
@@ -169,6 +171,27 @@ class CreateCreditos extends CreateRecord
 
     protected function afterCreate(): void
     {
+        // Verificar si hay conceptos de tipo Yape para registrar en yape_clientes
+        $this->record->load('conceptosCredito');
+        
+        foreach ($this->record->conceptosCredito as $concepto) {
+            if ($concepto->tipo_concepto === 'Yape') {
+                // Determinar el nombre a usar: nombre_yape o nombre del cliente
+                $nombreYape = !empty($this->data['nombre_yape']) 
+                    ? $this->data['nombre_yape'] 
+                    : $this->record->cliente->nombre_completo;
+
+                YapeCliente::create([
+                    'id_cliente' => $this->record->id_cliente,
+                    'nombre' => $nombreYape,
+                    'user_id' => auth()->id(),
+                    'monto' => $concepto->monto,
+                    'entregar' => $concepto->monto,
+                ]);
+                break; // Solo crear un registro por crédito
+            }
+        }
+
         $clienteNombre = $this->record->cliente?->nombre . ' ' . $this->record->cliente?->apellido;
         $rutaNombre = $this->record->cliente?->ruta?->nombre ?? 'Ruta desconocida';
 
