@@ -113,6 +113,87 @@ class CreditoController extends Controller
         }
     }
 
+    public function habilitarRenovacion(Request $request)
+    {
+        try {
+            $request->validate([
+                'credito_id' => 'required|exists:creditos,id_credito',
+            ]);
+
+            DB::beginTransaction();
+
+            $credito = Creditos::findOrFail($request->credito_id);
+
+            // Verificar que el crédito tenga saldo pendiente
+            if ($credito->saldo_actual <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El crédito ya está pagado y no puede ser renovado.',
+                ], 400);
+            }
+
+            // Verificar que no esté ya habilitado para renovación
+            if ($credito->por_renovar) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El crédito ya está habilitado para renovación.',
+                ], 400);
+            }
+
+            // Verificar que el crédito esté vencido
+            $fechaHoy = Carbon::now();
+            $fechaVencimiento = Carbon::parse($credito->fecha_vencimiento);
+            
+            if (!$fechaHoy->gt($fechaVencimiento)) {
+                $diasRestantes = $fechaVencimiento->diffInDays($fechaHoy);
+                return response()->json([
+                    'success' => false,
+                    'message' => "El crédito aún no está vencido. Faltan {$diasRestantes} días para el vencimiento.",
+                ], 400);
+            }
+
+            $diasVencidos = $fechaHoy->diffInDays($fechaVencimiento);
+
+            // Habilitar para renovación
+            $credito->por_renovar = true;
+            $credito->save();
+
+            // Registrar en el log de actividad
+            \App\Models\LogActividad::registrar(
+                'Habilitación para Renovación',
+                "Crédito habilitado para renovación - Cliente: {$credito->cliente->nombre_completo}, Ruta: {$credito->ruta->nombre}, Días vencidos: {$diasVencidos}",
+                [
+                    'tabla_afectada' => 'creditos',
+                    'registro_id' => $credito->id_credito,
+                    'cliente_id' => $credito->id_cliente,
+                    'ruta_id' => $credito->id_ruta,
+                    'dias_vencidos' => $diasVencidos
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Crédito habilitado para renovación exitosamente. Días vencidos: {$diasVencidos}",
+                'credito' => [
+                    'id' => $credito->id_credito,
+                    'cliente' => $credito->cliente->nombre_completo,
+                    'por_renovar' => $credito->por_renovar,
+                    'dias_vencidos' => $diasVencidos
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al habilitar renovación: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function renovar(Request $request)
     {
         try {
@@ -167,6 +248,8 @@ class CreditoController extends Controller
             $credito->porcentaje_interes = $request->porcentaje_interes;
             $credito->fecha_vencimiento = $request->fecha_vencimiento;
             $credito->fecha_credito = now();
+            // Cambiar por_renovar a false ya que se está procesando la renovación
+            $credito->por_renovar = false;
 
             // Calcular días restantes
             $fechaHoy        = Carbon::now();

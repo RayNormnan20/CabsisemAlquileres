@@ -3,15 +3,19 @@
 namespace App\Filament\Resources;
 
 use App\Models\PlanillaRecaudador;
+use App\Models\Creditos;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
 use App\Filament\Resources\PlanillaRecaudadorResource\Pages;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
+use Filament\Notifications\Notification;
 
 class PlanillaRecaudadorResource extends Resource
 {
@@ -84,7 +88,6 @@ class PlanillaRecaudadorResource extends Resource
                     ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
                     ->sortable(),
 
-
                 TextColumn::make('dias_atraso')
                     ->label('Atraso (días)')
                     ->getStateUsing(function ($record) {
@@ -94,6 +97,65 @@ class PlanillaRecaudadorResource extends Resource
                         $dias = self::getDiasAtraso($record);
                         return $dias > 0 ? 'danger' : 'success';
                     }),
+                    /*
+                BadgeColumn::make('estado_renovacion')
+                    ->label('Estado')
+                    ->getStateUsing(function ($record) {
+                        $credito = Creditos::find($record->id_credito);
+                        $diasAtraso = self::getDiasAtraso($record);
+                        
+                        if ($record->saldo_actual <= 0) {
+                            return 'Pagado';
+                        } elseif ($credito && $credito->por_renovar) {
+                            return 'Por Renovar';
+                        } elseif ($diasAtraso > 0) {
+                            return 'Vencido';
+                        } else {
+                            return 'Activo';
+                        }
+                    })
+                    ->colors([
+                        'gray' => 'Pagado',
+                        'warning' => 'Por Renovar',
+                        'danger' => 'Vencido',
+                        'success' => 'Activo',
+                    ]),
+                    */
+            ])
+            ->actions([
+                Action::make('habilitar_renovacion')
+                    ->label('Habilitar Renovación')
+                    ->icon('heroicon-o-refresh')
+                    ->color('warning')
+                    ->visible(function ($record) {
+                        $credito = Creditos::find($record->id_credito);
+                        $diasAtraso = self::getDiasAtraso($record);
+                        
+                        // Solo mostrar si el crédito está vencido, tiene saldo y no está marcado para renovar
+                        return $record->saldo_actual > 0 && 
+                               $diasAtraso > 0 && 
+                               $credito && 
+                               !$credito->por_renovar;
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirmar Habilitación para Renovación')
+                    ->modalSubheading(function ($record) {
+                        $diasAtraso = self::getDiasAtraso($record);
+                        return "¿Está seguro que desea habilitar este crédito para renovación?\n\nCliente: {$record->cliente_completo}\nDías vencidos: {$diasAtraso}\nSaldo: S/ " . number_format($record->saldo_actual, 2);
+                    })
+                    ->action(function ($record) {
+                        $credito = Creditos::find($record->id_credito);
+                        
+                        if ($credito) {
+                            $credito->por_renovar = true;
+                            $credito->save();
+                            
+                            Notification::make()
+                                ->title('Crédito habilitado para renovación')
+                                ->warning()
+                                ->send();
+                        }
+                    })
             ])
             ->filters([
                 SelectFilter::make('ruta')

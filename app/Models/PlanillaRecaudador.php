@@ -31,4 +31,10 @@ public function ruta()
 // Ahora sí existe id_ruta en la vista
 return $this->belongsTo(Ruta::class, 'id_ruta', 'id_ruta');
 }
+
+// Relación con el crédito para acceder al campo por_renovar
+public function credito()
+{
+    return $this->belongsTo(Creditos::class, 'id_credito', 'id_credito');
+}
 }
