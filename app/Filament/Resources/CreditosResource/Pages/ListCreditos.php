@@ -35,8 +35,8 @@ class ListCreditos extends ListRecords
             $this->currentRutaName = 'Todas las Rutas';
         }
 
-        // Mantener el estado del filtro en la sesión
-        $this->mostrarSoloActivos = Session::get('creditos_mostrar_solo_activos', true);
+        // Cambiar el comportamiento: cuando hay un cliente seleccionado, mostrar todos los créditos por defecto
+        $this->mostrarSoloActivos = Session::get('creditos_mostrar_solo_activos', false); // Cambiar de true a false
     }
 
     public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
@@ -90,10 +90,16 @@ class ListCreditos extends ListRecords
 
         if ($this->clienteId) {
             $query->where('creditos.id_cliente', $this->clienteId);
+            // Cuando se selecciona un cliente específico, mostrar todos los créditos (activos y pagados)
+            // No aplicar el filtro de solo activos automáticamente
         }
 
-        // Aplicar filtro de créditos activos si está habilitado
-        if ($this->mostrarSoloActivos) {
+        // Solo aplicar filtro de créditos activos si está explícitamente habilitado Y no hay cliente específico seleccionado
+        // O si el usuario ha activado manualmente el filtro
+        if ($this->mostrarSoloActivos && !$this->clienteId) {
+            $query->where('creditos.saldo_actual', '>', 0);
+        } elseif ($this->mostrarSoloActivos && $this->clienteId) {
+            // Si hay cliente seleccionado y el usuario quiere ver solo activos, aplicar el filtro
             $query->where('creditos.saldo_actual', '>', 0);
         }
 
@@ -126,6 +132,11 @@ class ListCreditos extends ListRecords
     {
         if ($property === 'clienteId') {
             $this->clienteId = $this->clienteId ? (int) $this->clienteId : null;
+            // Cuando se selecciona un cliente, automáticamente mostrar todos los créditos
+            if ($this->clienteId) {
+                $this->mostrarSoloActivos = false;
+                Session::put('creditos_mostrar_solo_activos', false);
+            }
             $this->resetPage();
         }
     }

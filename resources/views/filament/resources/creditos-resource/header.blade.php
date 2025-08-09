@@ -2,7 +2,7 @@
 $clienteIds = array_keys($clientes->toArray());
 $currentIndex = array_search($clienteId, $clienteIds);
 $anteriorId = $currentIndex > 0 ? $clienteIds[$currentIndex - 1] : null;
-$siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex + 1] : null; 
+$siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex + 1] : null;
 @endphp
 {{-- SELECTOR DE CLIENTE CON NAVEGACIÓN Y FILTRO --}}
 <div class="mb-6">
@@ -340,6 +340,58 @@ $cliente->loadMissing('creditos');
                                 alert('Error de conexión.');
                             });
                         }
+                    },
+
+                    confirmCancellation() {
+                        @php
+                            $creditoActivo = $cliente->creditoActivo();
+                        @endphp
+
+                        @if($creditoActivo)
+                        // Verificar que el saldo actual sea mayor a 0
+                        const saldoActual = {{ $creditoActivo->saldo_actual ?? 0 }};
+
+                        if (saldoActual <= 0) {
+                            alert('No se puede cancelar un crédito con saldo actual de 0 o menor.');
+                            return;
+                        }
+
+                        // Confirmar la cancelación
+                        if (confirm(`¿Está seguro de que desea cancelar este crédito?\nSaldo actual: S/ ${saldoActual.toFixed(2)}`)) {
+                            const creditoId = {{ $creditoActivo->id_credito ?? 'null' }};
+
+                            if (!creditoId) {
+                                alert('Error: No se pudo obtener el ID del crédito.');
+                                return;
+                            }
+
+                            fetch('/creditos/cancelar', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                                },
+                                body: JSON.stringify({
+                                    credito_id: creditoId
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    alert(data.message || 'Crédito cancelado exitosamente.');
+                                    location.reload();
+                                } else {
+                                    alert(data.error || 'Error al cancelar el crédito.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Error de conexión al cancelar el crédito.');
+                            });
+                        }
+                        @else
+                        alert('No hay crédito activo para cancelar.');
+                        @endif
                     }
 
                 }" x-init="init()" class="flex items-center space-x-2">
@@ -352,7 +404,12 @@ $cliente->loadMissing('creditos');
             @if($cliente->creditos->isNotEmpty())
             {{-- Grupo para el botón Editar Crédito y el Dropdown de Acciones --}}
             <div class="flex items-center space-x-2">
-                <a href="{{ route('filament.resources.creditos.edit', ['record' => $cliente->creditos->first()->id_credito]) }}"
+                @php
+                $creditoActivo = $cliente->creditoActivo();
+                @endphp
+
+                @if($creditoActivo)
+                <a href="{{ route('filament.resources.creditos.edit', ['record' => $creditoActivo->id_credito]) }}"
                     class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     Editar Crédito
                 </a>
@@ -392,14 +449,14 @@ $cliente->loadMissing('creditos');
                                 @endif
 
                                 <a href="#" @click.prevent="setDeactivationCredit(
-                                        {{ $cliente->creditos->first()->id_credito }},
+                                        {{ $creditoActivo->id_credito }},
                                         {
                                             clientName: '{{ $cliente->nombre_completo ?? $cliente->nombre }}', // Ajusta según el campo de nombre de tu cliente
-                                            capital: {{ $cliente->creditos->first()->valor_credito ?? 0 }},
-                                            interes: {{ $cliente->creditos->first()->porcentaje_interes ?? 0 }},
-                                            saldo: {{ $cliente->creditos->first()->saldo_actual ?? 0 }},
-                                            abonos: {{ $cliente->creditos->first()->abonos ?? 0 }},
-                                            fechaInicio: '{{ $cliente->creditos->first()->fecha_credito ?? '' }}', // <- FECHA DE INICIO
+                                            capital: {{ $creditoActivo->valor_credito ?? 0 }},
+                                            interes: {{ $creditoActivo->porcentaje_interes ?? 0 }},
+                                            saldo: {{ $creditoActivo->saldo_actual ?? 0 }},
+                                            abonos: {{ $creditoActivo->abonos ?? 0 }},
+                                            fechaInicio: '{{ $creditoActivo->fecha_credito ?? '' }}', // <- FECHA DE INICIO
                                             fechaVencimiento: '{{ now()->format('Y-m-d') }}' // Fecha actual
                                         },
                                         false
@@ -407,19 +464,20 @@ $cliente->loadMissing('creditos');
                                     tabindex="-1" id="menu-item-1">
                                     Bajo Cuenta
                                 </a>
-                                <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
-                                    role="menuitem" tabindex="-1" id="menu-item-2">Cancelado</a>
+                                <a href="#" @click.prevent="confirmCancellation()"
+                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem"
+                                    tabindex="-1" id="menu-item-2">Cancelado</a>
                                 <a href="#" @click.prevent="setDeactivationCredit(
-                                            {{ $cliente->creditos->first()->id_credito }},
+                                            {{ $creditoActivo->id_credito }},
                                             {
                                                 clientName: '{{ $cliente->nombre_completo ?? $cliente->nombre }}',
-                                                capital: {{ $cliente->creditos->first()->valor_credito ?? 0 }},
-                                                interes: {{ $cliente->creditos->first()->porcentaje_interes ?? 0 }},
-                                                saldo: {{ $cliente->creditos->first()->saldo_actual ?? 0 }},
-                                                abonos: {{ $cliente->creditos->first()->abonos ?? 0 }},
-                                                saldoActual: {{ $cliente->creditos->first()->saldo_actual ?? 0 }},
-                                                fechaInicio: '{{ $cliente->creditos->first()->fecha_credito ?? '' }}',
-                                                fechaVencimiento: '{{ $cliente->creditos->first()->fecha_vencimiento ?? '' }}',
+                                                capital: {{ $creditoActivo->valor_credito ?? 0 }},
+                                                interes: {{ $creditoActivo->porcentaje_interes ?? 0 }},
+                                                saldo: {{ $creditoActivo->saldo_actual ?? 0 }},
+                                                abonos: {{ $creditoActivo->abonos ?? 0 }},
+                                                saldoActual: {{ $creditoActivo->saldo_actual ?? 0 }},
+                                                fechaInicio: '{{ $creditoActivo->fecha_credito ?? '' }}',
+                                                fechaVencimiento: '{{ $creditoActivo->fecha_vencimiento ?? '' }}',
                                             },
                                             true
                                     )" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">
@@ -429,6 +487,13 @@ $cliente->loadMissing('creditos');
                         </div>
                     </div>
                 </div>
+                @else
+                {{-- Si no hay crédito activo, mostrar solo botón de crear --}}
+                <a href="{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente]) }}"
+                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Crear Crédito
+                </a>
+                @endif
             </div>
             @else
             <a href="{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente]) }}"
@@ -498,7 +563,8 @@ $cliente->loadMissing('creditos');
                                             </div>
                                             <div>
                                                 <span class="block text-sm text-gray-600">Días Transcurridos</span>
-                                                <span x-text="calcularDiasTranscurridos(fechaInicio)" class="text-lg text-indigo-700"></span>
+                                                <span x-text="calcularDiasTranscurridos(fechaInicio)"
+                                                    class="text-lg text-indigo-700"></span>
                                             </div>
                                         </div>
                                     </div>
@@ -710,7 +776,7 @@ $cliente->loadMissing('creditos');
                                 x-text="isRenewal ? 'Confirmar Renovación' : 'Confirmar Baja de Cuenta'">
                             </button>
 
-                                <!--
+                            <!--
                             <button type="button" @click="console.log({
                                         saldoActual,
                                         renovacion,
@@ -749,7 +815,7 @@ $cliente->loadMissing('creditos');
             <div><span class="font-medium">Celular:</span> {{ $cliente->celular }}</div>
             <div><span class="font-medium">Teléfono:</span> {{ $cliente->telefono }}</div>
             <div><span class="font-medium">Dirección:</span> {{ $cliente->direccion }}</div>
-           <!-- <div><span class="font-medium">Negocio/Alias:</span> {{ $cliente->nombre_negocio }}</div> -->
+            <!-- <div><span class="font-medium">Negocio/Alias:</span> {{ $cliente->nombre_negocio }}</div> -->
 
             <div><span class="font-medium">Ciudad:</span> {{ $cliente->ciudad }}</div>
             <div>

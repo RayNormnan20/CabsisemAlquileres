@@ -161,4 +161,80 @@ class CreditoController extends Controller
         }
     }
 
+    public function cancelar(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'credito_id' => 'required|exists:creditos,id_credito',
+            ]);
+
+            // Buscar el crédito
+            $credito = Creditos::findOrFail($request->credito_id);
+
+            // Verificar que el crédito tenga saldo pendiente
+            if ($credito->saldo_actual <= 0) {
+                return response()->json([
+                    'message' => 'El crédito ya está cancelado.',
+                ], 400);
+            }
+
+            // Usar el método registrarConConceptos para mantener consistencia
+            $datosAbono = [
+                'id_credito' => $credito->id_credito,
+                'id_cliente' => $credito->id_cliente,
+                'id_ruta' => $credito->id_ruta,
+                'id_usuario' => auth()->id(),
+                'fecha_pago' => now(),
+                'monto_abono' => $credito->saldo_actual,
+                'saldo_anterior' => $credito->saldo_actual,
+                'saldo_posterior' => 0, // ✅ Agregar este campo para evitar el error SQL
+                'observaciones' => 'Cancelación de crédito',
+            ];
+
+            $conceptos = [
+                [
+                    'id_usuario' => auth()->id(),
+                    'tipo_concepto' => 'Cancelado',
+                    'monto' => $credito->saldo_actual,
+                    'referencia' => 'Cancelación de crédito',
+                ]
+            ];
+
+            // Crear el abono con sus conceptos usando el método estándar
+            $abono = \App\Models\Abonos::registrarConConceptos($datosAbono, $conceptos);
+
+            // Registrar en el log de actividad
+            \App\Models\LogActividad::registrar(
+                'Cancelación de Crédito',
+                "Crédito cancelado para cliente: {$credito->cliente->nombre_completo}, Ruta: {$credito->ruta->nombre}, Monto: S/ " . number_format($abono->monto_abono, 2),
+                [
+                    'tabla_afectada' => 'creditos',
+                    'registro_id' => $credito->id_credito,
+                    'monto_cancelado' => $abono->monto_abono,
+                    'cliente_id' => $credito->id_cliente,
+                    'ruta_id' => $credito->id_ruta
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Crédito cancelado correctamente.',
+                'abono_id' => $abono->id_abono,
+                'monto_cancelado' => $abono->monto_abono
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al cancelar crédito: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Error al cancelar crédito.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }

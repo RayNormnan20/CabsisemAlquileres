@@ -75,7 +75,7 @@ class Abonos extends Model
                     $query->where('tipo_concepto', 'Yape');
                 })
                 ->sum('monto_abono');
-            
+
             YapeCliente::where('id', $this->id_yape_cliente)
                 ->update(['entregar' => $totalEntregado]);
         }

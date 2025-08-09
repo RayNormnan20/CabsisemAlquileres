@@ -138,6 +138,7 @@ return array(
     'App\\Http\\Controllers\\CreditoController' => $baseDir . '/app/Http/Controllers/CreditoController.php',
     'App\\Http\\Controllers\\RoadMap\\DataController' => $baseDir . '/app/Http/Controllers/RoadMap/DataController.php',
     'App\\Http\\Controllers\\RutaController' => $baseDir . '/app/Http/Controllers/RutaController.php',
+    'App\\Http\\Controllers\\YapeClienteController' => $baseDir . '/app/Http/Controllers/YapeClienteController.php',
     'App\\Http\\Kernel' => $baseDir . '/app/Http/Kernel.php',
     'App\\Http\\Livewire\\CustomSelectModal' => $baseDir . '/app/Http/Livewire/CustomSelectModal.php',
     'App\\Http\\Livewire\\ModalWithSelect' => $baseDir . '/app/Http/Livewire/ModalWithSelect.php',

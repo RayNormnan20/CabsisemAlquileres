@@ -204,6 +204,7 @@ class CreditosResource extends Resource
                                             ->label(fn (callable $get) => $get('es_adicional') ? 'Cuota Diaria *' : 'Porcentaje *')
                                             ->numeric()
                                             ->required()
+                                            ->default(10) // Valor por defecto: 10%
                                             ->minValue(0)
                                             ->maxValue(100)
                                             ->columnSpanFull()
@@ -247,6 +248,7 @@ class CreditosResource extends Resource
                                         ->label('Días *')
                                         ->numeric()
                                         ->required()
+                                        ->default(30) // Valor por defecto: 30 días
                                         ->minValue(1)
                                         ->columnSpanFull()
                                         ->reactive()

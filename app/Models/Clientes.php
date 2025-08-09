@@ -113,4 +113,10 @@ class Clientes extends Model
     {
         return $this->foto2_path ? asset('storage/' . $this->foto2_path) : null;
     }
+
+    // Método para obtener el crédito activo del cliente
+    public function creditoActivo()
+    {
+        return $this->creditos()->where('saldo_actual', '>', 0)->first();
+    }
 }

@@ -999,6 +999,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'App\\Http\\Controllers\\CreditoController' => __DIR__ . '/../..' . '/app/Http/Controllers/CreditoController.php',
         'App\\Http\\Controllers\\RoadMap\\DataController' => __DIR__ . '/../..' . '/app/Http/Controllers/RoadMap/DataController.php',
         'App\\Http\\Controllers\\RutaController' => __DIR__ . '/../..' . '/app/Http/Controllers/RutaController.php',
+        'App\\Http\\Controllers\\YapeClienteController' => __DIR__ . '/../..' . '/app/Http/Controllers/YapeClienteController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Livewire\\CustomSelectModal' => __DIR__ . '/../..' . '/app/Http/Livewire/CustomSelectModal.php',
         'App\\Http\\Livewire\\ModalWithSelect' => __DIR__ . '/../..' . '/app/Http/Livewire/ModalWithSelect.php',
