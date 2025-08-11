@@ -73,38 +73,37 @@ class ListCreditos extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        // Si no hay cliente seleccionado, retornar consulta vacía
+        // ✅ NUEVA LÓGICA: Solo mostrar créditos cuando hay cliente seleccionado
+
+        // Si NO hay cliente seleccionado, mostrar tabla vacía
         if (!$this->clienteId) {
-            return parent::getTableQuery()->whereRaw('1 = 0'); // Consulta que no retorna resultados
+            return parent::getTableQuery()->whereRaw('1 = 0'); // Tabla vacía por defecto
         }
 
+        // ✅ SOLO cuando hay cliente seleccionado, mostrar sus créditos
         $query = parent::getTableQuery();
+
+        // MANTENER EAGER LOADING para evitar N+1 queries
+        $query->with(['cliente', 'ruta', 'tipoPago', 'abonos', 'conceptosCredito']);
 
         $query->join('clientes', 'creditos.id_cliente', '=', 'clientes.id_cliente');
 
+        // Filtrar por ruta si está seleccionada
         if ($this->currentRutaId) {
             $query->where('clientes.id_ruta', $this->currentRutaId);
         }
 
         $query->where('clientes.activo', true);
 
-        if ($this->clienteId) {
-            $query->where('creditos.id_cliente', $this->clienteId);
-            // Cuando se selecciona un cliente específico, mostrar todos los créditos (activos y pagados)
-            // No aplicar el filtro de solo activos automáticamente
-        }
+        // ✅ FILTRAR POR CLIENTE ESPECÍFICO (requerido)
+        $query->where('creditos.id_cliente', $this->clienteId);
 
-        // Solo aplicar filtro de créditos activos si está explícitamente habilitado Y no hay cliente específico seleccionado
-        // O si el usuario ha activado manualmente el filtro
-        if ($this->mostrarSoloActivos && !$this->clienteId) {
-            $query->where('creditos.saldo_actual', '>', 0);
-        } elseif ($this->mostrarSoloActivos && $this->clienteId) {
-            // Si hay cliente seleccionado y el usuario quiere ver solo activos, aplicar el filtro
+        // Aplicar filtro de activos si está habilitado
+        if ($this->mostrarSoloActivos) {
             $query->where('creditos.saldo_actual', '>', 0);
         }
 
         $query->orderBy('creditos.fecha_credito', 'desc');
-
         $query->select('creditos.*');
 
         return $query;

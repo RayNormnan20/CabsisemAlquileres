@@ -1,24 +1,39 @@
 #!/bin/bash
 
-# Lanzar el worker de colas en background
-php artisan queue:work &
+echo "🚀 Iniciando aplicación en producción..."
 
-# Ejecutar migraciones (para evitar errores, espera a que termine)
+# Ejecutar migraciones
+echo "📊 Ejecutando migraciones..."
 php artisan migrate --force
 
-# Ejecutar seeders solo si es necesario (por ejemplo, ambiente dev)
-php artisan db:seed --force
-
-# Construir assets (en producción, mejor que esto se haga antes en build)
-npm run build
-
-# Limpiar y optimizar cache de Laravel
+# Limpiar cachés existentes
+echo "🧹 Limpiando cachés..."
 php artisan optimize:clear
 
-# Generar clave si no existe (puede ser útil)
-if [ ! -f /var/www/html/storage/oauth-private.key ]; then
-  php artisan key:generate
-fi
+# Optimizar para producción
+echo "⚡ Optimizando para producción..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
 
-# Finalmente, levantar el servidor integrado de Laravel
+# Optimizar autoloader
+echo "🔧 Optimizando autoloader..."
+composer dump-autoload --optimize
+
+# Crear directorios de caché si no existen
+echo "📁 Preparando directorios de caché..."
+mkdir -p storage/framework/cache/data
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
+chmod -R 775 storage/framework/cache
+chmod -R 775 storage/framework/sessions
+chmod -R 775 storage/framework/views
+
+# Lanzar worker de colas en background
+echo "🔄 Iniciando worker de colas..."
+php artisan queue:work &
+
+# Iniciar servidor
+echo "🌐 Iniciando servidor en puerto 8000..."
 php artisan serve --host=0.0.0.0 --port=8000

@@ -51,6 +51,13 @@ Route::post('/creditos/actualizar', [CreditoController::class, 'actualizarDatosC
 Route::post('/creditos/renovar', [CreditoController::class, 'renovar'])->name('creditos.renovar');
 Route::post('/creditos/cancelar', [CreditoController::class, 'cancelar'])->name('creditos.cancelar');
 
+// NUEVAS RUTAS CON CACHÉ (SOLO AGREGAR)
+Route::get('/creditos/activos', [CreditoController::class, 'index'])->name('creditos.activos');
+Route::get('/creditos/vencidos', [CreditoController::class, 'vencidos'])->name('creditos.vencidos');
+Route::get('/creditos/estadisticas', [CreditoController::class, 'estadisticas'])->name('creditos.estadisticas');
+Route::get('/creditos/conceptos', [CreditoController::class, 'getConceptosConCache'])->name('creditos.conceptos');
+Route::post('/creditos/limpiar-cache', [CreditoController::class, 'limpiarCache'])->name('creditos.limpiar-cache');
+
 Route::get('/clientes/{id}', [YapeClienteController::class, 'getClienteInfo']);
 Route::get('/cobradores-por-ruta/{rutaId}', [YapeClienteController::class, 'getCobradoresPorRuta']);
 

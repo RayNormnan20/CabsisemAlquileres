@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache; // AGREGAR ESTA LÍNEA
 
 class CreditoController extends Controller
 {
@@ -86,7 +87,7 @@ class CreditoController extends Controller
             // Registrar en el log de actividad
             \App\Models\LogActividad::registrar(
                 'Actualización de Crédito',
-                "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}" . 
+                "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}" .
                 ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
                 [
                     'tabla_afectada' => 'creditos',
@@ -99,7 +100,7 @@ class CreditoController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Datos del crédito actualizados correctamente' . 
+                'message' => 'Datos del crédito actualizados correctamente' .
                            ($request->descuento ? ' con descuento aplicado' : ''),
                 'credito' => $credito
             ], 200);
@@ -143,7 +144,7 @@ class CreditoController extends Controller
             // Verificar que el crédito esté vencido
             $fechaHoy = Carbon::now();
             $fechaVencimiento = Carbon::parse($credito->fecha_vencimiento);
-            
+
             if (!$fechaHoy->gt($fechaVencimiento)) {
                 $diasRestantes = $fechaVencimiento->diffInDays($fechaHoy);
                 return response()->json([
@@ -186,7 +187,7 @@ class CreditoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al habilitar renovación: ' . $e->getMessage(),
@@ -285,7 +286,7 @@ class CreditoController extends Controller
             // Registrar en el log de actividad
             \App\Models\LogActividad::registrar(
                 'Renovación de Crédito',
-                "Crédito renovado para cliente: {$credito->cliente->nombre_completo}" . 
+                "Crédito renovado para cliente: {$credito->cliente->nombre_completo}" .
                 ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
                 [
                     'tabla_afectada' => 'creditos',
@@ -298,7 +299,7 @@ class CreditoController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Crédito renovado correctamente' . 
+                'message' => 'Crédito renovado correctamente' .
                            ($request->descuento ? ' con descuento aplicado' : '') . '.',
                 'cuota_diaria_calculada' => $cuotaDiaria,
                 'dias_restantes' => $diasRestantes
@@ -400,4 +401,100 @@ class CreditoController extends Controller
         }
     }
 
+
+
+
+    // ========================================
+    // NUEVAS FUNCIONES CON CACHÉ (SOLO AGREGAR AL FINAL)
+    // ========================================
+
+    /**
+     * Obtener créditos activos con caché - NUEVA FUNCIÓN
+     */
+    public function index(Request $request)
+    {
+        $rutaId = $request->get('ruta_id');
+
+        $creditos = Creditos::getCreditosActivosConCache($rutaId);
+
+        return response()->json([
+            'success' => true,
+            'data' => $creditos,
+            'total' => $creditos->count()
+        ]);
+    }
+
+    /**
+     * Obtener créditos vencidos con caché - NUEVA FUNCIÓN
+     */
+    public function vencidos(Request $request)
+    {
+        $rutaId = $request->get('ruta_id');
+
+        $creditosVencidos = Creditos::getCreditosVencidosConCache($rutaId);
+
+        return response()->json([
+            'success' => true,
+            'data' => $creditosVencidos,
+            'total' => $creditosVencidos->count()
+        ]);
+    }
+
+    /**
+     * Obtener estadísticas con caché - NUEVA FUNCIÓN
+     */
+    public function estadisticas(Request $request)
+    {
+        $rutaId = $request->get('ruta_id');
+
+        $estadisticas = Creditos::getEstadisticasCreditosConCache($rutaId);
+
+        return response()->json([
+            'success' => true,
+            'data' => $estadisticas
+        ]);
+    }
+
+    /**
+     * Obtener conceptos con caché - NUEVA FUNCIÓN
+     */
+    public function getConceptosConCache()
+    {
+        $conceptos = Cache::remember('conceptos_creditos', 3600, function () {
+            return Concepto::select('id', 'nombre', 'descripcion')
+                          ->orderBy('nombre')
+                          ->get();
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $conceptos
+        ]);
+    }
+
+    /**
+     * Limpiar caché específico de créditos - NUEVA FUNCIÓN
+     */
+    public function limpiarCache(Request $request)
+    {
+        $rutaId = $request->get('ruta_id');
+
+        if ($rutaId) {
+            // Limpiar caché de una ruta específica
+            Cache::forget("creditos_activos_ruta_{$rutaId}");
+            Cache::forget("creditos_vencidos_ruta_{$rutaId}");
+            Cache::forget("estadisticas_creditos_ruta_{$rutaId}");
+        } else {
+            // Limpiar todo el caché de créditos
+            Cache::forget('creditos_activos_all');
+            Cache::forget('creditos_vencidos_all');
+            Cache::forget('estadisticas_creditos_all');
+            Cache::forget('conceptos_creditos');
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Caché limpiado correctamente'
+        ]);
+    }
 }

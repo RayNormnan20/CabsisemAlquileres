@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache; // AGREGAR ESTA LÍNEA
 
 class Creditos extends Model
 {
@@ -137,7 +138,108 @@ class Creditos extends Model
         $this->descuento_aplicado += $montoDescuento;
         $this->saldo_actual -= $montoDescuento;
         $this->save();
-        
+
         return $this;
+    }
+
+    // ========================================
+    // NUEVAS FUNCIONES DE CACHÉ (SOLO AGREGAR)
+    // ========================================
+
+    /**
+     * Obtener créditos activos con caché - NUEVA FUNCIÓN
+     */
+    public static function getCreditosActivosConCache($rutaId = null)
+    {
+        $cacheKey = $rutaId ? "creditos_activos_ruta_{$rutaId}" : 'creditos_activos_all';
+
+        return Cache::remember($cacheKey, 1800, function () use ($rutaId) { // 30 minutos
+            $query = self::with(['cliente', 'ruta', 'tipoPago'])
+                        ->where('saldo_actual', '>', 0);
+
+            if ($rutaId) {
+                $query->where('id_ruta', $rutaId);
+            }
+
+            return $query->orderBy('fecha_vencimiento', 'asc')->get();
+        });
+    }
+
+    /**
+     * Obtener créditos vencidos con caché - NUEVA FUNCIÓN
+     */
+    public static function getCreditosVencidosConCache($rutaId = null)
+    {
+        $cacheKey = $rutaId ? "creditos_vencidos_ruta_{$rutaId}" : 'creditos_vencidos_all';
+
+        return Cache::remember($cacheKey, 900, function () use ($rutaId) { // 15 minutos
+            $query = self::with(['cliente', 'ruta', 'tipoPago'])
+                        ->where('saldo_actual', '>', 0)
+                        ->where('fecha_vencimiento', '<', now());
+
+            if ($rutaId) {
+                $query->where('id_ruta', $rutaId);
+            }
+
+            return $query->orderBy('fecha_vencimiento', 'asc')->get();
+        });
+    }
+
+    /**
+     * Obtener estadísticas de créditos con caché - NUEVA FUNCIÓN
+     */
+    public static function getEstadisticasCreditosConCache($rutaId = null)
+    {
+        $cacheKey = $rutaId ? "estadisticas_creditos_ruta_{$rutaId}" : 'estadisticas_creditos_all';
+
+        return Cache::remember($cacheKey, 3600, function () use ($rutaId) { // 1 hora
+            $query = self::query();
+
+            if ($rutaId) {
+                $query->where('id_ruta', $rutaId);
+            }
+
+            return [
+                'total_creditos' => $query->count(),
+                'creditos_activos' => $query->where('saldo_actual', '>', 0)->count(),
+                'creditos_pagados' => $query->where('saldo_actual', '<=', 0)->count(),
+                'creditos_vencidos' => $query->where('saldo_actual', '>', 0)
+                                            ->where('fecha_vencimiento', '<', now())->count(),
+                'monto_total_activo' => $query->where('saldo_actual', '>', 0)->sum('saldo_actual'),
+                'monto_total_cartera' => $query->sum('valor_credito'),
+            ];
+        });
+    }
+
+    /**
+     * Limpiar caché cuando se modifica un crédito - NUEVA FUNCIÓN
+     */
+    public function limpiarCacheCredito()
+    {
+        $keys = [
+            'creditos_activos_all',
+            'creditos_vencidos_all',
+            'estadisticas_creditos_all',
+            "creditos_activos_ruta_{$this->id_ruta}",
+            "creditos_vencidos_ruta_{$this->id_ruta}",
+            "estadisticas_creditos_ruta_{$this->id_ruta}"
+        ];
+
+        foreach ($keys as $key) {
+            Cache::forget($key);
+        }
+    }
+
+    /**
+     * Override del método save para limpiar caché automáticamente - NUEVA FUNCIÓN
+     */
+    public function save(array $options = [])
+    {
+        $result = parent::save($options);
+
+        // Limpiar caché después de guardar
+        $this->limpiarCacheCredito();
+
+        return $result;
     }
 }

@@ -28,14 +28,25 @@ RUN composer install --no-dev --optimize-autoloader && \
     npm install && \
     npm run build
 
+# Crear directorios necesarios para caché
+RUN mkdir -p storage/framework/cache/data && \
+    mkdir -p storage/framework/sessions && \
+    mkdir -p storage/framework/views && \
+    mkdir -p storage/logs
+
 # Generar clave de app de Laravel
 RUN php artisan key:generate
 
-# Asegurar permisos correctos (opcional pero recomendado)
-RUN chown -R node:node /app
+# Asegurar permisos correctos
+RUN chown -R node:node /app && \
+    chmod -R 775 storage && \
+    chmod -R 775 bootstrap/cache
 
 # Usar usuario no root por seguridad
 USER node
+
+# Exponer puerto
+EXPOSE 8000
 
 # Comando al iniciar el contenedor
 CMD ["bash", "./run.sh"]
