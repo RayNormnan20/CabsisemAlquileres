@@ -391,6 +391,7 @@ class CreditosResource extends Resource
                                                         // Solo mostrar notificación si hay diferencia significativa (falta dinero)
                                                         $diferencia = $valorCredito - $sumaTotal;
                                                         
+                                                        /*
                                                         if ($diferencia > 0.01) { // Falta dinero
                                                             \Filament\Notifications\Notification::make()
                                                                 ->id('credito-suma-info')
@@ -406,28 +407,29 @@ class CreditosResource extends Resource
                                                                 ->warning()
                                                                 ->send();
                                                         }
+                                                                */
                                                         // No mostrar notificación cuando coincide exactamente para evitar spam
                                                         
-                                                        // Si el tipo es Yape, registrar en yape_clientes
-                                                        if ($get('tipo_concepto') === 'Yape' && $state) {
-                                                            $nombreYape = $livewire->data['nombre_yape'] ?? null;
-                                                            $clienteId = $livewire->data['id_cliente'] ?? null;
-                                                            
-                                                            if ($nombreYape && $clienteId) {
-                                                                // Crear o actualizar registro en yape_clientes
-                                                                \App\Models\YapeCliente::updateOrCreate(
-                                                                    [
-                                                                        'id_cliente' => $clienteId,
-                                                                        'nombre' => $nombreYape,
-                                                                    ],
-                                                                    [
-                                                                        'monto' => $state,
-                                                                        'entregar' => $state,
-                                                                        'user_id' => auth()->id(),
-                                                                    ]
-                                                                );
-                                                            }
-                                                        }
+                                                        // ELIMINAR ESTE BLOQUE COMPLETO - CAUSA DUPLICACIÓN
+                                                        // if ($get('tipo_concepto') === 'Yape' && $state) {
+                                                        //     $nombreYape = $livewire->data['nombre_yape'] ?? null;
+                                                        //     $clienteId = $livewire->data['id_cliente'] ?? null;
+                                                        //     
+                                                        //     if ($nombreYape && $clienteId) {
+                                                        //         // Crear o actualizar registro en yape_clientes
+                                                        //         \App\Models\YapeCliente::updateOrCreate(
+                                                        //             [
+                                                        //                 'id_cliente' => $clienteId,
+                                                        //                 'nombre' => $nombreYape,
+                                                        //             ],
+                                                        //             [
+                                                        //                 'monto' => $state,
+                                                        //                 'entregar' => $state,
+                                                        //                 'user_id' => auth()->id(),
+                                                        //             ]
+                                                        //         );
+                                                        //     }
+                                                        // }
                                                     }),
                                                    
                                                 
