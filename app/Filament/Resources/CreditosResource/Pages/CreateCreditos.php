@@ -207,4 +207,12 @@ class CreateCreditos extends CreateRecord
             ]
         );
     }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+            $this->getCancelFormAction(),
+        ];
+    }
 }

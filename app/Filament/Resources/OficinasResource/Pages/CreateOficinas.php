@@ -15,6 +15,14 @@ class CreateOficinas extends CreateRecord
         return static::$resource::getUrl('index');
     }
 
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+            $this->getCancelFormAction(),
+        ];
+    }
+
     protected function getActions(): array
     {
         return [

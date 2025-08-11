@@ -14,7 +14,7 @@ class CreateClientes extends CreateRecord
 
     public bool $crearCredito = false;
 
-    public ?int $currentRutaId = null;    
+    public ?int $currentRutaId = null;
 
     public function mount(): void
     {
@@ -22,6 +22,14 @@ class CreateClientes extends CreateRecord
 
         $this->currentRutaId = Session::get('selected_ruta_id');
 
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+            $this->getCancelFormAction(),
+        ];
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
