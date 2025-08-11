@@ -102,19 +102,26 @@ $cliente->loadMissing('creditos');
 
                     // Nueva función para calcular la nueva cuenta con descuento
                     calcularNuevaCuentaConDescuento() {
-                        const saldoActual = parseFloat(this.saldoActual) || 0;
+                        // Validar que el descuento no sea mayor al saldo actual
+                        const saldoActualSinDescuento = parseFloat(this.saldoOriginalSinDescuento) || 0;
                         const descuentoAplicado = parseFloat(this.descuento) || 0;
                         
-                        if (descuentoAplicado > saldoActual) {
+                        if (descuentoAplicado > saldoActualSinDescuento) {
                             alert('El descuento no puede ser mayor al saldo actual');
                             this.descuento = 0;
                             return;
                         }
                         
-                        const nuevaCuenta = saldoActual - descuentoAplicado;
-                        this.newValorCredito = nuevaCuenta.toFixed(2);
+                        if (descuentoAplicado < 0) {s
+                            alert('El descuento no puede ser negativo');
+                            this.descuento = 0;
+                            return;
+                        }
                         
-                        // Recalcular automáticamente si hay interés y forma de pago
+                        // NO modificamos this.saldoActual aquí
+                        // El saldo actual se mantiene sin cambios para mostrar el saldo real
+                        
+                        // Solo recalcular la nueva cuenta si hay interés y forma de pago
                         if (this.newInteres && this.newFormaPago) {
                             this.calcularFormaPagoYVencimiento();
                         }
@@ -157,6 +164,9 @@ $cliente->loadMissing('creditos');
                         
                         // Nuevo watcher para el descuento
                         this.$watch('descuento', () => this.calcularNuevaCuentaConDescuento());
+                        
+                        // Nuevo watcher para la fecha actual editable
+                        this.$watch('fechaActualEditable', () => this.calcularFechaVencimiento());
 
                         this.$watch(() => [this.newInteres, this.newFormaPago], ([interes, forma]) => {
                             this.mostrarRenovacionCompleta = interes && forma;
@@ -164,16 +174,12 @@ $cliente->loadMissing('creditos');
 
                         const hoy = new Date().toISOString().split('T')[0];
                         this.newFecha = hoy;
+                        
+                        // Inicializar la fecha actual editable
+                        this.fechaActualEditable = hoy;
 
-                        this.$watch('newFormaPago', (value) => {
-                            if (!value || isNaN(value)) {
-                                this.newFechaVencimiento = '';
-                                return;
-                            }
-
-                            const fechaInicio = new Date(this.newFecha);
-                            fechaInicio.setDate(fechaInicio.getDate() + parseInt(value));
-                            this.newFechaVencimiento = fechaInicio.toISOString().split('T')[0];
+                        this.$watch('newFormaPago', () => {
+                            this.calcularFechaVencimiento();
                         });
 
                         this.$nextTick(() => {
@@ -181,11 +187,27 @@ $cliente->loadMissing('creditos');
                         });
                     },
 
+                    // Nueva función específica para calcular la fecha de vencimiento
+                    calcularFechaVencimiento() {
+                        const diasPago = parseInt(this.newFormaPago);
+                        
+                        if (!diasPago || isNaN(diasPago) || diasPago <= 0) {
+                            this.newVencimientoDate = '';
+                            return;
+                        }
+
+                        // Usar la fecha actual editable como base
+                        const fechaBase = new Date(this.fechaActualEditable || new Date().toISOString().split('T')[0]);
+                        fechaBase.setDate(fechaBase.getDate() + diasPago);
+                        this.newVencimientoDate = fechaBase.toISOString().split('T')[0];
+                    },
+
                     calcularDiasTranscurridos(fechaInicio) {
                         if (!fechaInicio) return 0;
                         const inicio = new Date(fechaInicio.replace(' ', 'T'));
-                        const hoy = new Date();
-                        const diffTime = hoy - inicio;
+                        // Usar la fecha actual editable en lugar de la fecha del sistema
+                        const fechaActual = new Date(this.fechaActualEditable || new Date().toISOString().split('T')[0]);
+                        const diffTime = fechaActual - inicio;
                         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     },
 
@@ -206,6 +228,9 @@ $cliente->loadMissing('creditos');
                         this.saldo = (creditData.capital + parseFloat(this.interes)).toFixed(2);
                         this.fechaInicio = this.formatearFecha(creditData.fechaInicio);
                         this.fechaVencimiento = this.formatearFecha(creditData.fechaVencimiento);
+                        
+                        // Inicializar la fecha actual editable con la fecha actual del sistema
+                        this.fechaActualEditable = new Date().toISOString().split('T')[0];
 
                         let totalAbonos = 0;
                         if (Array.isArray(creditData.abonos) && creditData.abonos.length > 0) {
@@ -216,12 +241,20 @@ $cliente->loadMissing('creditos');
                             this.abonos = totalAbonos.toFixed(2);
                         } else {
                             this.abonos = 'No hay abonos por el momento';
+                            totalAbonos = 0;
                         }
 
-                        const totalAdeudado = creditData.capital + parseFloat(this.interes);
-                        this.saldoActual = (totalAdeudado - totalAbonos).toFixed(2);
+                        // USAR DIRECTAMENTE EL SALDO QUE VIENE DE LA BASE DE DATOS
+                        // En lugar de calcularlo, usar el saldo real del crédito
+                        const saldoReal = parseFloat(creditData.saldo || 0).toFixed(2);
+                        
+                        // Guardar el saldo original SIN descuento para los cálculos
+                        this.saldoOriginalSinDescuento = saldoReal;
+                        
+                        // Inicializar el saldo actual con el saldo real de la base de datos
+                        this.saldoActual = saldoReal;
 
-                        this.newValorCredito = this.saldoActual;
+                        this.newValorCredito = creditData.capital;
                         this.newInteres = creditData.interes;
                         this.newFormaPago = '';
                         this.newCuenta = '';
@@ -237,30 +270,33 @@ $cliente->loadMissing('creditos');
                     },
 
                     calcularFormaPagoYVencimiento() {
-                        const capital = parseFloat(this.newValorCredito);
+                        const capitalOriginal = parseFloat(this.capital);
+                        const saldoActual = parseFloat(this.saldoOriginalSinDescuento); // Usar saldo original sin descuento
                         const interes = parseFloat(this.newInteres);
                         const diasPago = parseInt(this.newFormaPago);
+                        const descuento = parseFloat(this.descuento) || 0;
 
-                        if (isNaN(capital) || isNaN(interes) || isNaN(diasPago) || diasPago <= 0) {
+                        if (isNaN(capitalOriginal) || isNaN(interes) || isNaN(diasPago) || diasPago <= 0) {
                             this.newCuenta = '';
                             this.newValorCuota = '';
                             this.newVencimientoDate = '';
                             return;
                         }
 
-                        const meses = Math.ceil(diasPago / 30);
-                        const interesMensual = capital * (interes / 100);
-                        const interesTotal = interesMensual * meses;
+                        // Calcular el interés adicional sobre el CAPITAL ORIGINAL
+                        const mesesExactos = diasPago / 30;
+                        const interesMensual = capitalOriginal * (interes / 100);
+                        const interesAdicional = interesMensual * mesesExactos;
 
-                        const totalPagar = capital + interesTotal;
+                        // El descuento reduce el monto base sobre el cual se calcula el nuevo crédito
+                        const saldoConDescuento = saldoActual - descuento;
+                        const totalPagar = saldoConDescuento + interesAdicional;
                         const cuotaDiaria = totalPagar / diasPago;
                         this.newValorCuota = cuotaDiaria.toFixed(2);
-
                         this.newCuenta = totalPagar.toFixed(2);
 
-                        const hoy = new Date();
-                        hoy.setDate(hoy.getDate() + diasPago);
-                        this.newVencimientoDate = hoy.toISOString().split('T')[0];
+                        // Calcular la fecha de vencimiento usando la función específica
+                        this.calcularFechaVencimiento();
                     },
 
                     guardarDatosCredito() {
@@ -304,6 +340,7 @@ $cliente->loadMissing('creditos');
                                 porcentaje_interes: parseFloat(this.newInteres),
                                 dias_plazo: parseInt(this.newFormaPago),
                                 fecha_vencimiento: this.newVencimientoDate,
+                                fecha_credito: this.fechaActualEditable, // Agregar fecha editada
                                 valor_cuota: parseFloat(this.newValorCuota),
                                 numero_cuotas: parseInt(this.newNumeroCuotas) || 1,
                                 descuento: parseFloat(this.descuento) || 0, // Agregar descuento
@@ -353,6 +390,7 @@ $cliente->loadMissing('creditos');
                                     nueva_cuenta: parseFloat(this.newCuenta),
                                     valor_cuota: parseFloat(this.newValorCuota),
                                     fecha_vencimiento: this.newVencimientoDate,
+                                    fecha_credito: this.fechaActualEditable, // Agregar fecha editada
                                     descuento: parseFloat(this.descuento) || 0, // Agregar descuento
                                 })
                             })
@@ -692,11 +730,11 @@ $cliente->loadMissing('creditos');
                                             </div>
                                             <div class="mb-3">
                                                 <label for="forma-pago"
-                                                    class="block text-sm font-medium text-gray-700">Forma de Pago
+                                                    class="block text-sm font-medium text-blue-700">Forma de Pago
                                                     (Días)</label>
                                                 <input type="number" step="0.01" id="nuevo-forma-pago"
                                                     x-model="newFormaPago" @input="calcularFormaPagoYVencimiento()"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                                    class="mt-1 block w-full rounded-md border-blue-400 shadow-sm bg-blue-50 focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="nueva-cuenta"
@@ -709,8 +747,8 @@ $cliente->loadMissing('creditos');
                                                 <label for="fecha-actual"
                                                     class="block text-sm font-medium text-gray-700">Fecha Actual</label>
                                                 <input type="date" id="fecha-actual"
-                                                    :value="new Date().toISOString().split('T')[0]" disabled
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-600 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                                    x-model="fechaActualEditable"
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="nueva-fecha-vencimiento"
@@ -793,6 +831,26 @@ $cliente->loadMissing('creditos');
                                                 class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
                                                 Agregar
                                             </button>
+                                        </div>
+
+                                        <!-- Lista de pagos agregados -->
+                                        <div class="mt-4 space-y-2">
+                                            <template x-for="(pago, index) in pagos" :key="pago.tipo">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="w-28 text-gray-700 font-medium" x-text="pago.tipo"></span>
+                                                    <input type="number" x-model="pago.monto"
+                                                        class="flex-1 border-gray-300 rounded-md" placeholder="Monto" />
+                                                    <button type="button" @click="eliminarMedioPago(index)"
+                                                        class="text-red-600 hover:text-red-800 font-bold text-sm">Eliminar</button>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <!-- Total entregado -->
+                                        <div class="mt-4">
+                                            <label class="block text-sm font-medium text-gray-700">Total entregado</label>
+                                            <input type="number" :value="totalEntregado" readonly
+                                                class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                         </div>
                                     </div>
 

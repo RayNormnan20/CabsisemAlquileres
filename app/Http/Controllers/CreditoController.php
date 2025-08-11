@@ -26,6 +26,7 @@ class CreditoController extends Controller
                 'nueva_cuenta' => 'required|numeric',
                 'valor_cuota' =>'required|numeric',
                 'fecha_vencimiento' => 'required|date',
+                'fecha_credito' => 'nullable|date', // Agregar validación para fecha editada
                 'descuento' => 'nullable|numeric|min:0', // Nuevo campo
             ]);
 
@@ -81,6 +82,11 @@ class CreditoController extends Controller
             $credito->valor_cuota = $request->valor_cuota;
             $credito->saldo_actual = $request->nueva_cuenta;
             $credito->fecha_vencimiento = $request->fecha_vencimiento;
+            
+            // Usar la fecha editada si se proporciona, sino usar la fecha actual
+            if ($request->fecha_credito) {
+                $credito->fecha_credito = $request->fecha_credito;
+            }
 
             $credito->save();
 
@@ -195,15 +201,14 @@ class CreditoController extends Controller
         }
     }
 
-    public function renovar(Request $request)
+    public function update(Request $request)
     {
         try {
             DB::beginTransaction();
 
-            // Buscar el crédito original
             $credito = Creditos::findOrFail($request->id);
 
-            // Aplicar descuento si se proporciona
+            // Aplicar descuento si se proporciona (solo actualizar el saldo, sin crear abono)
             if ($request->descuento && $request->descuento > 0) {
                 // Validar que el descuento no sea mayor al saldo actual
                 if ($request->descuento > $credito->saldo_actual) {
@@ -212,33 +217,67 @@ class CreditoController extends Controller
                     ], 400);
                 }
 
-                // Buscar el concepto "Abono de Descuento"
-                $conceptoDescuento = Concepto::where('nombre', 'Abono de Descuento')->first();
-                if (!$conceptoDescuento) {
-                    // Si no existe, crear el concepto
-                    $conceptoDescuento = Concepto::create([
-                        'nombre' => 'Abono de Descuento',
-                        'descripcion' => 'Descuento aplicado al crédito'
-                    ]);
+                // Aplicar el descuento directamente al saldo sin crear abono
+                $credito->saldo_actual = $credito->saldo_actual - $request->descuento;
+            }
+
+            // Actualizar los demás campos
+            $credito->porcentaje_interes = $request->nuevo_interes;
+            $credito->dias_plazo = $request->forma_pago;
+            $credito->valor_cuota = $request->valor_cuota;
+            $credito->saldo_actual = $request->nueva_cuenta;
+            $credito->fecha_vencimiento = $request->fecha_vencimiento;
+
+            $credito->save();
+
+            // Registrar en el log de actividad
+            \App\Models\LogActividad::registrar(
+                'Actualización de Crédito',
+                "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}" .
+                ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
+                [
+                    'tabla_afectada' => 'creditos',
+                    'registro_id' => $credito->id_credito,
+                    'descuento_aplicado' => $request->descuento ?? 0,
+                    'cliente_id' => $credito->id_cliente,
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Datos del crédito actualizados correctamente' .
+                           ($request->descuento ? ' con descuento aplicado' : ''),
+                'credito' => $credito
+            ], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => 'Error al actualizar crédito',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    public function renovar(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Buscar el crédito original
+            $credito = Creditos::findOrFail($request->id);
+
+            if ($request->descuento && $request->descuento > 0) {
+                // Validar que el descuento no sea mayor al saldo actual
+                if ($request->descuento > $credito->saldo_actual) {
+                    return response()->json([
+                        'error' => 'El descuento no puede ser mayor al saldo actual'
+                    ], 400);
                 }
 
-                // Crear un abono por el descuento
-                Abonos::create([
-                    'id_credito' => $credito->id_credito,
-                    'id_cliente' => $credito->id_cliente,
-                    'id_ruta' => $credito->id_ruta,
-                    'id_usuario' => auth()->id(),
-                    'fecha_pago' => now(),
-                    'monto_abono' => $request->descuento,
-                    'saldo_anterior' => $credito->saldo_actual,
-                    'saldo_posterior' => $credito->saldo_actual - $request->descuento,
-                    'observaciones' => 'Descuento aplicado en renovación',
-                    'id_concepto' => $conceptoDescuento->id,
-                    'estado' => true,
-                ]);
-
-                // Aplicar el descuento al crédito
-                $credito->aplicarDescuento($request->descuento);
+                // Aplicar el descuento directamente al saldo sin crear abono
+                $credito->saldo_actual = $credito->saldo_actual - $request->descuento;
             }
 
             // Actualizar solo los campos permitidos (excluyendo forma_pago)
@@ -248,7 +287,14 @@ class CreditoController extends Controller
             $credito->dias_plazo = $request->dias_plazo;
             $credito->porcentaje_interes = $request->porcentaje_interes;
             $credito->fecha_vencimiento = $request->fecha_vencimiento;
-            $credito->fecha_credito = now();
+            
+            // Usar la fecha editada si se proporciona, sino usar la fecha actual
+            if ($request->fecha_credito) {
+                $credito->fecha_credito = $request->fecha_credito;
+            } else {
+                $credito->fecha_credito = now();
+            }
+            
             // Cambiar por_renovar a false ya que se está procesando la renovación
             $credito->por_renovar = false;
 
