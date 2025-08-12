@@ -208,12 +208,12 @@ class YapeClientesTableWidget extends BaseWidget
 
             // Monto
             TextColumn::make('monto')
-                ->label('Monto')
+                ->label('Por Yapear')
                 ->money('PEN', true),
 
             // Entregar (suma de abonos realizados)
             TextColumn::make('entregar_calculado')
-                ->label('Entregar')
+                ->label('Yapeado')
                 ->getStateUsing(function (YapeCliente $record) {
                     // Sumar todos los abonos que tienen este id_yape_cliente
                     $abonosSum = Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');

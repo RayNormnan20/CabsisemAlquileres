@@ -6,7 +6,6 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
 @endphp
 {{-- SELECTOR DE CLIENTE CON NAVEGACIÓN Y FILTRO --}}
 <div class="mb-6">
-    <!-- Fila superior con selector de cliente -->
     <div class="flex items-center justify-center gap-4 mb-4">
         {{-- Botón anterior --}}
         <button wire:click="$set('clienteId', {{ $anteriorId ?? 'null' }})"
@@ -57,6 +56,12 @@ $cliente->loadMissing('creditos');
                     deactivatingCreditId: null,
                     isRenewal: false,
                     mostrarRenovacionCompleta: false,
+                    isShowingRenovacionSteps: false, // New variable to control steps
+
+                    // Missing variables that need to be added:
+                    fechaActualEditable: '',
+                    saldoOriginalSinDescuento: 0,
+                    newNumeroCuotas: 1,
 
                     clientName: '',
                     capital: '',
@@ -112,7 +117,7 @@ $cliente->loadMissing('creditos');
                             return;
                         }
                         
-                        if (descuentoAplicado < 0) {s
+                        if (descuentoAplicado < 0) {
                             alert('El descuento no puede ser negativo');
                             this.descuento = 0;
                             return;
@@ -174,7 +179,7 @@ $cliente->loadMissing('creditos');
 
                         const hoy = new Date().toISOString().split('T')[0];
                         this.newFecha = hoy;
-                        
+
                         // Inicializar la fecha actual editable
                         this.fechaActualEditable = hoy;
 
@@ -231,6 +236,11 @@ $cliente->loadMissing('creditos');
                         
                         // Inicializar la fecha actual editable con la fecha actual del sistema
                         this.fechaActualEditable = new Date().toISOString().split('T')[0];
+                        this.renovacion = 0;
+                        this.pagos = [];
+                        this.medioSeleccionado = '';
+                        this.montoTemporal = 0;
+
 
                         let totalAbonos = 0;
                         if (Array.isArray(creditData.abonos) && creditData.abonos.length > 0) {
@@ -251,8 +261,15 @@ $cliente->loadMissing('creditos');
                         // Guardar el saldo original SIN descuento para los cálculos
                         this.saldoOriginalSinDescuento = saldoReal;
                         
-                        // Inicializar el saldo actual con el saldo real de la base de datos
-                        this.saldoActual = saldoReal;
+                        // MODIFICACIÓN: Para renovaciones, mostrar el valor de Nueva Cuenta en Saldo Actual
+                        if (isRenewal) {
+                            // En renovaciones, el Saldo Actual debe mostrar el valor de Nueva Cuenta
+                            // Inicialmente será el saldo real, pero se actualizará cuando se calcule la nueva cuenta
+                            this.saldoActual = saldoReal;
+                        } else {
+                            // Para actualizaciones normales, mostrar el saldo real
+                            this.saldoActual = saldoReal;
+                        }
 
                         this.newValorCredito = creditData.capital;
                         this.newInteres = creditData.interes;
@@ -267,6 +284,7 @@ $cliente->loadMissing('creditos');
                         this.isRenewal = isRenewal;
                         this.showDeactivationModal = true;
                         this.open = false;
+                        this.isShowingRenovacionSteps = false; // Reset to step 1
                     },
 
                     calcularFormaPagoYVencimiento() {
@@ -294,6 +312,11 @@ $cliente->loadMissing('creditos');
                         const cuotaDiaria = totalPagar / diasPago;
                         this.newValorCuota = cuotaDiaria.toFixed(2);
                         this.newCuenta = totalPagar.toFixed(2);
+
+                        // Si es renovación, actualizar el Saldo Actual con el valor de Nueva Cuenta
+                        if (this.isRenewal) {
+                            this.saldoActual = this.newCuenta;
+                        }
 
                         // Calcular la fecha de vencimiento usando la función específica
                         this.calcularFechaVencimiento();
@@ -461,6 +484,15 @@ $cliente->loadMissing('creditos');
                         @else
                         alert('No hay crédito activo para cancelar.');
                         @endif
+                    },
+
+                    // Funciones para el modal de renovación
+                    showRenovacionSteps() {
+                        this.isShowingRenovacionSteps = true;
+                    },
+
+                    hideRenovacionSteps() {
+                        this.isShowingRenovacionSteps = false;
                     }
 
                 }" x-init="init()" class="flex items-center space-x-2">
@@ -507,7 +539,6 @@ $cliente->loadMissing('creditos');
                         class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
                         role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
                         <div class="py-1" role="none">
-                            <!-- <a href="{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente]) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem" tabindex="-1" id="menu-item-0">Nuevo Préstamo</a> -->
                             @if($cliente->creditos->isEmpty() || $cliente->creditos->every(fn($credito) =>
                             $credito->saldo_actual <= 0)) <a
                                 href="{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente]) }}"
@@ -645,8 +676,7 @@ $cliente->loadMissing('creditos');
                                         </div>
                                     </div>
 
-
-                                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div x-show="!isRenewal || !isShowingRenovacionSteps" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {{-- Columna Izquierda: Datos del Crédito (Solo lectura) --}}
                                         <div>
                                             <h4 class="text-md font-semibold text-gray-800 mb-2">Datos Actuales</h4>
@@ -760,146 +790,96 @@ $cliente->loadMissing('creditos');
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <div x-show="isRenewal && isShowingRenovacionSteps" class="mt-4">
+                                        <h4 class="text-lg font-medium text-gray-900 mb-4">Datos de Renovación</h4>
+                                        <!-- Organizar en 2 columnas -->
+                                        <div class="grid grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Saldo Actual</label>
+                                                <input type="number" x-model="saldoActual"
+                                                    class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" readonly disabled />
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Renovación</label>
+                                                <input type="number" x-model="renovacion"
+                                                    class="mt-1 block w-full border-gray-300 rounded-md" />
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">A entregar</label>
+                                                <input type="number" :value="aEntregar.toFixed(2)" readonly
+                                                    class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Valor del Crédito</label>
+                                                <input type="number" :value="valorCredito.toFixed(2)" readonly
+                                                    class="mt-1 block w-full border-gray-300 rounded-md" />
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <label class="block text-sm font-medium text-gray-700">Agregar medio de pago</label>
+                                            <div class="flex flex-wrap gap-2 mt-1">
+                                                <select x-model="medioSeleccionado" class="border-gray-300 rounded-md">
+                                                    <option value="" disabled selected>Seleccione...</option>
+                                                    <template x-for="medio in mediosDisponibles" :key="medio">
+                                                        <option x-text="medio" :value="medio"></option>
+                                                    </template>
+                                                </select>
+                                                <input type="number" x-model="montoTemporal" min="0"
+                                                    class="border-gray-300 rounded-md w-36" placeholder="Monto" />
+                                                <button type="button" @click="agregarMedioPago"
+                                                    class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                                    Agregar
+                                                </button>
+                                            </div>
+
+                                            <div class="mt-4 space-y-2">
+                                                <template x-for="(pago, index) in pagos" :key="pago.tipo">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="w-28 text-gray-700 font-medium" x-text="pago.tipo"></span>
+                                                        <input type="number" x-model="pago.monto"
+                                                            class="flex-1 border-gray-300 rounded-md" placeholder="Monto" />
+                                                        <button type="button" @click="eliminarMedioPago(index)"
+                                                            class="text-red-600 hover:text-red-800 font-bold text-sm">Eliminar</button>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <div class="mt-4">
+                                                <label class="block text-sm font-medium text-gray-700">Total entregado</label>
+                                                <input type="number" :value="totalEntregado" readonly
+                                                    class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <template x-if="isRenewal && !mostrarRenovacionCompleta">
-                                <div class="mt-6 text-sm text-gray-600 italic">
-                                    Completa el <strong>nuevo interés</strong> y la <strong>forma de pago</strong> para
-                                    continuar...
-                                </div>
-                            </template>
-                            <template x-if="isRenewal && mostrarRenovacionCompleta">
-                                <div class="mt-4 space-y-3">
-                                    <h1 class="text-md font-semibold text-gray-800 mb-2">Renovación</h1>
-                                    <!-- Saldo Actual -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Saldo Actual</label>
-                                        <input type="number" x-model="saldoActual"
-                                            class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" readonly
-                                            disabled />
-                                    </div>
-                                    <!-- Renovación -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Renovación</label>
-                                        <input type="number" x-model="renovacion"
-                                            class="mt-1 block w-full border-gray-300 rounded-md" />
-                                    </div>
-                                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Nueva Fecha -->
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Nueva Fecha</label>
-                                            <input type="date" x-model="newFecha"
-                                                class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100"
-                                                readonly />
-                                        </div>
-
-                                        <!-- Nueva Fecha de Vencimiento -->
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Nueva Fecha de
-                                                Vencimiento</label>
-                                            <input type="date" x-model="newFechaVencimiento"
-                                                class="mt-1 block w-full border-gray-300 rounded-md bg-gray-100"
-                                                readonly />
-                                        </div>
-                                    </div>
-                                    <!-- A entregar -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">A entregar</label>
-                                        <input type="number" :value="aEntregar.toFixed(2)" readonly
-                                            class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
-                                    </div>
-                                    <!-- Valor del nuevo crédito -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Valor del Crédito</label>
-                                        <input type="number" :value="valorCredito.toFixed(2)" readonly
-                                            class="mt-1 block w-full border-gray-300 rounded-md" />
-                                    </div>
-                                    <!-- Selección de medios de pago -->
-                                    <div class="mt-4">
-                                        <label class="block text-sm font-medium text-gray-700">Agregar medio de
-                                            pago</label>
-                                        <div class="flex flex-wrap gap-2 mt-1">
-                                            <select x-model="medioSeleccionado" class="border-gray-300 rounded-md">
-                                                <option value="" disabled selected>Seleccione...</option>
-                                                <template x-for="medio in mediosDisponibles" :key="medio">
-                                                    <option x-text="medio" :value="medio"></option>
-                                                </template>
-                                            </select>
-                                            <input type="number" x-model="montoTemporal" min="0"
-                                                class="border-gray-300 rounded-md w-36" placeholder="Monto" />
-                                            <button type="button" @click="agregarMedioPago"
-                                                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                Agregar
-                                            </button>
-                                        </div>
-
-                                        <!-- Lista de pagos agregados -->
-                                        <div class="mt-4 space-y-2">
-                                            <template x-for="(pago, index) in pagos" :key="pago.tipo">
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="w-28 text-gray-700 font-medium" x-text="pago.tipo"></span>
-                                                    <input type="number" x-model="pago.monto"
-                                                        class="flex-1 border-gray-300 rounded-md" placeholder="Monto" />
-                                                    <button type="button" @click="eliminarMedioPago(index)"
-                                                        class="text-red-600 hover:text-red-800 font-bold text-sm">Eliminar</button>
-                                                </div>
-                                            </template>
-                                        </div>
-
-                                        <!-- Total entregado -->
-                                        <div class="mt-4">
-                                            <label class="block text-sm font-medium text-gray-700">Total entregado</label>
-                                            <input type="number" :value="totalEntregado" readonly
-                                                class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
-                                        </div>
-                                    </div>
-
-                                    <!-- Lista de pagos agregados -->
-                                    <div class="mt-4 space-y-2">
-                                        <template x-for="(pago, index) in pagos" :key="pago.tipo">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="w-28 text-gray-700 font-medium" x-text="pago.tipo"></span>
-                                                <input type="number" x-model="pago.monto"
-                                                    class="flex-1 border-gray-300 rounded-md" placeholder="Monto" />
-                                                <button type="button" @click="eliminarMedioPago(index)"
-                                                    class="text-red-600 hover:text-red-800 font-bold text-sm">Eliminar</button>
-                                            </div>
-                                        </template>
-                                    </div>
-
-                                    <!-- Total entregado -->
-                                    <div class="mt-4">
-                                        <label class="block text-sm font-medium text-gray-700">Total entregado</label>
-                                        <input type="number" :value="totalEntregado" readonly
-                                            class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
-                                    </div>
-                                </div>
-                            </template>
                         </div>
                         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-
                             <button type="button" @click="confirmDeactivation()"
+                                x-show="!isRenewal || isShowingRenovacionSteps"
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
                                 x-text="isRenewal ? 'Confirmar Renovación' : 'Confirmar Baja de Cuenta'">
                             </button>
-
-                            <!--
-                            <button type="button" @click="console.log({
-                                        saldoActual,
-                                        renovacion,
-                                        newFecha,
-                                        newFechaVencimiento,
-                                        aEntregar,
-                                        valorCredito,
-                                        pagos,
-                                        totalEntregado
-                                    })" class="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                                Ver datos en consola
+                            
+                            <button type="button" @click="showRenovacionSteps()"
+                                x-show="isRenewal && !isShowingRenovacionSteps && mostrarRenovacionCompleta"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Siguiente
                             </button>
-                        -->
 
+                            <button type="button" @click="hideRenovacionSteps()"
+                                x-show="isRenewal && isShowingRenovacionSteps"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Volver
+                            </button>
+                            
                             <button type="button" @click="showDeactivationModal = false"
-                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                x-show="!isShowingRenovacionSteps"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                 Cancelar
                             </button>
