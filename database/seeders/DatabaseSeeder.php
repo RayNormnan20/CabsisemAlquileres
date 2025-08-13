@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -27,6 +26,9 @@ class DatabaseSeeder extends Seeder
         $this->call(ConceptosSeeder::class);
 
         $this->call(DiasNoLaborablesSeeder::class);
+        $this->call(EstadosDepartamentoSeeder::class);
+
+
 
 
 

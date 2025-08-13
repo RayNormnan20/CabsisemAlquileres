@@ -43,6 +43,13 @@ php artisan make:filament-resource CuadreRecaudador
 php artisan make:filament-resource PlanillaRecaudador
 
 
+php artisan make:filament-resource EstadoDepartamento
+php artisan make:filament-resource Edificios
+php artisan make:filament-resource Departamentos
+php artisan make:filament-resource Alquileres
+php artisan make:filament-resource PagosAlquiler
+
+
 
 ------ CREARLAS TABLAS PARA LOS MIGRATE -------
 

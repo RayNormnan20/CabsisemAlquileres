@@ -85,4 +85,16 @@ class ClienteAlquiler extends Model
             ->get()
             ->mapWithKeys(fn($c) => [$c->id_cliente_alquiler => $c->nombre_completo]);
     }
+    
+    // Relación con Edificios (como propietario)
+    public function edificiosPropios()
+    {
+        return $this->hasMany(Edificio::class, 'id_cliente_alquiler', 'id_cliente_alquiler');
+    }
+
+    // Relación con Alquileres (como inquilino)
+    public function alquileresComoInquilino()
+    {
+        return $this->hasMany(Alquiler::class, 'id_cliente_alquiler', 'id_cliente_alquiler');
+    }
 }

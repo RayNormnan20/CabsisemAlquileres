@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\ClienteAlquilerResource\Pages;
+namespace App\Filament\Resources\EdificiosResource\Pages;
 
-use App\Filament\Resources\ClienteAlquilerResource;
+use App\Filament\Resources\EdificiosResource;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Session;
 
-class ListClienteAlquiler extends ListRecords
+class ListEdificios extends ListRecords
 {
-    protected static string $resource = ClienteAlquilerResource::class;
+    protected static string $resource = EdificiosResource::class;
 
     public ?int $currentRutaId = null;
     public ?string $currentRutaName = null;
@@ -37,16 +37,12 @@ class ListClienteAlquiler extends ListRecords
         $this->resetPage();
     }
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\CreateAction::make(),
-        ];
-    }
-
     protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery();
+
+        // Agregar el conteo de departamentos
+        $query->withCount('departamentos');
 
         if ($this->currentRutaId) {
             $query->where('id_ruta', $this->currentRutaId);
@@ -60,22 +56,22 @@ class ListClienteAlquiler extends ListRecords
     protected function getTableHeading(): ?string
     {
         if ($this->currentRutaName && $this->currentRutaId) {
-            return "Listado de Clientes Alquiler";
+            return "Listado de Edificios - {$this->currentRutaName}";
         }
-        return "Listado de Clientes de Alquiler";
-    }
-
-    protected function shouldPersistTableFiltersInSession(): bool
-    {
-        return true;
+        return "Listado de Edificios";
     }
 
     protected function getActions(): array
     {
         return [
             Actions\CreateAction::make()
-                ->label('Agregar Cliente de Alquiler')
+                ->label('Agregar Edificio')
                 ->icon('heroicon-s-plus'),
         ];
+    }
+
+    protected function shouldPersistTableFiltersInSession(): bool
+    {
+        return true;
     }
 }

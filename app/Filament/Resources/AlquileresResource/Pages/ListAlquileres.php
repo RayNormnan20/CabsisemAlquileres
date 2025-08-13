@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\ClienteAlquilerResource\Pages;
+namespace App\Filament\Resources\AlquileresResource\Pages;
 
-use App\Filament\Resources\ClienteAlquilerResource;
+use App\Filament\Resources\AlquileresResource;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Session;
 
-class ListClienteAlquiler extends ListRecords
+class ListAlquileres extends ListRecords
 {
-    protected static string $resource = ClienteAlquilerResource::class;
+    protected static string $resource = AlquileresResource::class;
 
     public ?int $currentRutaId = null;
     public ?string $currentRutaName = null;
@@ -37,22 +37,15 @@ class ListClienteAlquiler extends ListRecords
         $this->resetPage();
     }
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\CreateAction::make(),
-        ];
-    }
-
     protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery();
 
         if ($this->currentRutaId) {
-            $query->where('id_ruta', $this->currentRutaId);
+            $query->whereHas('inquilino', function($q) {
+                $q->where('id_ruta', $this->currentRutaId);
+            });
         }
-
-        $query->where('activo', true);
 
         return $query;
     }
@@ -60,22 +53,22 @@ class ListClienteAlquiler extends ListRecords
     protected function getTableHeading(): ?string
     {
         if ($this->currentRutaName && $this->currentRutaId) {
-            return "Listado de Clientes Alquiler";
+            return "Listado de Alquileres - {$this->currentRutaName}";
         }
-        return "Listado de Clientes de Alquiler";
-    }
-
-    protected function shouldPersistTableFiltersInSession(): bool
-    {
-        return true;
+        return "Listado de Alquileres";
     }
 
     protected function getActions(): array
     {
         return [
             Actions\CreateAction::make()
-                ->label('Agregar Cliente de Alquiler')
+                ->label('Agregar Alquiler')
                 ->icon('heroicon-s-plus'),
         ];
+    }
+
+    protected function shouldPersistTableFiltersInSession(): bool
+    {
+        return true;
     }
 }

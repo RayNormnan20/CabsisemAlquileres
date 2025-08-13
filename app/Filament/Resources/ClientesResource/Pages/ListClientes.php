@@ -26,7 +26,7 @@ class ListClientes extends ListRecords
             $this->currentRutaName = Session::get('selected_ruta_name');
         } else {
             $this->currentRutaId = null;
-            $this->currentRutaName = 'Todas las Rutas'; 
+            $this->currentRutaName = 'Todas las Rutas';
         }
     }
 
@@ -76,7 +76,7 @@ class ListClientes extends ListRecords
     }
 
     protected function getActions(): array
-    {   
+    {
         return [
             Actions\CreateAction::make()
                 ->label('Agregar Cliente')
