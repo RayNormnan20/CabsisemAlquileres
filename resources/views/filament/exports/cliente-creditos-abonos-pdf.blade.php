@@ -280,7 +280,7 @@
             </tr>
             @php
             $creditosHoy = collect($creditos)->filter(function($credito) {
-            return \Carbon\Carbon::parse($credito['fecha'])->isToday();
+                return \Carbon\Carbon::parse($credito['fecha'])->isToday(); // Usar fecha sin formatear
             });
             $totalCreditosHoy = $creditosHoy->sum('valor');
             @endphp

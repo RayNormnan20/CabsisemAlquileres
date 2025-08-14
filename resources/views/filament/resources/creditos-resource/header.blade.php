@@ -223,7 +223,7 @@ $cliente->loadMissing('creditos');
                     },
 
                     setDeactivationCredit(creditId, creditData, isRenewal = false) {
-                        console.log('data', creditData)
+                       // console.log('data', creditData)
                         this.deactivatingCreditId = creditId;
 
                         this.clientName = creditData.clientName;

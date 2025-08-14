@@ -82,7 +82,8 @@ class ClienteCreditosAbonosExport
 
             $this->creditosData[] = [
                 'id' => $credito->id_credito,
-                'fecha' => Carbon::parse($credito->fecha_inicio)->format('d/m/Y'),
+                'fecha' => $credito->fecha_inicio, // Pasar fecha sin formatear
+                'fecha_formateada' => Carbon::parse($credito->fecha_inicio)->format('d/m/Y'), // Agregar versión formateada
                 'valor' => $credito->valor_credito,
                 'saldo' => $credito->saldo_actual,
                 'estado' => $credito->estado,
