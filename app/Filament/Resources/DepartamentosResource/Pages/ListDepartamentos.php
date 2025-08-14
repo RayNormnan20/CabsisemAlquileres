@@ -62,6 +62,11 @@ class ListDepartamentos extends ListRecords
             Actions\CreateAction::make()
                 ->label('Agregar Departamento')
                 ->icon('heroicon-s-plus'),
+            Actions\Action::make('disponibilidad')
+                ->label('Ver Disponibilidad por Pisos')
+                ->icon('heroicon-o-view-grid')
+                ->color('secondary')
+                ->url(fn () => static::getResource()::getUrl('disponibilidad')),
         ];
     }
 

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->decimal('monto_pagado', 10, 2);
             $table->integer('mes_correspondiente');
             $table->integer('ano_correspondiente');
-            $table->enum('metodo_pago', ['efectivo', 'transferencia', 'cheque', 'tarjeta'])->default('efectivo');
+            $table->enum('metodo_pago', ['efectivo', 'Yape'])->default('efectivo');
             $table->string('referencia_pago', 100)->nullable();
             $table->text('observaciones')->nullable();
             $table->string('recibo_path', 500)->nullable();

@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ConceptosSeeder::class);
 
         $this->call(DiasNoLaborablesSeeder::class);
-        $this->call(EstadosDepartamentoSeeder::class);
+        $this->call(EstadosDepartamentoSeeder::class);         
 
 
 

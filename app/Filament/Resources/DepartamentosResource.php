@@ -268,6 +268,7 @@ class DepartamentosResource extends Resource
             'index' => Pages\ListDepartamentos::route('/'),
             'create' => Pages\CreateDepartamentos::route('/create'),
             'edit' => Pages\EditDepartamentos::route('/{record}/edit'),
+            'disponibilidad' => Pages\DisponibilidadPorPisos::route('/disponibilidad-por-pisos'),
         ];
     }
 
