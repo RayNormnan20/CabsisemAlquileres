@@ -16,4 +16,16 @@ class ListLogActividads extends ListRecords
           //  Actions\CreateAction::make(),
         ];
     }
+
+    // Add this method to show all records by default
+    protected function getTableRecordsPerPageSelectOptions(): array 
+    {
+        return [10, 25, 50, 100, 'all'];
+    }
+
+    // Fix: Return a large integer instead of 'all' string
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return 9999; // This will effectively show all records
+    }
 }

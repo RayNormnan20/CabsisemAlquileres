@@ -19,7 +19,7 @@ class ClienteCreditosAbonos extends Page
     protected static ?string $navigationLabel = 'Liquidaciones';
     protected static ?string $title = 'Liquidaciones';
     protected static ?string $slug = 'liquidaciones';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
     protected static ?string $navigationGroup = 'Movimientos';
     
     protected static string $view = 'filament.pages.cliente-creditos-abonos';

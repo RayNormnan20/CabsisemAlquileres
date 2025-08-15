@@ -17,7 +17,15 @@ class YapeClienteResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-collection';
     protected static ?string $navigationLabel = 'Yapes del día';
+        protected static ?int $navigationSort = 3;
+
     protected static ?string $modelLabel = 'Yape Cliente';
+
+     protected static function getNavigationGroup(): ?string
+    {
+        return __('Movimientos');
+
+    }
 public static function form(Form $form): Form
 {
     return $form->schema([

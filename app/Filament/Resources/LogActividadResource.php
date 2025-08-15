@@ -20,6 +20,9 @@ class LogActividadResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-office-building';
     protected static ?int $navigationSort = 3;
 
+    // Ocultar el recurso del menú de navegación
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static function getNavigationLabel(): string
     {
         return __('Actividades');

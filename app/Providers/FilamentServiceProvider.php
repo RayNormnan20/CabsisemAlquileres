@@ -18,10 +18,12 @@ class FilamentServiceProvider extends ServiceProvider
             // Registrar los grupos de navegación
             Filament::registerNavigationGroups([
                 'Principal',
-                'Principal > Reportes',
-                'Principal > Reportes > Recaudador',
-                'Permissions',
+                'Créditos',
                 'Movimientos',
+                'Créditos',
+                'Alquileres',        // Agregado primero
+                'Movimientos',       // Segundo
+                'Permissions',
                 'Clientes'
             ]);
         });
