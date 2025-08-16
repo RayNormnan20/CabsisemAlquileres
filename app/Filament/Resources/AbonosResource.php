@@ -292,6 +292,12 @@ class AbonosResource extends Resource
                                     ];
                                 })
                                 ->required()
+                                ->columnSpan([
+                                    'default' => 2,
+                                    'sm' => 1,
+                                    'md' => 1
+                                ])
+
                                 ->disabled(function ($livewire) {
                                     if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos) {
                                         return filled($livewire->metodo_pago);
@@ -309,7 +315,11 @@ class AbonosResource extends Resource
                                 ->numeric()
                                 ->required()
                                 ->prefix('S/')
-                                ->columnSpan(1)
+                                ->columnSpan([
+                                    'default' => 2,
+                                    'sm' => 1,
+                                    'md' => 1
+                                ])
                                 ->disabled(true)
                                 ->reactive()
                                 ->suffixIcon('heroicon-s-exclamation')

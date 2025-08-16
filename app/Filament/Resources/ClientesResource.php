@@ -131,6 +131,7 @@ class ClientesResource extends Resource
 
                             Toggle::make('crear_credito')
                                 ->label('Crear crédito después de guardar')
+                                ->default(true)
                                 ->inline(false)
                                 ->visible(fn (string $context) => $context === 'create'),
 

@@ -59,6 +59,35 @@
             "
             style="display: none;"
         >
+            <!-- Opción: Modo Oscuro -->
+            <button 
+                type="button"
+                onclick="toggleDarkMode()"
+                class="
+                    flex items-center px-4 py-3 w-full text-left
+                    text-sm text-gray-700 dark:text-gray-300
+                    hover:bg-gray-50 dark:hover:bg-gray-700
+                    hover:text-gray-900 dark:hover:text-white
+                    transition-colors duration-150
+                "
+            >
+                <svg class="w-5 h-5 mr-3 text-gray-400 dark-mode-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+                <svg class="w-5 h-5 mr-3 text-gray-400 light-mode-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <div>
+                    <div class="font-medium">Modo Oscuro</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Alternar tema claro/oscuro</div>
+                </div>
+            </button>
+
+            <!-- Separador -->
+            <div class="border-t border-gray-200 dark:border-gray-600 my-2"></div>
+
             <!-- Opción: Registro de Actividad -->
             <a 
                 href="{{ route('filament.resources.log-actividads.index') }}"
@@ -82,3 +111,49 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleDarkMode() {
+    const html = document.documentElement;
+    const isDark = html.classList.contains('dark');
+    
+    if (isDark) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    } else {
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    }
+    
+    // Actualizar iconos
+    updateThemeIcons();
+}
+
+function updateThemeIcons() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const darkIcons = document.querySelectorAll('.dark-mode-icon');
+    const lightIcons = document.querySelectorAll('.light-mode-icon');
+    
+    if (isDark) {
+        darkIcons.forEach(icon => icon.classList.add('hidden'));
+        lightIcons.forEach(icon => icon.classList.remove('hidden'));
+    } else {
+        darkIcons.forEach(icon => icon.classList.remove('hidden'));
+        lightIcons.forEach(icon => icon.classList.add('hidden'));
+    }
+}
+
+// Inicializar tema al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    
+    updateThemeIcons();
+});
+</script>

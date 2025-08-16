@@ -33,7 +33,9 @@ class CreateAbonos extends CreateRecord
                 $query->where('id_ruta', $this->currentRutaId);
             })
             ->orderBy('nombre')
-            ->get();
+            ->get()
+            ->pluck('nombre_completo', 'id_cliente')
+            ->toArray();
 
         // Obtener método de pago de la URL si existe
         $this->metodo_pago = request()->query('metodo_pago');
