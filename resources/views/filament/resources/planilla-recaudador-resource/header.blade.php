@@ -1,7 +1,7 @@
 <div class="flex flex-col space-y-4 mb-6">
     <!-- Título y botón de exportar -->
     <div class="flex justify-between items-center">
-        <h1 class="text-xl font-bold text-gray-800">Planilla Recaudador</h1>
+        <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100">Planilla Recaudador</h1>
         <button wire:click="exportToPDF" wire:loading.attr="disabled" wire:target="exportToPDF"
             class="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
@@ -20,18 +20,18 @@
 
         <!-- Filtro de Ruta -->
         <div class="w-48">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Ruta</label>
             <select wire:model="rutaId"
-                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 @foreach($rutas as $ruta)
                 <option value="{{ $ruta->id_ruta }}">{{ $ruta->nombre }}</option>
                 @endforeach
             </select>
         </div>
         <div class="w-48">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Orden de Ruta</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Orden de Ruta</label>
             <select wire:model="tableFilters.ordenar_por"
-                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 <option value="ruta">Orden de Ruta</option>
                 <option value="fecha">Fecha</option>
                 <option value="nombre">Nombre del Cliente</option>
@@ -40,9 +40,9 @@
 
         <!-- Filtro de Estado de Crédito -->
         <div class="w-48">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Estado Crédito</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Estado Crédito</label>
             <select wire:model="estadoCredito"
-                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 <option value="todos">Todos</option>
                 <option value="activos">Créditos Activos</option>
                 <option value="cancelados">Créditos Cancelados</option>

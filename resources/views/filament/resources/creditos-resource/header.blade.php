@@ -41,49 +41,51 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
                 this.search = '';
             }
         }">
-            <label for="clienteId" class="block text-base font-semibold text-gray-700 mb-1 text-center">
+            <label for="clienteId"
+                class="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-1 text-center">
                 Seleccionar Cliente
             </label>
-            
+
             <!-- Input/Button principal -->
             <button @click="open = !open" type="button"
-                class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-left text-sm focus:ring-primary-500 focus:border-primary-500">
+                class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-left text-sm text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
                 <span x-text="selectedClienteName" class="block truncate"></span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4 text-gray-400 dark:text-gray-300" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
 
             <!-- Dropdown -->
             <div x-show="open" @click.away="open = false"
-                class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden">
+                class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-hidden">
                 <!-- Input de búsqueda -->
-                <div class="p-2 border-b border-gray-200">
+                <div class="p-2 border-b border-gray-200 dark:border-gray-600">
                     <input x-model="search" type="text" placeholder="Buscar cliente..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                 </div>
 
                 <!-- Lista de opciones -->
                 <div class="max-h-48 overflow-y-auto">
                     <!-- Opción "Seleccionar" -->
                     <button @click="selectCliente('', '-- Seleccionar --')" type="button"
-                        class="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                        :class="{ 'bg-primary-50 text-primary-600': selectedClienteId === null }">
+                        class="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
+                        :class="{ 'bg-primary-50 dark:bg-primary-900 text-primary-600 dark:text-primary-400': selectedClienteId === null }">
                         -- Seleccionar --
                     </button>
 
                     <!-- Opciones de clientes filtradas -->
                     <template x-for="[id, nombre] in Object.entries(filteredClientes)" :key="id">
                         <button @click="selectCliente(id, nombre)" type="button"
-                            class="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                            :class="{ 'bg-primary-50 text-primary-600': selectedClienteId == id }">
+                            class="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
+                            :class="{ 'bg-primary-50 dark:bg-primary-900 text-primary-600 dark:text-primary-400': selectedClienteId == id }">
                             <span x-text="nombre"></span>
                         </button>
                     </template>
 
                     <!-- Mensaje cuando no hay resultados -->
                     <div x-show="Object.keys(filteredClientes).length === 0 && search !== ''"
-                        class="px-3 py-2 text-gray-500 text-sm">
+                        class="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
                         No se encontraron clientes
                     </div>
                 </div>
@@ -141,7 +143,7 @@ $cliente->loadMissing('creditos');
                     newCuenta: '',
                     newValorCuota: '',
                     newVencimientoDate: '',
-                    
+
                     // Nueva variable para el descuento
                     descuento: 0,
 
@@ -172,22 +174,22 @@ $cliente->loadMissing('creditos');
                         // Validar que el descuento no sea mayor al saldo actual
                         const saldoActualSinDescuento = parseFloat(this.saldoOriginalSinDescuento) || 0;
                         const descuentoAplicado = parseFloat(this.descuento) || 0;
-                        
+
                         if (descuentoAplicado > saldoActualSinDescuento) {
                             alert('El descuento no puede ser mayor al saldo actual');
                             this.descuento = 0;
                             return;
                         }
-                        
+
                         if (descuentoAplicado < 0) {
                             alert('El descuento no puede ser negativo');
                             this.descuento = 0;
                             return;
                         }
-                        
+
                         // NO modificamos this.saldoActual aquí
                         // El saldo actual se mantiene sin cambios para mostrar el saldo real
-                        
+
                         // Solo recalcular la nueva cuenta si hay interés y forma de pago
                         if (this.newInteres && this.newFormaPago) {
                             this.calcularFormaPagoYVencimiento();
@@ -228,10 +230,10 @@ $cliente->loadMissing('creditos');
                     init() {
                         this.$watch('newInteres', () => this.calcularFormaPagoYVencimiento());
                         this.$watch('newFormaPago', () => this.calcularFormaPagoYVencimiento());
-                        
+
                         // Nuevo watcher para el descuento
                         this.$watch('descuento', () => this.calcularNuevaCuentaConDescuento());
-                        
+
                         // Nuevo watcher para la fecha actual editable
                         this.$watch('fechaActualEditable', () => this.calcularFechaVencimiento());
 
@@ -257,7 +259,7 @@ $cliente->loadMissing('creditos');
                     // Nueva función específica para calcular la fecha de vencimiento
                     calcularFechaVencimiento() {
                         const diasPago = parseInt(this.newFormaPago);
-                        
+
                         if (!diasPago || isNaN(diasPago) || diasPago <= 0) {
                             this.newVencimientoDate = '';
                             return;
@@ -295,7 +297,7 @@ $cliente->loadMissing('creditos');
                         this.saldo = (creditData.capital + parseFloat(this.interes)).toFixed(2);
                         this.fechaInicio = this.formatearFecha(creditData.fechaInicio);
                         this.fechaVencimiento = this.formatearFecha(creditData.fechaVencimiento);
-                        
+
                         // Inicializar la fecha actual editable con la fecha actual del sistema
                         this.fechaActualEditable = new Date().toISOString().split('T')[0];
                         this.renovacion = 0;
@@ -319,10 +321,10 @@ $cliente->loadMissing('creditos');
                         // USAR DIRECTAMENTE EL SALDO QUE VIENE DE LA BASE DE DATOS
                         // En lugar de calcularlo, usar el saldo real del crédito
                         const saldoReal = parseFloat(creditData.saldo || 0).toFixed(2);
-                        
+
                         // Guardar el saldo original SIN descuento para los cálculos
                         this.saldoOriginalSinDescuento = saldoReal;
-                        
+
                         // MODIFICACIÓN: Para renovaciones, mostrar el valor de Nueva Cuenta en Saldo Actual
                         if (isRenewal) {
                             // En renovaciones, el Saldo Actual debe mostrar el valor de Nueva Cuenta
@@ -339,7 +341,7 @@ $cliente->loadMissing('creditos');
                         this.newCuenta = '';
                         this.newValorCuota = '';
                         this.newVencimientoDate = creditData.fechaVencimiento || '';
-                        
+
                         // Resetear el descuento
                         this.descuento = 0;
 
@@ -666,13 +668,13 @@ $cliente->loadMissing('creditos');
                 class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 Crear Crédito
             </a>
-                {{-- Botón Adicional - Mostrar cuando no hay crédito activo --}}
-                @if(!$creditoActivo)
-                <a href="{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente, 'tipo' => 'adicional']) }}"
-                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                    Adicional
-                </a>
-                @endif
+            {{-- Botón Adicional - Mostrar cuando no hay crédito activo --}}
+            @if(!$creditoActivo)
+            <a href="{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente, 'tipo' => 'adicional']) }}"
+                class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                Adicional
+            </a>
+            @endif
 
             @endif
 
@@ -738,7 +740,8 @@ $cliente->loadMissing('creditos');
                                         </div>
                                     </div>
 
-                                    <div x-show="!isRenewal || !isShowingRenovacionSteps" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div x-show="!isRenewal || !isShowingRenovacionSteps"
+                                        class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {{-- Columna Izquierda: Datos del Crédito (Solo lectura) --}}
                                         <div>
                                             <h4 class="text-md font-semibold text-gray-800 mb-2">Datos Actuales</h4>
@@ -801,7 +804,7 @@ $cliente->loadMissing('creditos');
                                                     disabled
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-600 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                             </div>
-                                            
+
                                             <!-- Nuevo campo de Descuento -->
                                             <div class="mb-3">
                                                 <label for="descuento"
@@ -811,7 +814,7 @@ $cliente->loadMissing('creditos');
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                                 <!-- <p class="mt-1 text-xs text-gray-500">El descuento se restará del saldo actual para calcular la nueva cuenta</p> -->
                                             </div>
-                                            
+
                                             <div class="mb-3">
                                                 <label for="nuevo-interes"
                                                     class="block text-sm font-medium text-gray-700">Nuevo
@@ -838,8 +841,7 @@ $cliente->loadMissing('creditos');
                                             <div class="mb-3">
                                                 <label for="fecha-actual"
                                                     class="block text-sm font-medium text-gray-700">Fecha Actual</label>
-                                                <input type="date" id="fecha-actual"
-                                                    x-model="fechaActualEditable"
+                                                <input type="date" id="fecha-actual" x-model="fechaActualEditable"
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                             </div>
                                             <div class="mb-3">
@@ -852,38 +854,44 @@ $cliente->loadMissing('creditos');
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div x-show="isRenewal && isShowingRenovacionSteps" class="mt-4">
                                         <h4 class="text-lg font-medium text-gray-900 mb-4">Datos de Renovación</h4>
                                         <!-- Organizar en 2 columnas -->
                                         <div class="grid grid-cols-2 gap-4 mb-4">
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">Saldo Actual</label>
+                                                <label class="block text-sm font-medium text-gray-700">Saldo
+                                                    Actual</label>
                                                 <input type="number" x-model="saldoActual"
-                                                    class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" readonly disabled />
+                                                    class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md"
+                                                    readonly disabled />
                                             </div>
-                                            
+
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">Renovación</label>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700">Renovación</label>
                                                 <input type="number" x-model="renovacion"
                                                     class="mt-1 block w-full border-gray-300 rounded-md" />
                                             </div>
-                                            
+
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">A entregar</label>
+                                                <label class="block text-sm font-medium text-gray-700">A
+                                                    entregar</label>
                                                 <input type="number" :value="aEntregar.toFixed(2)" readonly
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
-                                            
+
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">Valor del Crédito</label>
+                                                <label class="block text-sm font-medium text-gray-700">Valor del
+                                                    Crédito</label>
                                                 <input type="number" :value="valorCredito.toFixed(2)" readonly
                                                     class="mt-1 block w-full border-gray-300 rounded-md" />
                                             </div>
                                         </div>
-                                        
+
                                         <div class="mt-4">
-                                            <label class="block text-sm font-medium text-gray-700">Agregar medio de pago</label>
+                                            <label class="block text-sm font-medium text-gray-700">Agregar medio de
+                                                pago</label>
                                             <div class="flex flex-wrap gap-2 mt-1">
                                                 <select x-model="medioSeleccionado" class="border-gray-300 rounded-md">
                                                     <option value="" disabled selected>Seleccione...</option>
@@ -902,9 +910,11 @@ $cliente->loadMissing('creditos');
                                             <div class="mt-4 space-y-2">
                                                 <template x-for="(pago, index) in pagos" :key="pago.tipo">
                                                     <div class="flex items-center space-x-2">
-                                                        <span class="w-28 text-gray-700 font-medium" x-text="pago.tipo"></span>
+                                                        <span class="w-28 text-gray-700 font-medium"
+                                                            x-text="pago.tipo"></span>
                                                         <input type="number" x-model="pago.monto"
-                                                            class="flex-1 border-gray-300 rounded-md" placeholder="Monto" />
+                                                            class="flex-1 border-gray-300 rounded-md"
+                                                            placeholder="Monto" />
                                                         <button type="button" @click="eliminarMedioPago(index)"
                                                             class="text-red-600 hover:text-red-800 font-bold text-sm">Eliminar</button>
                                                     </div>
@@ -912,7 +922,8 @@ $cliente->loadMissing('creditos');
                                             </div>
 
                                             <div class="mt-4">
-                                                <label class="block text-sm font-medium text-gray-700">Total entregado</label>
+                                                <label class="block text-sm font-medium text-gray-700">Total
+                                                    entregado</label>
                                                 <input type="number" :value="totalEntregado" readonly
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
@@ -927,7 +938,7 @@ $cliente->loadMissing('creditos');
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
                                 x-text="isRenewal ? 'Confirmar Renovación' : 'Confirmar Baja de Cuenta'">
                             </button>
-                            
+
                             <button type="button" @click="showRenovacionSteps()"
                                 x-show="isRenewal && !isShowingRenovacionSteps && mostrarRenovacionCompleta"
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
@@ -939,7 +950,7 @@ $cliente->loadMissing('creditos');
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                 Volver
                             </button>
-                            
+
                             <button type="button" @click="showDeactivationModal = false"
                                 x-show="!isShowingRenovacionSteps"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
@@ -956,23 +967,25 @@ $cliente->loadMissing('creditos');
     {{-- Información desplegable --}}
     <div x-data="{ open: false }" class="px-6 py-4">
         <button @click="open = !open" type="button"
-            class="text-primary-600 hover:text-primary-900 text-sm font-medium flex items-center focus:outline-none">
+            class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 text-sm font-medium flex items-center focus:outline-none">
             <span x-text="open ? '▲ Ocultar información' : '▼ Ver información del cliente'"></span>
         </button>
 
-        <div x-show="open" x-transition class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div><span class="font-medium">Documento:</span> {{ $cliente->numero_documento }}</div>
-            <div><span class="font-medium">Celular:</span> {{ $cliente->celular }}</div>
-            <div><span class="font-medium">Teléfono:</span> {{ $cliente->telefono }}</div>
-            <div><span class="font-medium">Dirección:</span> {{ $cliente->direccion }}</div>
-            <!-- <div><span class="font-medium">Negocio/Alias:</span> {{ $cliente->nombre_negocio }}</div> -->
+        <div x-show="open" x-transition class="mt-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Documento:</span> {{ $cliente->numero_documento }}</div>
+                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Celular:</span> {{ $cliente->celular }}</div>
+                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Teléfono:</span> {{ $cliente->telefono }}</div>
+                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Dirección:</span> {{ $cliente->direccion }}</div>
+                <!-- <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Negocio/Alias:</span> {{ $cliente->nombre_negocio }}</div> -->
 
-            <div><span class="font-medium">Ciudad:</span> {{ $cliente->ciudad }}</div>
-            <div>
-                <span class="font-medium">Status:</span>
-                <span class="{{ $cliente->activo ? 'text-green-600' : 'text-red-600' }}">
-                    {{ $cliente->activo ? 'Activo' : 'Inactivo' }}
-                </span>
+                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Ciudad:</span> {{ $cliente->ciudad }}</div>
+                <div class="text-gray-900 dark:text-gray-100">
+                    <span class="font-medium text-gray-700 dark:text-gray-200">Status:</span>
+                    <span class="{{ $cliente->activo ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300' }}">
+                        {{ $cliente->activo ? 'Activo' : 'Inactivo' }}
+                    </span>
+                </div>
             </div>
         </div>
     </div>

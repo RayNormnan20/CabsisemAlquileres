@@ -1,4 +1,4 @@
-<div class="flex flex-col space-y-4">
+<div class="flex flex-col space-y-4 bg-white dark:bg-gray-800 p-4 rounded-lg">
     <!-- Layout responsive: una fila en desktop, dos filas en móvil -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <!-- Primera fila en móvil: selectores -->
@@ -32,43 +32,43 @@
         }">
                 <!-- Input/Button principal -->
                 <button @click="open = !open" type="button"
-                    class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-left focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-left focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                     <span x-text="selectedClienteName" class="block truncate"></span>
-                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-4 h-4 text-gray-400 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
 
                 <!-- Dropdown -->
                 <div x-show="open" @click.away="open = false"
-                    class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden">
+                    class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-hidden">
                     <!-- Input de búsqueda -->
-                    <div class="p-2 border-b border-gray-200">
+                    <div class="p-2 border-b border-gray-200 dark:border-gray-600">
                         <input x-model="search" type="text" placeholder="Buscar cliente..."
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                     </div>
 
                     <!-- Lista de opciones -->
                     <div class="max-h-48 overflow-y-auto">
                         <!-- Opción "Todos los clientes" -->
                         <button @click="selectCliente('', 'Todos los clientes')" type="button"
-                            class="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                            :class="{ 'bg-indigo-50 text-indigo-600': selectedClienteId === null }">
+                            class="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
+                            :class="{ 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400': selectedClienteId === null }">
                             Todos los clientes
                         </button>
 
                         <!-- Opciones de clientes filtradas -->
                         <template x-for="[id, nombre] in Object.entries(filteredClientes)" :key="id">
                             <button @click="selectCliente(id, nombre)" type="button"
-                                class="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                                :class="{ 'bg-indigo-50 text-indigo-600': selectedClienteId == id }">
+                                class="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
+                                :class="{ 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400': selectedClienteId == id }">
                                 <span x-text="nombre"></span>
                             </button>
                         </template>
 
                         <!-- Mensaje cuando no hay resultados -->
                         <div x-show="Object.keys(filteredClientes).length === 0 && search !== ''"
-                            class="px-3 py-2 text-gray-500 text-sm">
+                            class="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
                             No se encontraron clientes
                         </div>
                     </div>
@@ -77,7 +77,7 @@
 
             <div class="flex-1">
                 <select wire:model="tipoConcepto"
-                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                     <option value="">Todos los métodos</option>
                     <option value="Yape">Yape</option>
                     <option value="Efectivo">Efectivo</option>
@@ -87,7 +87,7 @@
             <div class="flex-6">
                 <select wire:model="rutaId"
                     wire:change="$set('rutaId', $event.target.value === '' ? null : parseInt($event.target.value))"
-                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                     <option value="">Todas las rutas</option>
                     @foreach($rutas as $id => $nombre)
                     <option value="{{ $id }}">{{ $nombre }}</option>
@@ -103,24 +103,24 @@
             <div class="relative inline-block text-left" x-data="{ open: false }">
                 <!-- Botón desplegable -->
                 <button @click="open = !open"
-                    class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md bg-white text-sm hover:bg-gray-50">
-                    <x-heroicon-o-calendar class="w-4 h-4 text-gray-600" />
+                    class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <x-heroicon-o-calendar class="w-4 h-4 text-gray-600 dark:text-gray-300" />
                     {{ $fechaDesde ? \Carbon\Carbon::parse($fechaDesde)->format('d M Y') : 'Desde' }}
                     -
                     {{ $fechaHasta ? \Carbon\Carbon::parse($fechaHasta)->format('d M Y') : 'Hasta' }}
-                    <svg class="w-4 h-4 ml-1 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-4 h-4 ml-1 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
 
                 <!-- Dropdown -->
                 <div x-show="open" @click.away="open = false"
-                    class="absolute z-50 mt-2 w-90 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 p-4 space-y-3">
+                    class="absolute z-50 mt-2 w-90 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 dark:ring-gray-600 p-4 space-y-3">
                     <!-- Selector de período -->
                     <div>
-                        <label class="block text-sm text-gray-600 mb-1">Período:</label>
+                        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Período:</label>
                         <select wire:model="periodoSeleccionado" wire:change="aplicarPeriodo"
-                            class="w-full border-gray-300 rounded-md shadow-sm text-sm">
+                            class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
                             <option value="hoy">Hoy</option>
                             <option value="ayer">Ayer</option>
                             <option value="semana_actual">Esta semana</option>
@@ -134,13 +134,13 @@
 
                     <!-- Rango de fechas -->
                     <div>
-                        <label class="block text-sm text-gray-600 mb-1">Rango personalizado:</label>
+                        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Rango personalizado:</label>
                         <div class="flex items-center gap-2">
                             <input type="date" wire:model="fechaDesde"
-                                class="w-full border-gray-300 rounded-md shadow-sm text-sm" />
-                            <span class="text-gray-500">-</span>
+                                class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm" />
+                            <span class="text-gray-500 dark:text-gray-400">-</span>
                             <input type="date" wire:model="fechaHasta"
-                                class="w-full border-gray-300 rounded-md shadow-sm text-sm" />
+                                class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm" />
                         </div>
                     </div>
                 </div>
@@ -166,12 +166,12 @@
                     x-transition:leave="transition ease-in duration-75"
                     x-transition:leave-start="transform opacity-100 scale-100"
                     x-transition:leave-end="transform opacity-0 scale-95"
-                    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 dark:ring-gray-600 focus:outline-none z-10"
                     role="menu">
                     <div class="py-1" role="none">
                         <!-- Opción Yape con parámetro en la URL -->
                         <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Yape']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
                             wire:navigate @if(!$clienteId) onclick="return false;" @endif>
                             Yape
                         </a>
@@ -179,7 +179,7 @@
                     <div class="py-1" role="none">
                         <!-- Opción Efectivo -->
                         <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Efectivo']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
                             wire:navigate @if(!$clienteId) onclick="return false;" @endif>
                             Efectivo
                         </a>
@@ -187,7 +187,7 @@
                     <div class="py-1" role="none">
                         <!-- Única opción: Crear Crédito -->
                         <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono completar p.']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
                             wire:navigate @if(!$clienteId) onclick="return false;" @endif>
                             Abono completar p.
                         </a>
@@ -195,7 +195,7 @@
                     <div class="py-1" role="none">
                         <!-- Única opción: Crear Crédito -->
                         <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono sin firma Chis']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
                             wire:navigate @if(!$clienteId) onclick="return false;" @endif>
                             Abono sin firma Chis
                         </a>
@@ -203,42 +203,42 @@
                     <!-- Ejemplo para "otros egresos" -->
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'OTROS EGRESOS']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
                             Otros egresos
                         </a>
                     </div>
 
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'OTROS INGRESOS']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
                             Otros ingresos
                         </a>
                     </div>
 
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO SOBRANTE COB']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
                             Abono sobrante cob
                         </a>
                     </div>
 
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO FALTANTE COB']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
                             Abono faltante cob
                         </a>
                     </div>
 
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ENTREGA CAJA COBRADOR']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
                             Entrega caja COBRADOR
                         </a>
                     </div>
 
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO DE DESCUENTO']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
                             ABONO DE DESCUENTO
                         </a>
                     </div>
@@ -260,22 +260,22 @@
     ->first();
     @endphp
     @if($cliente)
-    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-600">
         <div class="flex justify-between items-center">
             <div>
-                <h3 class="text-lg font-bold text-gray-800">{{ $cliente->nombre_completo }}</h3>
-                <p class="text-sm text-gray-600">DNI: {{ $cliente->numero_documento }}</p>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ $cliente->nombre_completo }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300">DNI: {{ $cliente->numero_documento }}</p>
             </div>
             <div class="text-right">
-                <p class="text-sm">
+                <p class="text-sm text-gray-900 dark:text-gray-100">
                     <span class="font-medium">Créditos:</span> {{ $cliente->creditos_count }}
                 </p>
-                <p class="text-sm">
+                <p class="text-sm text-gray-900 dark:text-gray-100">
                     <span class="font-medium">Abonos:</span> {{ $cliente->abonos_count }}
                 </p>
-                <p class="text-sm">
+                <p class="text-sm text-gray-900 dark:text-gray-100">
                     <span class="font-medium">Estado:</span>
-                    <span class="{{ $cliente->activo ? 'text-green-600' : 'text-red-600' }}">
+                    <span class="{{ $cliente->activo ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                         {{ $cliente->activo ? 'Activo' : 'Inactivo' }}
                     </span>
                 </p>
