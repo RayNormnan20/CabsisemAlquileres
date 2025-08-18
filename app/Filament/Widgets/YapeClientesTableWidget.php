@@ -130,19 +130,24 @@ class YapeClientesTableWidget extends BaseWidget
                         ->label('Ver Pagos')
                         ->modalHeading(fn (YapeCliente $record) => 'Pagos realizados a: ' . $record->nombre)
                         ->modalContent(function (YapeCliente $record) {
-                            // Obtener todos los abonos para este YapeCliente
+                            // Obtener todos los abonos para este YapeCliente con sus conceptos e imágenes
                             $abonos = Abonos::where('id_yape_cliente', $record->id)
-                                ->with(['cliente'])
+                                ->with(['cliente', 'usuario', 'conceptosabonos'])
                                 ->orderBy('created_at', 'desc')
                                 ->get();
 
-                            $html = '<div class="overflow-x-auto">';
+                            $html = '<div class="space-y-6">';
+
+                            // Tabla de abonos
+                            $html .= '<div class="overflow-x-auto">';
+                            $html .= '<h3 class="text-lg font-semibold text-gray-900 mb-4">Detalle de Abonos</h3>';
                             $html .= '<table class="min-w-full divide-y divide-gray-200">';
                             $html .= '<thead class="bg-gray-50">';
                             $html .= '<tr>';
                             $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>';
                             $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>';
                             $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>';
+                            $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comprobante</th>';
                             $html .= '</tr>';
                             $html .= '</thead>';
                             $html .= '<tbody class="bg-white divide-y divide-gray-200">';
@@ -153,15 +158,135 @@ class YapeClientesTableWidget extends BaseWidget
                                     $monto = 'S/ ' . number_format($abono->monto_abono, 2);
                                     $fecha = $abono->created_at->format('d/m/Y');
 
+                                    // Verificar si tiene comprobante
+                                    $tieneComprobante = $abono->conceptosabonos->where('foto_comprobante', '!=', null)->count() > 0;
+
                                     $html .= '<tr>';
                                     $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . $clienteNombre . '</td>';
                                     $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . $monto . '</td>';
                                     $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . $fecha . '</td>';
+                                    $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">';
+
+                                    if ($tieneComprobante) {
+                                        // Crear datos para el modal de imágenes usando la misma estructura que AbonosResource
+                                        $abonosConImagenes = $abonos->filter(function($a) {
+                                            return $a->conceptosabonos->where('foto_comprobante', '!=', null)->count() > 0;
+                                        })->map(function($a) {
+                                            return [
+                                                'id' => $a->id_abono,
+                                                'cliente' => $a->cliente ? $a->cliente->nombre_completo : 'Sin cliente',
+                                                'fecha' => $a->created_at->format('d/m/Y H:i'),
+                                                'monto' => $a->monto_abono,
+                                                'usuario' => $a->usuario ? $a->usuario->name : 'Sin usuario',
+                                                'metodos' => $a->conceptosabonos->pluck('tipo_concepto')->implode(', '),
+                                                'url' => optional($a->conceptosabonos->firstWhere('foto_comprobante', '!=', null))->foto_comprobante
+                                                    ? asset('storage/' . $a->conceptosabonos->firstWhere('foto_comprobante', '!=', null)->foto_comprobante)
+                                                    : null,
+                                            ];
+                                        })->values();
+
+                                        $startIndex = $abonosConImagenes->search(fn($a) => $a['id'] == $abono->id_abono);
+                                        $jsonData = htmlspecialchars($abonosConImagenes->toJson(), ENT_QUOTES, 'UTF-8');
+
+                                        // Botón del ojo que abre el modal
+                                        $html .= '<button onclick="openModal(\'modal' . $abono->id_abono . '\')" class="inline-flex items-center px-2 py-1 bg-blue-600 border border-transparent rounded text-xs text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">';
+                                        $html .= '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+                                        $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>';
+                                        $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+                                        $html .= '</svg>';
+                                        $html .= '</button>';
+
+                                        // Modal usando la misma estructura que AbonosResource
+                                        $html .= '<div id="modal' . $abono->id_abono . '" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">';
+                                        $html .= '<div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">';
+                                        $html .= '<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal(\'modal' . $abono->id_abono . '\')"></div>';
+                                        $html .= '<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">';
+
+                                        // Contenido del modal con Alpine.js
+                                        $html .= '<div wire:ignore x-data="{';
+                                        $html .= 'items: ' . $jsonData . ',';
+                                        $html .= 'index: ' . $startIndex . ',';
+                                        $html .= 'prev() { if (this.index > 0) this.index--; },';
+                                        $html .= 'next() { if (this.index < this.items.length - 1) this.index++; }';
+                                        $html .= '}" class="space-y-4 p-6">';
+
+                                        // Header
+                                        $html .= '<div class="flex justify-between items-center mb-4">';
+                                        $html .= '<h3 class="text-lg font-medium text-gray-900">Comprobantes de Pago</h3>';
+                                        $html .= '<button onclick="closeModal(\'modal' . $abono->id_abono . '\')" class="text-gray-400 hover:text-gray-600">';
+                                        $html .= '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+                                        $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+                                        $html .= '</svg>';
+                                        $html .= '</button>';
+                                        $html .= '</div>';
+
+                                        // Navegación
+                                        $html .= '<div class="flex justify-between items-center mb-4 bg-white p-3 rounded-lg shadow">';
+                                        $html .= '<button type="button" @click="prev" :disabled="index === 0" class="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
+                                        $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
+                                        $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />';
+                                        $html .= '</svg>';
+                                        $html .= '<span>Anterior</span>';
+                                        $html .= '</button>';
+
+                                        $html .= '<span class="text-sm font-semibold text-gray-700">';
+                                        $html .= 'Comprobante <span x-text="index+1"></span> de <span x-text="items.length"></span>';
+                                        $html .= '</span>';
+
+                                        $html .= '<button type="button" @click="next" :disabled="index === items.length - 1" class="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
+                                        $html .= '<span>Siguiente</span>';
+                                        $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
+                                        $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />';
+                                        $html .= '</svg>';
+                                        $html .= '</button>';
+                                        $html .= '</div>';
+
+                                        // Información del abono
+                                        $html .= '<div class="grid grid-cols-3 gap-2 text-xs p-2 bg-gray-50 rounded">';
+                                        $html .= '<div>';
+                                        $html .= '<p class="font-medium text-gray-500 mt-2">Usuario</p>';
+                                        $html .= '<p x-text="items[index].usuario"></p>';
+                                        $html .= '<p class="font-medium text-gray-500">Cliente</p>';
+                                        $html .= '<p x-text="items[index].cliente"></p>';
+                                        $html .= '</div>';
+                                        $html .= '<div>';
+                                        $html .= '<p class="font-medium text-gray-500">Fecha</p>';
+                                        $html .= '<p x-text="items[index].fecha"></p>';
+                                        $html .= '<p class="font-medium text-gray-500 mt-2">Métodos de pago</p>';
+                                        $html .= '<p x-text="items[index].metodos"></p>';
+                                        $html .= '</div>';
+                                        $html .= '<div>';
+                                        $html .= '<p class="font-medium text-gray-500">Monto</p>';
+                                        $html .= '<p>S/ <span x-text="items[index].monto"></span></p>';
+                                        $html .= '</div>';
+                                        $html .= '</div>';
+
+                                        // Imagen
+                                        $html .= '<template x-if="items[index].url">';
+                                        $html .= '<div class="flex justify-center">';
+                                        $html .= '<img :src="items[index].url" class="rounded-lg max-h-[290px] max-w-full object-contain cursor-pointer" @click="window.open(items[index].url, \'_blank\')"/>';
+                                        $html .= '</div>';
+                                        $html .= '</template>';
+                                        $html .= '<template x-if="!items[index].url">';
+                                        $html .= '<p class="text-center text-gray-400">No hay comprobante disponible</p>';
+                                        $html .= '</template>';
+
+                                        $html .= '</div>';
+                                        $html .= '</div>';
+                                        $html .= '</div>';
+                                        $html .= '</div>';
+
+
+                                    } else {
+                                        $html .= '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Sin comprobante</span>';
+                                    }
+
+                                    $html .= '</td>';
                                     $html .= '</tr>';
                                 }
                             } else {
                                 $html .= '<tr>';
-                                $html .= '<td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No hay pagos registrados</td>';
+                                $html .= '<td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No hay pagos registrados</td>';
                                 $html .= '</tr>';
                             }
 
@@ -191,6 +316,38 @@ class YapeClientesTableWidget extends BaseWidget
                             $html .= '</svg>';
                             $html .= 'PDF';
                             $html .= '</a>';
+                            $html .= '</div>';
+
+                            $html .= '</div>';
+
+                            // Script mejorado para manejar modales sin conflictos
+                            $html .= '<script type="text/javascript">';
+                            $html .= '(function() {';
+                            $html .= '    if (typeof window.modalManager === "undefined") {';
+                            $html .= '        window.modalManager = {';
+                            $html .= '            openModal: function(modalId) {';
+                            $html .= '                var allModals = document.querySelectorAll("div[id^=\"modal\"]");';
+                            $html .= '                allModals.forEach(function(modal) {';
+                            $html .= '                    modal.classList.add("hidden");';
+                            $html .= '                });';
+                            $html .= '                var targetModal = document.getElementById(modalId);';
+                            $html .= '                if (targetModal) {';
+                            $html .= '                    targetModal.classList.remove("hidden");';
+                            $html .= '                }';
+                            $html .= '            },';
+                            $html .= '            closeModal: function(modalId) {';
+                            $html .= '                var targetModal = document.getElementById(modalId);';
+                            $html .= '                if (targetModal) {';
+                            $html .= '                    targetModal.classList.add("hidden");';
+                            $html .= '                }';
+                            $html .= '            }';
+                            $html .= '        };';
+                            $html .= '        window.openModal = window.modalManager.openModal;';
+                            $html .= '        window.closeModal = window.modalManager.closeModal;';
+                            $html .= '    }';
+                            $html .= '})();';
+                            $html .= '</script>';
+
                             $html .= '</div>';
 
                             return new HtmlString($html);
