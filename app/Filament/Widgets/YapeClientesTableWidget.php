@@ -134,18 +134,19 @@ class YapeClientesTableWidget extends BaseWidget
                                 ->orderBy('created_at', 'desc')
                                 ->get();
 
-                            $html = '<div class="space-y-6">';
+                            $html = '<div class="space-y-4 sm:space-y-6">';
 
                             // Tabla de abonos
                             $html .= '<div class="overflow-x-auto">';
-                            $html .= '<h3 class="text-lg font-semibold text-gray-900 mb-4">Detalle de Abonos</h3>';
+                            $html .= '<h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Detalle de Abonos</h3>';
+                            $html .= '<div class="max-h-80 sm:max-h-96 overflow-y-auto border border-gray-200 rounded-lg">';
                             $html .= '<table class="min-w-full divide-y divide-gray-200">';
                             $html .= '<thead class="bg-gray-50">';
                             $html .= '<tr>';
-                            $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>';
-                            $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>';
-                            $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>';
-                            $html .= '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comprobante</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Fecha</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ver</th>';
                             $html .= '</tr>';
                             $html .= '</thead>';
                             $html .= '<tbody class="bg-white divide-y divide-gray-200">';
@@ -160,10 +161,13 @@ class YapeClientesTableWidget extends BaseWidget
                                     $tieneComprobante = $abono->conceptosabonos->where('foto_comprobante', '!=', null)->count() > 0;
 
                                     $html .= '<tr>';
-                                    $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . $clienteNombre . '</td>';
-                                    $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . $monto . '</td>';
-                                    $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . $fecha . '</td>';
-                                    $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm text-gray-900">';
+                                    $html .= '<div class="font-medium">' . $clienteNombre . '</div>';
+                                    $html .= '<div class="text-gray-500 sm:hidden text-xs">' . $fecha . '</div>';
+                                    $html .= '</td>';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold text-green-600">' . $monto . '</td>';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 hidden sm:table-cell">' . $fecha . '</td>';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">';
 
                                     if ($tieneComprobante) {
                                         // Crear datos para el modal de imágenes usando la misma estructura que AbonosResource
@@ -198,74 +202,80 @@ class YapeClientesTableWidget extends BaseWidget
                                         $html .= '<div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">';
                                         $html .= '<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="event.stopPropagation(); window.independentModalManager.closeModal(\'modal' . $abono->id_abono . '\')"></div>';
                                         $html .= '<span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>';
-                                        $html .= '<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full" onclick="event.stopPropagation()">';
+                                        $html .= '<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full w-full max-w-sm sm:max-w-4xl mx-4 sm:mx-auto" onclick="event.stopPropagation()">';
 
                                         $html .= '<div x-data="{';
                                         $html .= 'items: ' . $jsonData . ',';
                                         $html .= 'index: ' . $startIndex . ',';
                                         $html .= 'prev() { if (this.index > 0) this.index--; },';
                                         $html .= 'next() { if (this.index < this.items.length - 1) this.index++; }';
-                                        $html .= '}" class="space-y-4 p-6">';
+                                        $html .= '}" class="space-y-3 p-3 sm:p-6 sm:space-y-4">';
 
                                         // Header
-                                        $html .= '<div class="flex justify-between items-center mb-4">';
-                                        $html .= '<h3 class="text-lg font-medium text-gray-900">Comprobantes de Pago</h3>';
+                                        $html .= '<div class="flex justify-between items-center mb-3 sm:mb-4">';
+                                        $html .= '<h3 class="text-base sm:text-lg font-medium text-gray-900">Comprobantes de Pago</h3>';
                                         $html .= '<button onclick="event.stopPropagation(); event.preventDefault(); window.independentModalManager.closeModal(\'modal' . $abono->id_abono . '\')" class="text-gray-400 hover:text-gray-600 focus:outline-none">';
-                                        $html .= '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+                                        $html .= '<svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
                                         $html .= '</svg>';
                                         $html .= '</button>';
                                         $html .= '</div>';
 
                                         // Navegación
-                                        $html .= '<div class="flex justify-between items-center mb-4 bg-white p-3 rounded-lg shadow">';
-                                        $html .= '<button type="button" @click="prev" :disabled="index === 0" class="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
-                                        $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
+                                        $html .= '<div class="flex justify-between items-center mb-3 sm:mb-4 bg-white p-2 sm:p-3 rounded-lg shadow">';
+                                        $html .= '<button type="button" @click="prev" :disabled="index === 0" class="flex items-center space-x-1 px-2 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
+                                        $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />';
                                         $html .= '</svg>';
-                                        $html .= '<span>Anterior</span>';
+                                        $html .= '<span class="hidden sm:inline">Anterior</span>';
                                         $html .= '</button>';
 
-                                        $html .= '<span class="text-sm font-semibold text-gray-700">';
-                                        $html .= 'Comprobante <span x-text="index+1"></span> de <span x-text="items.length"></span>';
+                                        $html .= '<span class="text-xs sm:text-sm font-semibold text-gray-700 text-center">';
+                                        $html .= '<span x-text="index+1"></span>/<span x-text="items.length"></span>';
                                         $html .= '</span>';
 
-                                        $html .= '<button type="button" @click="next" :disabled="index === items.length - 1" class="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
-                                        $html .= '<span>Siguiente</span>';
-                                        $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
+                                        $html .= '<button type="button" @click="next" :disabled="index === items.length - 1" class="flex items-center space-x-1 px-2 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
+                                        $html .= '<span class="hidden sm:inline">Siguiente</span>';
+                                        $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />';
                                         $html .= '</svg>';
                                         $html .= '</button>';
                                         $html .= '</div>';
 
                                         // Información del abono
-                                        $html .= '<div class="grid grid-cols-3 gap-2 text-xs p-2 bg-gray-50 rounded">';
-                                        $html .= '<div>';
-                                        $html .= '<p class="font-medium text-gray-500 mt-2">Usuario</p>';
-                                        $html .= '<p x-text="items[index].usuario"></p>';
+                                        $html .= '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm p-3 bg-gray-50 rounded">';
+                                        $html .= '<div class="space-y-1">';
+                                        $html .= '<p class="font-medium text-gray-500">Usuario</p>';
+                                        $html .= '<p class="text-gray-900 font-semibold" x-text="items[index].usuario"></p>';
+                                        $html .= '</div>';
+                                        $html .= '<div class="space-y-1">';
                                         $html .= '<p class="font-medium text-gray-500">Cliente</p>';
-                                        $html .= '<p x-text="items[index].cliente"></p>';
+                                        $html .= '<p class="text-gray-900 font-semibold" x-text="items[index].cliente"></p>';
                                         $html .= '</div>';
-                                        $html .= '<div>';
+                                        $html .= '<div class="space-y-1">';
                                         $html .= '<p class="font-medium text-gray-500">Fecha</p>';
-                                        $html .= '<p x-text="items[index].fecha"></p>';
-                                        $html .= '<p class="font-medium text-gray-500 mt-2">Métodos de pago</p>';
-                                        $html .= '<p x-text="items[index].metodos"></p>';
+                                        $html .= '<p class="text-gray-900 font-semibold" x-text="items[index].fecha"></p>';
                                         $html .= '</div>';
-                                        $html .= '<div>';
+                                        $html .= '<div class="space-y-1 sm:col-span-2">';
+                                        $html .= '<p class="font-medium text-gray-500">Métodos de pago</p>';
+                                        $html .= '<p class="text-gray-900 font-semibold" x-text="items[index].metodos"></p>';
+                                        $html .= '</div>';
+                                        $html .= '<div class="space-y-1">';
                                         $html .= '<p class="font-medium text-gray-500">Monto</p>';
-                                        $html .= '<p>S/ <span x-text="items[index].monto"></span></p>';
+                                        $html .= '<p class="text-green-600 font-bold text-lg">S/ <span x-text="items[index].monto"></span></p>';
                                         $html .= '</div>';
                                         $html .= '</div>';
 
                                         // Imagen
                                         $html .= '<template x-if="items[index].url">';
-                                        $html .= '<div class="flex justify-center">';
-                                        $html .= '<img :src="items[index].url" class="rounded-lg max-h-[290px] max-w-full object-contain cursor-pointer" @click="window.open(items[index].url, \'_blank\')"/>';
+                                        $html .= '<div class="flex justify-center bg-gray-100 rounded-lg p-2">';
+                                        $html .= '<img :src="items[index].url" class="rounded-lg max-h-[250px] sm:max-h-[350px] max-w-full object-contain cursor-pointer shadow-lg" @click="window.open(items[index].url, \'_blank\')" />';
                                         $html .= '</div>';
                                         $html .= '</template>';
                                         $html .= '<template x-if="!items[index].url">';
-                                        $html .= '<p class="text-center text-gray-400">No hay comprobante disponible</p>';
+                                        $html .= '<div class="text-center py-8 bg-gray-100 rounded-lg">';
+                                        $html .= '<p class="text-gray-400 text-sm">No hay comprobante disponible</p>';
+                                        $html .= '</div>';
                                         $html .= '</template>';
 
                                         $html .= '</div>';
@@ -289,25 +299,33 @@ class YapeClientesTableWidget extends BaseWidget
                             $html .= '</tbody>';
                             $html .= '</table>';
                             $html .= '</div>';
+                            $html .= '</div>';
 
                             // Mostrar totales
                             $totalPagos = $abonos->sum('monto_abono');
-                            $html .= '<div class="mt-4 p-4 bg-gray-50 rounded-lg">';
+                            $devolucion = max(0, $totalPagos - $record->monto);
+                            $html .= '<div class="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg">';
                             $html .= '<div class="flex justify-between items-center">';
-                            $html .= '<span class="text-sm font-medium text-gray-700">Total de Pagos:</span>';
-                            $html .= '<span class="text-lg font-bold text-green-600">S/ ' . number_format($totalPagos, 2) . '</span>';
+                            $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Total de Pagos:</span>';
+                            $html .= '<span class="text-base sm:text-lg font-bold text-green-600">S/ ' . number_format($totalPagos, 2) . '</span>';
                             $html .= '</div>';
+                            if ($devolucion > 0) {
+                                $html .= '<div class="flex justify-between items-center mt-2">';
+                                $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Devolución:</span>';
+                                $html .= '<span class="text-base sm:text-lg font-bold text-red-600">S/ ' . number_format($devolucion, 2) . '</span>';
+                                $html .= '</div>';
+                            }
                             $html .= '<div class="flex justify-between items-center mt-2">';
-                            $html .= '<span class="text-sm font-medium text-gray-700">Cantidad de Pagos:</span>';
-                            $html .= '<span class="text-sm font-semibold text-blue-600">' . $abonos->count() . ' pagos</span>';
+                            $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Cantidad de Pagos:</span>';
+                            $html .= '<span class="text-xs sm:text-sm font-semibold text-blue-600">' . $abonos->count() . ' pagos</span>';
                             $html .= '</div>';
                             $html .= '</div>';
 
                             // Agregar botón de descarga PDF
                             $downloadUrl = route('yape-cliente.pdf', $record->id);
-                            $html .= '<div class="mt-4 text-center">';
-                            $html .= '<a href="' . $downloadUrl . '" target="_blank" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">';
-                            $html .= '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+                            $html .= '<div class="mt-3 sm:mt-4 text-center">';
+                            $html .= '<a href="' . $downloadUrl . '" target="_blank" class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-2 sm:px-4 sm:py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">';
+                            $html .= '<svg class="w-3 h-3 sm:w-4 sm:h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
                             $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>';
                             $html .= '</svg>';
                             $html .= 'PDF';
@@ -357,7 +375,7 @@ class YapeClientesTableWidget extends BaseWidget
 
                             return new HtmlString($html);
                         })
-                        ->modalWidth('4xl')
+                        ->modalWidth('lg')
                 ),
 
             // Cobrador
