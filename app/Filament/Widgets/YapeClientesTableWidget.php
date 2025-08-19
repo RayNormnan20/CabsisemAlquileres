@@ -122,9 +122,10 @@ class YapeClientesTableWidget extends BaseWidget
                 ->searchable()
                 ->color('primary')
                 ->weight('bold')
+                ->tooltip('Ver detalles')
                 ->action(
                     Action::make('ver_pagos')
-                        ->label('Ver Pagos')
+                        ->label('Ver detalles')
                         ->requiresConfirmation(false)
                         ->modalHeading(fn (YapeCliente $record) => 'Pagos realizados a: ' . $record->nombre)
                         ->modalContent(function (YapeCliente $record) {
@@ -143,10 +144,10 @@ class YapeClientesTableWidget extends BaseWidget
                             $html .= '<table class="min-w-full divide-y divide-gray-200">';
                             $html .= '<thead class="bg-gray-50">';
                             $html .= '<tr>';
-                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>';
-                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>';
-                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Fecha</th>';
-                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ver</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Fecha y Hora</th>';
+                            $html .= '<th class="px-2 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ver</th>';
                             $html .= '</tr>';
                             $html .= '</thead>';
                             $html .= '<tbody class="bg-white divide-y divide-gray-200">';
@@ -156,17 +157,18 @@ class YapeClientesTableWidget extends BaseWidget
                                     $clienteNombre = $abono->cliente ? $abono->cliente->nombre_completo : 'Sin cliente';
                                     $monto = 'S/ ' . number_format($abono->monto_abono, 2);
                                     $fecha = $abono->created_at->format('d/m/Y');
+                                    $fechaHora = $abono->created_at->format('d/m/Y H:i');
 
                                     // Verificar si tiene comprobante
                                     $tieneComprobante = $abono->conceptosabonos->where('foto_comprobante', '!=', null)->count() > 0;
 
                                     $html .= '<tr>';
-                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm text-gray-900">';
-                                    $html .= '<div class="font-medium">' . $clienteNombre . '</div>';
-                                    $html .= '<div class="text-gray-500 sm:hidden text-xs">' . $fecha . '</div>';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 text-xs sm:text-sm lg:text-base text-gray-900">';
+                                    $html .= '<div class="font-medium lg:whitespace-nowrap lg:overflow-visible">' . $clienteNombre . '</div>';
+                                    $html .= '<div class="text-gray-500 sm:hidden text-xs">' . $fechaHora . '</div>';
                                     $html .= '</td>';
-                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold text-green-600">' . $monto . '</td>';
-                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 hidden sm:table-cell">' . $fecha . '</td>';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 whitespace-nowrap text-xs sm:text-sm lg:text-base font-semibold text-green-600">' . $monto . '</td>';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 whitespace-nowrap text-xs sm:text-sm lg:text-base text-gray-900 hidden sm:table-cell">' . $fechaHora . '</td>';
                                     $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">';
 
                                     if ($tieneComprobante) {
@@ -375,7 +377,7 @@ class YapeClientesTableWidget extends BaseWidget
 
                             return new HtmlString($html);
                         })
-                        ->modalWidth('lg')
+                        ->modalWidth('4xl')
                 ),
 
             // Cobrador
