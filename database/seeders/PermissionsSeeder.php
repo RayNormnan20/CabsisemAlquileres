@@ -14,7 +14,7 @@ class PermissionsSeeder extends Seeder
 {
     private array $modules = [
         'Permisos', 'Rol', 'Usuario', 'Clientes', 'Oficina', 'Ruta',
-        'Creditos', 'Abonos', 'Concepto', 'Planilla Recaudador'
+        'Creditos', 'Abonos', 'Concepto', 'Planilla Recaudador', 'YapeCliente'
     ];
 
     private array $pluralActions = [
@@ -72,6 +72,9 @@ class PermissionsSeeder extends Seeder
 
             // Abonos
             'Listar Abonos', 'Ver Abonos', 'Crear Abonos', 'Actualizar Abonos', 'Eliminar Abonos',
+
+            // YapeCliente
+            'Listar YapeClientes', 'Ver YapeCliente', 'Crear YapeCliente', 'Actualizar YapeCliente', 'Eliminar YapeCliente',
         ];
 
         $collectorRole->syncPermissions($collectorPermissions);

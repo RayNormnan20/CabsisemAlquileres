@@ -12,6 +12,7 @@ use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvid
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use App\Models\Ruta;
+use App\Models\YapeCliente;
 use App\Policies\AbonoPolicy;
 use App\Policies\ClientesPolicy;
 use App\Policies\ConceptoPolicy;
@@ -19,6 +20,7 @@ use App\Policies\CreditosPolicy;
 use App\Policies\OficinaPolicy;
 use App\Policies\PlanillaRecaudadorPolicy;
 use App\Policies\RutaPolicy;
+use App\Policies\YapeClientePolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -31,6 +33,7 @@ class AuthServiceProvider extends ServiceProvider
             Creditos::class => CreditosPolicy::class,
             PlanillaRecaudador::class => PlanillaRecaudadorPolicy::class,
             Concepto::class => ConceptoPolicy::class,
+            YapeCliente::class => YapeClientePolicy::class,
     ];
 
     public function boot()

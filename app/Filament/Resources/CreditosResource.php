@@ -637,7 +637,19 @@ class CreditosResource extends Resource
                     ])
                     ->action(function () {
                         // Acción vacía necesaria para el modal
-                    })
+                    }),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->size('sm')
+                    ->button()
+                    ->tooltip('Eliminar Crédito')
+                    ->extraAttributes([
+                        'title' => 'Eliminar',
+                        'class' => 'hover:bg-danger-50 rounded-full'
+                    ])
             ])
 
             ->bulkActions([]);
