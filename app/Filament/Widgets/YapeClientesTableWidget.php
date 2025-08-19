@@ -21,9 +21,6 @@ class YapeClientesTableWidget extends BaseWidget
 {
     protected int|string|array $columnSpan = 'full';
 
-    // Propiedad para rastrear si hay filtro activo
-    protected static bool $hasActiveFilter = false;
-
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $query = YapeCliente::with(['cliente', 'abonos']);
@@ -128,6 +125,7 @@ class YapeClientesTableWidget extends BaseWidget
                 ->action(
                     Action::make('ver_pagos')
                         ->label('Ver Pagos')
+                        ->requiresConfirmation(false)
                         ->modalHeading(fn (YapeCliente $record) => 'Pagos realizados a: ' . $record->nombre)
                         ->modalContent(function (YapeCliente $record) {
                             // Obtener todos los abonos para este YapeCliente con sus conceptos e imágenes
@@ -188,8 +186,7 @@ class YapeClientesTableWidget extends BaseWidget
                                         $startIndex = $abonosConImagenes->search(fn($a) => $a['id'] == $abono->id_abono);
                                         $jsonData = htmlspecialchars($abonosConImagenes->toJson(), ENT_QUOTES, 'UTF-8');
 
-                                        // Botón del ojo que abre el modal
-                                        $html .= '<button onclick="openModal(\'modal' . $abono->id_abono . '\')" class="inline-flex items-center px-2 py-1 bg-blue-600 border border-transparent rounded text-xs text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">';
+                                        $html .= '<button onclick="window.modalManager.openModal(\'modal' . $abono->id_abono . '\')" class="inline-flex items-center px-2 py-1 bg-blue-600 border border-transparent rounded text-xs text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">';
                                         $html .= '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
@@ -199,11 +196,11 @@ class YapeClientesTableWidget extends BaseWidget
                                         // Modal usando la misma estructura que AbonosResource
                                         $html .= '<div id="modal' . $abono->id_abono . '" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">';
                                         $html .= '<div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">';
-                                        $html .= '<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal(\'modal' . $abono->id_abono . '\')"></div>';
-                                        $html .= '<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">';
+                                        $html .= '<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="window.modalManager.closeModal(\'modal' . $abono->id_abono . '\')"></div>';
+                                        $html .= '<span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>';
+                                        $html .= '<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full" onclick="event.stopPropagation()">';
 
-                                        // Contenido del modal con Alpine.js
-                                        $html .= '<div wire:ignore x-data="{';
+                                        $html .= '<div x-data="{';
                                         $html .= 'items: ' . $jsonData . ',';
                                         $html .= 'index: ' . $startIndex . ',';
                                         $html .= 'prev() { if (this.index > 0) this.index--; },';
@@ -213,7 +210,7 @@ class YapeClientesTableWidget extends BaseWidget
                                         // Header
                                         $html .= '<div class="flex justify-between items-center mb-4">';
                                         $html .= '<h3 class="text-lg font-medium text-gray-900">Comprobantes de Pago</h3>';
-                                        $html .= '<button onclick="closeModal(\'modal' . $abono->id_abono . '\')" class="text-gray-400 hover:text-gray-600">';
+                                        $html .= '<button onclick="window.modalManager.closeModal(\'modal' . $abono->id_abono . '\')" class="text-gray-400 hover:text-gray-600 focus:outline-none">';
                                         $html .= '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
                                         $html .= '</svg>';
@@ -275,8 +272,7 @@ class YapeClientesTableWidget extends BaseWidget
                                         $html .= '</div>';
                                         $html .= '</div>';
                                         $html .= '</div>';
-
-
+                                        $html .= '</div>';
                                     } else {
                                         $html .= '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Sin comprobante</span>';
                                     }
@@ -320,35 +316,40 @@ class YapeClientesTableWidget extends BaseWidget
 
                             $html .= '</div>';
 
-                            // Script mejorado para manejar modales sin conflictos
-                            $html .= '<script type="text/javascript">';
-                            $html .= '(function() {';
-                            $html .= '    if (typeof window.modalManager === "undefined") {';
-                            $html .= '        window.modalManager = {';
-                            $html .= '            openModal: function(modalId) {';
-                            $html .= '                var allModals = document.querySelectorAll("div[id^=\"modal\"]");';
-                            $html .= '                allModals.forEach(function(modal) {';
-                            $html .= '                    modal.classList.add("hidden");';
-                            $html .= '                });';
-                            $html .= '                var targetModal = document.getElementById(modalId);';
-                            $html .= '                if (targetModal) {';
-                            $html .= '                    targetModal.classList.remove("hidden");';
-                            $html .= '                }';
-                            $html .= '            },';
-                            $html .= '            closeModal: function(modalId) {';
-                            $html .= '                var targetModal = document.getElementById(modalId);';
-                            $html .= '                if (targetModal) {';
-                            $html .= '                    targetModal.classList.add("hidden");';
+                           $html .= '<script type="text/javascript">';
+                            $html .= 'if (typeof window.modalManager === "undefined") {';
+                            $html .= '    window.modalManager = {';
+                            $html .= '        currentModal: null,';
+                            $html .= '        openModal: function(modalId) {';
+                            $html .= '            this.closeCurrentModal();';
+                            $html .= '            var modal = document.getElementById(modalId);';
+                            $html .= '            if (modal) {';
+                            $html .= '                modal.classList.remove("hidden");';
+                            $html .= '                document.body.classList.add("overflow-hidden");';
+                            $html .= '                this.currentModal = modalId;';
+                            $html .= '            }';
+                            $html .= '        },';
+                            $html .= '        closeCurrentModal: function() {';
+                            $html .= '            if (this.currentModal) {';
+                            $html .= '                var modal = document.getElementById(this.currentModal);';
+                            $html .= '                if (modal) modal.classList.add("hidden");';
+                            $html .= '                this.currentModal = null;';
+                            $html .= '                document.body.classList.remove("overflow-hidden");';
+                            $html .= '            }';
+                            $html .= '        },';
+                            $html .= '        closeModal: function(modalId) {';
+                            $html .= '            var modal = document.getElementById(modalId);';
+                            $html .= '            if (modal) {';
+                            $html .= '                modal.classList.add("hidden");';
+                            $html .= '                if (this.currentModal === modalId) {';
+                            $html .= '                    this.currentModal = null;';
+                            $html .= '                    document.body.classList.remove("overflow-hidden");';
                             $html .= '                }';
                             $html .= '            }';
-                            $html .= '        };';
-                            $html .= '        window.openModal = window.modalManager.openModal;';
-                            $html .= '        window.closeModal = window.modalManager.closeModal;';
-                            $html .= '    }';
-                            $html .= '})();';
+                            $html .= '        }';
+                            $html .= '    };';
+                            $html .= '}';
                             $html .= '</script>';
-
-                            $html .= '</div>';
 
                             return new HtmlString($html);
                         })

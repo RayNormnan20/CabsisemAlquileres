@@ -31,11 +31,26 @@ class YapeClienteController extends Controller
         // Obtener el YapeCliente
         $yapeCliente = YapeCliente::with(['cliente', 'user'])->findOrFail($id);
         
-        // Obtener todos los abonos para este YapeCliente
+        // Obtener todos los abonos para este YapeCliente con sus conceptos e imágenes
         $abonos = Abonos::where('id_yape_cliente', $id)
-            ->with(['cliente'])
+            ->with(['cliente', 'conceptosabonos'])
             ->orderBy('created_at', 'desc')
             ->get();
+            
+        // Obtener todas las imágenes de comprobantes
+        $imagenes = [];
+        foreach ($abonos as $abono) {
+            foreach ($abono->conceptosabonos as $concepto) {
+                if ($concepto->foto_comprobante) {
+                    $imagenes[] = [
+                        'url' => storage_path('app/public/' . $concepto->foto_comprobante),
+                        'cliente' => $abono->cliente ? $abono->cliente->nombre_completo : 'Sin cliente',
+                        'fecha' => $abono->created_at->format('d/m/Y'),
+                        'monto' => $abono->monto_abono
+                    ];
+                }
+            }
+        }
 
         // Crear el contenido HTML para el PDF
         $html = '
@@ -133,6 +148,52 @@ class YapeClienteController extends Controller
                     border-top: 1px solid #dee2e6;
                     padding-top: 15px;
                 }
+                .imagenes-section {
+                    margin-top: 30px;
+                    page-break-inside: avoid;
+                }
+                .imagenes-titulo {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #007bff;
+                    margin-bottom: 20px;
+                    text-align: center;
+                    border-bottom: 2px solid #007bff;
+                    padding-bottom: 10px;
+                }
+                .imagenes-grid {
+                    display: table;
+                    width: 100%;
+                    border-collapse: separate;
+                    border-spacing: 10px;
+                }
+                .imagen-fila {
+                    display: table-row;
+                }
+                .imagen-celda {
+                    display: table-cell;
+                    width: 33.33%;
+                    vertical-align: top;
+                    text-align: center;
+                    padding: 10px;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    background-color: #f8f9fa;
+                }
+                .imagen-comprobante {
+                    max-width: 100%;
+                    max-height: 200px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .imagen-info {
+                    margin-top: 8px;
+                    font-size: 10px;
+                    color: #495057;
+                }
+                .imagen-info strong {
+                    color: #007bff;
+                }
             </style>
         </head>
         <body>
@@ -169,7 +230,16 @@ class YapeClienteController extends Controller
 
         if ($abonos->count() > 0) {
             foreach ($abonos as $abono) {
-                $clienteNombre = $abono->cliente ? $abono->cliente->nombre_completo : 'Sin cliente';
+                $clienteNombre = $abono->cliente ? 
+                    (function($nombreCompleto) {
+                        $partes = explode(' ', $nombreCompleto);
+                        if (count($partes) >= 2) {
+                            // Mantener solo el primer nombre y censurar apellidos
+                            return $partes[0] . ' ******';
+                        }
+                        return $nombreCompleto;
+                    })($abono->cliente->nombre_completo) 
+                    : 'Sin cliente';
                 $monto = 'S/ ' . number_format($abono->monto_abono, 2);
                 $fecha = $abono->created_at->format('d/m/Y H:i');
                 
@@ -220,8 +290,54 @@ class YapeClienteController extends Controller
         }
         
         $html .= '
-            </div>
+            </div>';
             
+        // Agregar sección de imágenes si existen
+        if (count($imagenes) > 0) {
+            $html .= '
+            <div class="imagenes-section">
+                <div class="imagenes-titulo">Comprobantes de Pago</div>
+                <div class="imagenes-grid">';
+                
+            // Organizar imágenes en filas de 3
+            $imagenesChunks = array_chunk($imagenes, 3);
+            
+            foreach ($imagenesChunks as $fila) {
+                $html .= '<div class="imagen-fila">';
+                
+                foreach ($fila as $imagen) {
+                    // Verificar si el archivo existe
+                    if (file_exists($imagen['url'])) {
+                        // Convertir imagen a base64 para embeber en PDF
+                        $imageData = base64_encode(file_get_contents($imagen['url']));
+                        $imageInfo = getimagesize($imagen['url']);
+                        $mimeType = $imageInfo['mime'];
+                        
+                        $html .= '<div class="imagen-celda">';
+                         $html .= '<img src="data:' . $mimeType . ';base64,' . $imageData . '" class="imagen-comprobante" alt="Comprobante">';
+                         $html .= '<div class="imagen-info">';
+                         $html .= '<strong>Fecha:</strong> ' . $imagen['fecha'] . '<br>';
+                         $html .= '<strong>Monto:</strong> S/ ' . number_format($imagen['monto'], 2);
+                         $html .= '</div>';
+                         $html .= '</div>';
+                    }
+                }
+                
+                // Completar la fila con celdas vacías si es necesario
+                $celdasFaltantes = 3 - count($fila);
+                for ($i = 0; $i < $celdasFaltantes; $i++) {
+                    $html .= '<div class="imagen-celda" style="border: none; background: none;"></div>';
+                }
+                
+                $html .= '</div>';
+            }
+            
+            $html .= '
+                </div>
+            </div>';
+        }
+        
+        $html .= '
             <div class="footer">
                 <p>Reporte generado automáticamente por el Sistema de Gestión</p>
                 <p>© ' . date('Y') . ' - Todos los derechos reservados</p>
