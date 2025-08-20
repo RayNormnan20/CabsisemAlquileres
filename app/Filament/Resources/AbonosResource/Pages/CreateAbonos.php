@@ -154,6 +154,9 @@ class CreateAbonos extends CreateRecord
         $data['saldo_posterior'] = $credito->saldo_actual - $montoAbono;
         $data['id_usuario'] = auth()->id();
         $data['fecha_pago'] = now();
+        
+        // Establecer el checkbox activar_segundo_recorrido basado en el estado del crédito
+        $data['activar_segundo_recorrido'] = $credito->segundo_recorrido ?? false;
 
         // Actualizar el crédito con el nuevo saldo y ruta
         $credito->saldo_actual = $data['saldo_posterior'];
@@ -172,6 +175,18 @@ class CreateAbonos extends CreateRecord
         $credito = Creditos::find($this->record->id_credito);
         if ($credito) {
             $credito->saldo_actual = $this->record->saldo_posterior;
+            
+            // Si el crédito tenía segundo_recorrido = true, cambiarlo a false después del abono
+            if ($credito->segundo_recorrido) {
+                $credito->segundo_recorrido = false;
+                
+                // Mostrar notificación
+                \Filament\Notifications\Notification::make()
+                    ->title('Segundo recorrido completado y desactivado')
+                    ->success()
+                    ->send();
+            }
+            
             $credito->save();
         }
 

@@ -26,7 +26,8 @@ class Abonos extends Model
         'saldo_posterior',
         'coordenadas_gps',
         'observaciones',
-        'estado'
+        'estado',
+        'activar_segundo_recorrido'
     ];
 
     protected $casts = [
@@ -35,13 +36,34 @@ class Abonos extends Model
         'saldo_anterior' => 'decimal:2',
         'saldo_posterior' => 'decimal:2',
         'coordenadas_gps' => 'array',
-        'estado' => 'boolean'
+        'estado' => 'boolean',
+        'activar_segundo_recorrido' => 'boolean'
     ];
 
     // Eventos del modelo
     protected static function boot()
     {
         parent::boot();
+
+        // Cuando se crea un abono
+        static::created(function ($abono) {
+            if ($abono->id_credito) {
+                $abono->actualizarSegundoRecorridoCredito();
+                
+                // Resetear el checkbox a false después de crear el abono
+                if ($abono->activar_segundo_recorrido) {
+                    $abono->activar_segundo_recorrido = false;
+                    $abono->saveQuietly(); // Usar saveQuietly para evitar disparar eventos infinitos
+                }
+            }
+        });
+
+        // Cuando se actualiza un abono
+        static::updated(function ($abono) {
+            if ($abono->id_credito && $abono->wasChanged('activar_segundo_recorrido')) {
+                $abono->actualizarSegundoRecorridoCredito();
+            }
+        });
 
         // EVENTOS DESHABILITADOS: No actualizar automáticamente el campo 'entregar'
         // El campo 'entregar' ahora representa el monto específico del Yape a entregar
@@ -68,6 +90,18 @@ class Abonos extends Model
             }
         });
         */
+    }
+
+    /**
+     * Actualiza el estado de segundo recorrido del crédito asociado
+     */
+    public function actualizarSegundoRecorridoCredito()
+    {
+        if ($this->id_credito) {
+            // Actualizar el crédito según el estado del checkbox
+            Creditos::where('id_credito', $this->id_credito)
+                ->update(['segundo_recorrido' => $this->activar_segundo_recorrido]);
+        }
     }
 
     // MÉTODO DESHABILITADO: No actualizar automáticamente el campo 'entregar'

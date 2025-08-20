@@ -35,6 +35,9 @@ class EditAbonos extends EditRecord
             $data['fecha_credito'] = $credito->fecha_credito->format('d/m/Y');
             $data['fecha_vencimiento'] = $credito->fecha_vencimiento->format('d/m/Y');
             $data['valor_cuota'] = $credito->valor_cuota;
+            
+            // Establecer el checkbox activar_segundo_recorrido basado en el estado del crédito
+            $data['activar_segundo_recorrido'] = $credito->segundo_recorrido ?? false;
         }
 
         return $data;

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\ClientesPorRenovarWidget;
 use App\Filament\Widgets\FinancialStatsWidget;
+use App\Filament\Widgets\SegundoRecorridoWidget;
 use App\Filament\Widgets\YapeClientesTableWidget;
 use App\Filament\Widgets\YapesTotalesDelDiaWidget;
 use Filament\Pages\Dashboard as BasePage;
@@ -48,6 +49,7 @@ class Dashboard extends BasePage
                    FinancialStatsWidget::class,
                    YapeClientesTableWidget::class,
                    YapesTotalesDelDiaWidget::class,
+                   SegundoRecorridoWidget::class,
                    ClientesPorRenovarWidget::class
 
         ];

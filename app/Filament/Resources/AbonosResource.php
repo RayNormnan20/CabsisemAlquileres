@@ -380,6 +380,77 @@ class AbonosResource extends Resource
                         })
                 ]),
 
+            // Sección de configuración adicional
+            Forms\Components\Section::make('Configuración del Crédito')
+                ->schema([
+                    Forms\Components\Checkbox::make('activar_segundo_recorrido')
+                        ->label('Activar Segundo Recorrido')
+                        ->helperText('Al activar esta opción, el crédito será marcado automáticamente como "segundo recorrido" basado al crédito.')
+                        ->default(function (callable $get, $livewire) {
+                            // En modo edición, usar el crédito del abono
+                            if (isset($livewire->record)) {
+                                $creditoId = $get('id_credito');
+                                if ($creditoId) {
+                                    $credito = \App\Models\Creditos::find($creditoId);
+                                    return $credito ? (bool)$credito->segundo_recorrido : false;
+                                }
+                            }
+                            
+                            // En modo creación, buscar el crédito activo del cliente
+                            $clienteId = $get('id_cliente');
+                            if ($clienteId) {
+                                $credito = \App\Models\Creditos::where('id_cliente', $clienteId)
+                                    ->where('saldo_actual', '>', 0)
+                                    ->first();
+                                return $credito ? (bool)$credito->segundo_recorrido : false;
+                            }
+                            return false;
+                        })
+                        ->reactive()
+                        ->afterStateHydrated(function (callable $get, callable $set, $livewire) {
+                            // Actualizar el estado del checkbox cuando se hidrata el formulario
+                            if (!isset($livewire->record)) {
+                                // En modo creación
+                                $clienteId = $get('id_cliente');
+                                if ($clienteId) {
+                                    $credito = \App\Models\Creditos::where('id_cliente', $clienteId)
+                                        ->where('saldo_actual', '>', 0)
+                                        ->first();
+                                    $set('activar_segundo_recorrido', $credito ? (bool)$credito->segundo_recorrido : false);
+                                }
+                            }
+                        })
+                        ->afterStateUpdated(function ($state, callable $get, callable $set, $livewire) {
+                            // Obtener el ID del crédito desde el formulario
+                            $creditoId = $get('id_credito');
+                            
+                            if ($creditoId && $state) {
+                                // Actualizar el crédito inmediatamente cuando se activa el checkbox
+                                \App\Models\Creditos::where('id_credito', $creditoId)
+                                    ->update(['segundo_recorrido' => true]);
+                                
+                                // Mostrar notificación
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Segundo recorrido activado')
+                                    ->body('El crédito ha sido marcado como segundo recorrido automáticamente.')
+                                    ->success()
+                                    ->send();
+                            } elseif ($creditoId && !$state) {
+                                // Desactivar segundo recorrido
+                                \App\Models\Creditos::where('id_credito', $creditoId)
+                                    ->update(['segundo_recorrido' => false]);
+                                
+                                // Mostrar notificación
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Segundo recorrido desactivado')
+                                    ->body('El crédito ya no está marcado como segundo recorrido.')
+                                    ->success()
+                                    ->send();
+                            }
+                        })
+                        ->columnSpanFull()
+                ])
+                ->columns(1),
 
         ]);
 }
