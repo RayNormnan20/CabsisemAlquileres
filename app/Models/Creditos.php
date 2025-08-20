@@ -89,6 +89,11 @@ class Creditos extends Model
         return $this->belongsTo(Ruta::class, 'id_ruta');
     }
 
+    public function yapeCliente()
+    {
+        return $this->hasOne(YapeCliente::class, 'id_credito');
+    }
+
     public function scopeActivos($query)
     {
         return $query->where('saldo_actual', '>', 0);

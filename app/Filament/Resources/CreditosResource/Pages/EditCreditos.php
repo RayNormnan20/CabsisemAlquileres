@@ -57,6 +57,11 @@ class EditCreditos extends EditRecord
                         throw new \Exception('El crédito tiene abonos realizados.');
                     }
 
+                    // Eliminar el YapeCliente asociado si existe
+                    if ($this->record->yapeCliente) {
+                        $this->record->yapeCliente->forceDelete();
+                    }
+
                     $clienteNombre = $this->record->cliente?->nombre . ' ' . $this->record->cliente?->apellido;
                     $rutaNombre = $this->record->cliente?->ruta?->nombre ?? 'Ruta desconocida';
 

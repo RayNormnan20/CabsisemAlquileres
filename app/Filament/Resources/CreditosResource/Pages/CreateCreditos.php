@@ -183,6 +183,7 @@ class CreateCreditos extends CreateRecord
 
                 YapeCliente::create([
                     'id_cliente' => $this->record->id_cliente,
+                    'id_credito' => $this->record->id_credito, // Asignar el id_credito del crédito recién creado
                     'nombre' => $nombreYape,
                     'user_id' => auth()->id(),
                     'monto' => $concepto->monto,

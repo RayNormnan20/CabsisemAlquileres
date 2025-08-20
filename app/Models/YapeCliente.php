@@ -14,6 +14,7 @@ class YapeCliente extends Model
 
     protected $fillable = [
         'id_cliente', // Asegúrate que coincida con el nombre en la migración
+        'id_credito', // Nueva relación con créditos
         'nombre',
         'user_id',
         'monto',
@@ -39,5 +40,10 @@ class YapeCliente extends Model
     public function abonos()
     {
         return $this->hasMany(Abonos::class, 'id_yape_cliente', 'id');
+    }
+
+    public function credito()
+    {
+        return $this->belongsTo(Creditos::class, 'id_credito', 'id_credito');
     }
 }

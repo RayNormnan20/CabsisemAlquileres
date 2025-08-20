@@ -65,13 +65,13 @@ public static function form(Form $form): Form
             Forms\Components\TextInput::make('monto')
                 ->numeric()
                 ->required()
-                ->label('A Yapear'),
-               // ->helperText('Valor total del crédito registrado'),
+                ->label('Monto del Crédito')
+                ->helperText('Valor total del crédito registrado'),
 
             Forms\Components\TextInput::make('entregar')
                 ->numeric()
-                ->label('Crédito')
-               // ->helperText('Monto específico del Yape que se debe entregar'),
+                ->label('Monto a Entregar (Yape)')
+                ->helperText('Monto específico del Yape que se debe entregar'),
     ]);
 }
 
@@ -96,13 +96,13 @@ public static function form(Form $form): Form
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('entregar')
-                ->money('PEN', true)
-                ->label('Crédito')
-                ->sortable(),
+                    ->money('PEN', true)
+                    ->label('Préstamo')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('monto')
                     ->money('PEN', true)
-                    ->label('A Yapear')
+                    ->label('Por Yapear')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
