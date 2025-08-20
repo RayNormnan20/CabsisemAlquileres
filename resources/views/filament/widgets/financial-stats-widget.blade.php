@@ -113,6 +113,32 @@
                     <p class="text-[10px] text-gray-500 leading-tight">S/ {{ $totalCreditosRutaSum }} otorgados</p>
                 </div>
             </div>
+
+            <!-- PAGOS YAPE (detalle) -->
+            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-yellow-500"
+                onclick="window.location.href='{{ route('filament.resources.abonos.index') }}'">
+                <div class="text-center">
+                    <div class="bg-yellow-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                        <x-heroicon-o-eye class="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <h3 class="text-xs font-bold text-gray-800 leading-tight">PAGOS YAPE</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">{{ $countPagosYapeHoy }} pagos hoy</p>
+                    <p class="text-[10px] text-gray-500 leading-tight">S/ {{ $totalPagosYapeHoy }} total</p>
+                </div>
+            </div>
+
+            <!-- PAGOS EFECTIVO (detalle) -->
+            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-emerald-500"
+                onclick="window.location.href='{{ route('filament.resources.abonos.index') }}'">
+                <div class="text-center">
+                    <div class="bg-emerald-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                        <x-heroicon-o-eye class="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <h3 class="text-xs font-bold text-gray-800 leading-tight">PAGOS EFECTIVO</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">{{ $countPagosEfectivoHoy }} pagos hoy</p>
+                    <p class="text-[10px] text-gray-500 leading-tight">S/ {{ $totalPagosEfectivoHoy }} total</p>
+                </div>
+            </div>
         </div>
 
     </div>

@@ -42,6 +42,10 @@ class FinancialStatsWidget extends Widget
         $cuotasPagadasHoy = 0;
         $totalAbonosHoyCount = 0;
         $totalCuotasHoySum = 0; // Nueva variable para sumar el valor de cuotas de hoy
+        $totalPagosYapeHoy = 0; // Total de pagos Yape del día
+        $totalPagosEfectivoHoy = 0; // Total de pagos Efectivo del día
+        $countPagosYapeHoy = 0; // Cantidad de pagos Yape del día
+        $countPagosEfectivoHoy = 0; // Cantidad de pagos Efectivo del día
 
         // --- Lógica para Clientes por Ruta ---
         $clientesQuery = Clientes::query();
@@ -81,6 +85,34 @@ class FinancialStatsWidget extends Widget
         }
         $totalAbonosHoyCount = $abonosHoyQuery->count();
         $totalAbonosHoySum = $abonosHoyQuery->sum('monto_abono');
+
+        // --- Lógica para Pagos Yape del día ---
+        $pagosYapeHoyQuery = Abonos::query()
+            ->whereDate('created_at', now()->toDateString())
+            ->whereHas('conceptosabonos', function ($query) {
+                $query->where('tipo_concepto', 'Yape');
+            });
+        if ($selectedRutaId) {
+            $pagosYapeHoyQuery->whereHas('credito.cliente', function ($query) use ($selectedRutaId) {
+                $query->where('id_ruta', $selectedRutaId);
+            });
+        }
+        $countPagosYapeHoy = $pagosYapeHoyQuery->count();
+        $totalPagosYapeHoy = $pagosYapeHoyQuery->sum('monto_abono');
+
+        // --- Lógica para Pagos Efectivo del día ---
+        $pagosEfectivoHoyQuery = Abonos::query()
+            ->whereDate('created_at', now()->toDateString())
+            ->whereHas('conceptosabonos', function ($query) {
+                $query->where('tipo_concepto', 'Efectivo');
+            });
+        if ($selectedRutaId) {
+            $pagosEfectivoHoyQuery->whereHas('credito.cliente', function ($query) use ($selectedRutaId) {
+                $query->where('id_ruta', $selectedRutaId);
+            });
+        }
+        $countPagosEfectivoHoy = $pagosEfectivoHoyQuery->count();
+        $totalPagosEfectivoHoy = $pagosEfectivoHoyQuery->sum('monto_abono');
 
         // Cálculo de cuotas
         $creditos = $creditosQuery->get();
@@ -124,6 +156,10 @@ class FinancialStatsWidget extends Widget
             'totalAbonosHoyCount' => $totalAbonosHoyCount,
             'totalAbonosHoySum' => number_format($totalAbonosHoySum, 2, ',', '.'),
             'totalCuotasHoySum' => number_format($totalCuotasHoySum, 2, ',', '.'),
+            'totalPagosYapeHoy' => number_format($totalPagosYapeHoy, 2, ',', '.'),
+            'totalPagosEfectivoHoy' => number_format($totalPagosEfectivoHoy, 2, ',', '.'),
+            'countPagosYapeHoy' => $countPagosYapeHoy,
+            'countPagosEfectivoHoy' => $countPagosEfectivoHoy,
         ];
     }
 }
