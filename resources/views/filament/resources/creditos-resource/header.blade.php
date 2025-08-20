@@ -152,6 +152,16 @@ $cliente->loadMissing('creditos');
                     newFecha: '',
                     newFechaVencimiento: '',
 
+                    // Campos directos para medios de pago
+                    efectivo: 0,
+                    yape: 0,
+                    nombreYapeCliente: '',
+                    caja: 0,
+                    descuentoPago: 0,
+                    abonoCompletarPrestamo: 0,
+                    otro: 0,
+                    
+                    // Mantener compatibilidad con el sistema existente
                     mediosDisponibles: ['Efectivo', 'Yape', 'Plin', 'Tarjeta', 'Transferencia'],
                     pagos: [],
                     medioSeleccionado: '',
@@ -163,6 +173,15 @@ $cliente->loadMissing('creditos');
 
                     get totalEntregado() {
                         return this.pagos.reduce((acc, pago) => acc + Number(pago.monto), 0);
+                    },
+
+                    get totalMediosPagoDirectos() {
+                        return Number(this.efectivo || 0) + 
+                               Number(this.yape || 0) + 
+                               Number(this.caja || 0) + 
+                               Number(this.descuentoPago || 0) + 
+                               Number(this.abonoCompletarPrestamo || 0) + 
+                               Number(this.otro || 0);
                     },
 
                     get valorCredito() {
@@ -235,7 +254,10 @@ $cliente->loadMissing('creditos');
                         this.$watch('descuento', () => this.calcularNuevaCuentaConDescuento());
 
                         // Nuevo watcher para la fecha actual editable
-                        this.$watch('fechaActualEditable', () => this.calcularFechaVencimiento());
+                        this.$watch('fechaActualEditable', () => {
+                            this.calcularFechaVencimiento();
+                            this.fechaInicio = this.fechaActualEditable;
+                        });
 
                         this.$watch(() => [this.newInteres, this.newFormaPago], ([interes, forma]) => {
                             this.mostrarRenovacionCompleta = interes && forma;
@@ -267,7 +289,8 @@ $cliente->loadMissing('creditos');
 
                         // Usar la fecha actual editable como base
                         const fechaBase = new Date(this.fechaActualEditable || new Date().toISOString().split('T')[0]);
-                        fechaBase.setDate(fechaBase.getDate() + diasPago);
+                        // Siempre usar 30 días (un mes) para el cálculo de fecha de vencimiento en renovaciones
+                        fechaBase.setDate(fechaBase.getDate() + 30);
                         this.newVencimientoDate = fechaBase.toISOString().split('T')[0];
                     },
 
@@ -345,6 +368,11 @@ $cliente->loadMissing('creditos');
                         // Resetear el descuento
                         this.descuento = 0;
 
+                        // Cargar nombre Yape existente si hay uno asociado al crédito
+                        if (isRenewal) {
+                            this.cargarNombreYapeExistente(creditId);
+                        }
+
                         this.isRenewal = isRenewal;
                         this.showDeactivationModal = true;
                         this.open = false;
@@ -365,14 +393,16 @@ $cliente->loadMissing('creditos');
                             return;
                         }
 
-                        // Calcular el interés adicional sobre el CAPITAL ORIGINAL
+                        // Calcular el interés solo sobre los días ingresados en Forma de Pago basado en el capital original
                         const mesesExactos = diasPago / 30;
                         const interesMensual = capitalOriginal * (interes / 100);
-                        const interesAdicional = interesMensual * mesesExactos;
+                        const interesCalculado = interesMensual * mesesExactos;
 
-                        // El descuento reduce el monto base sobre el cual se calcula el nuevo crédito
-                        const saldoConDescuento = saldoActual - descuento;
-                        const totalPagar = saldoConDescuento + interesAdicional;
+                        // Calcular el total antes del descuento (capital original + interés)
+                        const totalSinDescuento = capitalOriginal + interesCalculado;
+                        
+                        // Aplicar descuento al total final
+                        const totalPagar = totalSinDescuento - descuento;
                         const cuotaDiaria = totalPagar / diasPago;
                         this.newValorCuota = cuotaDiaria.toFixed(2);
                         this.newCuenta = totalPagar.toFixed(2);
@@ -417,13 +447,37 @@ $cliente->loadMissing('creditos');
                         });
                     },
 
+                    limpiarMediosPago() {
+                        this.efectivo = 0;
+                        this.yape = 0;
+                        this.nombreYapeCliente = '';
+                        this.caja = 0;
+                        this.descuentoPago = 0;
+                        this.abonoCompletarPrestamo = 0;
+                        this.otro = 0;
+                    },
+
                     confirmDeactivation() {
                         if (this.isRenewal) {
+                            // Validar que la suma de medios de pago sea igual al monto a entregar
+                            const totalMediosPago = parseFloat(this.efectivo || 0) + 
+                                                  parseFloat(this.yape || 0) + 
+                                                  parseFloat(this.caja || 0) + 
+                                                  parseFloat(this.descuentoPago || 0) + 
+                                                  parseFloat(this.abonoCompletarPrestamo || 0) + 
+                                                  parseFloat(this.otro || 0);
+                            
+                            const montoAEntregar = parseFloat(this.aEntregar || 0);
+                            
+                            if (totalMediosPago !== montoAEntregar) {
+                                alert(`La suma de los medios de pago (S/ ${totalMediosPago.toFixed(2)}) debe ser igual al monto a entregar (S/ ${montoAEntregar.toFixed(2)}). Por favor, complete los medios de pago correctamente.`);
+                                return;
+                            }
 
                             // Armar payload
                             const payload = {
                                 id: this.deactivatingCreditId,
-                                valor_credito: parseFloat(this.aEntregar),
+                                valor_credito: parseFloat(this.renovacion),
                                 porcentaje_interes: parseFloat(this.newInteres),
                                 dias_plazo: parseInt(this.newFormaPago),
                                 fecha_vencimiento: this.newVencimientoDate,
@@ -431,12 +485,14 @@ $cliente->loadMissing('creditos');
                                 valor_cuota: parseFloat(this.newValorCuota),
                                 numero_cuotas: parseInt(this.newNumeroCuotas) || 1,
                                 descuento: parseFloat(this.descuento) || 0, // Agregar descuento
-                                medios_pago: this.pagos
-                                    .filter(mp => mp.tipo && mp.monto && !isNaN(parseFloat(mp.monto)))
-                                    .map(mp => ({
-                                        tipo: mp.tipo,
-                                        monto: parseFloat(mp.monto)
-                                    }))
+                                medios_pago: [
+                                    ...(this.efectivo > 0 ? [{ tipo: 'Efectivo', monto: parseFloat(this.efectivo) }] : []),
+                                    ...(this.yape > 0 ? [{ tipo: 'Yape', monto: parseFloat(this.yape), nombre_cliente: this.nombreYapeCliente }] : []),
+                                    ...(this.caja > 0 ? [{ tipo: 'Caja', monto: parseFloat(this.caja) }] : []),
+                                    ...(this.descuentoPago > 0 ? [{ tipo: 'Descuento', monto: parseFloat(this.descuentoPago) }] : []),
+                                    ...(this.abonoCompletarPrestamo > 0 ? [{ tipo: 'Abono para completar préstamo', monto: parseFloat(this.abonoCompletarPrestamo) }] : []),
+                                    ...(this.otro > 0 ? [{ tipo: 'Otro', monto: parseFloat(this.otro) }] : [])
+                                ]
                             };
 
                             fetch(`/creditos/renovar`, {
@@ -453,6 +509,7 @@ $cliente->loadMissing('creditos');
                                 if (data.message) {
                                     alert(data.message);
                                     console.log(data);
+                                    this.limpiarMediosPago();
                                     this.showDeactivationModal = false;
                                 } else {
                                     alert(data.error || 'Error al renovar');
@@ -485,6 +542,7 @@ $cliente->loadMissing('creditos');
                             .then(data => {
                                 if (data.message) {
                                     alert(data.message);
+                                    this.limpiarMediosPago();
                                     this.showDeactivationModal = false;
                                     location.reload(); // Recargar para ver los cambios
                                 } else {
@@ -496,6 +554,26 @@ $cliente->loadMissing('creditos');
                                 alert('Error de conexión.');
                             });
                         }
+                    },
+
+                    cargarNombreYapeExistente(creditId) {
+                        // Hacer consulta al backend para obtener el YapeCliente asociado al crédito
+                        fetch(`/creditos/${creditId}/yape-cliente`, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.nombre_yape) {
+                                this.nombreYapeCliente = data.nombre_yape;
+                            }
+                        })
+                        .catch(error => {
+                            console.log('No hay YapeCliente asociado o error:', error);
+                        });
                     },
 
                     confirmCancellation() {
@@ -730,7 +808,7 @@ $cliente->loadMissing('creditos');
                                             </div>
                                             <div>
                                                 <span class="block text-sm text-gray-600">Fecha Actual</span>
-                                                <span x-text="fechaVencimiento" class="text-lg"></span>
+                                                <span x-text="new Date().toISOString().split('T')[0]" class="text-lg"></span>
                                             </div>
                                             <div>
                                                 <span class="block text-sm text-gray-600">Días Transcurridos</span>
@@ -811,7 +889,7 @@ $cliente->loadMissing('creditos');
                                                     class="block text-sm font-medium text-gray-700">Descuento</label>
                                                 <input type="number" step="0.01" id="descuento" x-model="descuento"
                                                     placeholder="Ingrese el descuento"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                                    class="mt-1 block w-full rounded-md border-blue-400 shadow-sm bg-blue-50 focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50">
                                                 <!-- <p class="mt-1 text-xs text-gray-500">El descuento se restará del saldo actual para calcular la nueva cuenta</p> -->
                                             </div>
 
@@ -821,7 +899,7 @@ $cliente->loadMissing('creditos');
                                                     Interés</label>
                                                 <input type="number" step="0.01" id="nuevo-interes" x-model="newInteres"
                                                     @input="calcularFormaPagoYVencimiento()"
-                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                                    class="mt-1 block w-full rounded-md border-blue-400 shadow-sm bg-blue-50 focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="forma-pago"
@@ -869,9 +947,9 @@ $cliente->loadMissing('creditos');
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700">Renovación</label>
+                                                    class="block text-sm font-medium text-blue-700">Renovación</label>
                                                 <input type="number" x-model="renovacion"
-                                                    class="mt-1 block w-full border-gray-300 rounded-md" />
+                                                    class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" />
                                             </div>
 
                                             <div>
@@ -880,51 +958,67 @@ $cliente->loadMissing('creditos');
                                                 <input type="number" :value="aEntregar.toFixed(2)" readonly
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
+                                            <div x-show="yape > 0" x-transition>
+                                                    <label class="block text-sm font-medium text-gray-700">Nombre Cliente Yape</label>
+                                                    <input type="text" x-model="nombreYapeCliente" 
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="Ingrese el nombre del cliente" />
+                                            </div>
 
-                                            <div>
+                                            {{-- <div>
                                                 <label class="block text-sm font-medium text-gray-700">Valor del
                                                     Crédito</label>
                                                 <input type="number" :value="valorCredito.toFixed(2)" readonly
                                                     class="mt-1 block w-full border-gray-300 rounded-md" />
-                                            </div>
+                                            </div> --}}
                                         </div>
 
                                         <div class="mt-4">
-                                            <label class="block text-sm font-medium text-gray-700">Agregar medio de
-                                                pago</label>
-                                            <div class="flex flex-wrap gap-2 mt-1">
-                                                <select x-model="medioSeleccionado" class="border-gray-300 rounded-md">
-                                                    <option value="" disabled selected>Seleccione...</option>
-                                                    <template x-for="medio in mediosDisponibles" :key="medio">
-                                                        <option x-text="medio" :value="medio"></option>
-                                                    </template>
-                                                </select>
-                                                <input type="number" x-model="montoTemporal" min="0"
-                                                    class="border-gray-300 rounded-md w-36" placeholder="Monto" />
-                                                <button type="button" @click="agregarMedioPago"
-                                                    class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                    Agregar
-                                                </button>
-                                            </div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-3">Medios de Pago</label>
+                                            
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Efectivo</label>
 
-                                            <div class="mt-4 space-y-2">
-                                                <template x-for="(pago, index) in pagos" :key="pago.tipo">
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="w-28 text-gray-700 font-medium"
-                                                            x-text="pago.tipo"></span>
-                                                        <input type="number" x-model="pago.monto"
-                                                            class="flex-1 border-gray-300 rounded-md"
-                                                            placeholder="Monto" />
-                                                        <button type="button" @click="eliminarMedioPago(index)"
-                                                            class="text-red-600 hover:text-red-800 font-bold text-sm">Eliminar</button>
-                                                    </div>
-                                                </template>
+                                                    <input type="number" x-model="efectivo" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Yape</label>
+                                                    <input type="number" x-model="yape" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Caja</label>
+                                                    <input type="number" x-model="caja" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Descuento</label>
+                                                    <input type="number" x-model="descuentoPago" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Abono para completar préstamo</label>
+                                                    <input type="number" x-model="abonoCompletarPrestamo" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-blue-700">Otro</label>
+                                                    <input type="number" x-model="otro" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
                                             </div>
 
                                             <div class="mt-4">
-                                                <label class="block text-sm font-medium text-gray-700">Total
-                                                    entregado</label>
-                                                <input type="number" :value="totalEntregado" readonly
+                                                <label class="block text-sm font-medium text-gray-700">Total Medios de Pago</label>
+                                                <input type="number" :value="totalMediosPagoDirectos.toFixed(2)" readonly
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
                                         </div>

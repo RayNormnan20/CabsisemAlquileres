@@ -62,13 +62,13 @@ public static function form(Form $form): Form
                 ->default(fn () => Auth::id())
                 ->hidden(fn () => !session('selected_ruta_id')),
 
-            Forms\Components\TextInput::make('monto')
+            Forms\Components\TextInput::make('valor')
                 ->numeric()
                 ->required()
                 ->label('Monto del Crédito')
                 ->helperText('Valor total del crédito registrado'),
 
-            Forms\Components\TextInput::make('valor')
+            Forms\Components\TextInput::make('monto')
                 ->numeric()
                 ->label('Monto a Entregar (Yape)')
                 ->helperText('Monto específico del Yape que se debe entregar'),

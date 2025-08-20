@@ -326,6 +326,19 @@ class CreditoController extends Controller
                         'tipo_concepto' => $mp['tipo'],
                         'monto'         => $mp['monto'],
                     ]);
+                    
+                    // Si es un pago por Yape y se proporciona nombre del cliente, registrar en YapeCliente
+                    if ($mp['tipo'] === 'Yape' && isset($mp['nombre_cliente']) && !empty($mp['nombre_cliente'])) {
+                        \App\Models\YapeCliente::create([
+                            'id_cliente' => $credito->id_cliente,
+                            'id_credito' => $credito->id_credito,
+                            'nombre' => $mp['nombre_cliente'],
+                            'user_id' => auth()->id(),
+                            'monto' => $mp['monto'],
+                            'entregar' => $mp['monto'],
+                            'valor' => $request->valor_credito, // Usar el valor del crédito renovado
+                        ]);
+                    }
                 }
             }
 
@@ -542,5 +555,35 @@ class CreditoController extends Controller
             'success' => true,
             'message' => 'Caché limpiado correctamente'
         ]);
+    }
+
+    public function getYapeCliente($creditoId)
+    {
+        try {
+            $credito = Creditos::findOrFail($creditoId);
+            
+            // Buscar el YapeCliente asociado al crédito
+            $yapeCliente = \App\Models\YapeCliente::where('id_credito', $creditoId)->first();
+            
+            if ($yapeCliente) {
+                return response()->json([
+                    'success' => true,
+                    'nombre_yape' => $yapeCliente->nombre
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay YapeCliente asociado a este crédito'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al obtener YapeCliente: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener YapeCliente'
+            ], 500);
+        }
     }
 }
