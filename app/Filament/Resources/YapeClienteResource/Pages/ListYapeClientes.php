@@ -42,4 +42,14 @@ class ListYapeClientes extends ListRecords
     {
         return true;
     }
+
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return 25;
+    }
+
+    protected function getTableRecordsPerPageSelectOptions(): array
+    {
+        return [10, 25, 50, 100, 'all'];
+    }
 }

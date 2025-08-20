@@ -181,15 +181,34 @@ class CreateCreditos extends CreateRecord
                     ? $this->data['nombre_yape']
                     : $this->record->cliente->nombre_completo;
 
-                YapeCliente::create([
-                    'id_cliente' => $this->record->id_cliente,
-                    'id_credito' => $this->record->id_credito, // Asignar el id_credito del crédito recién creado
-                    'nombre' => $nombreYape,
-                    'user_id' => auth()->id(),
-                    'monto' => $concepto->monto,
-                    'entregar' => $this->record->valor_credito,
-                ]);
-                break; // Solo crear un registro por crédito
+                // Verificar si ya existe un YapeCliente con el mismo nombre y cliente sin id_credito
+                $yapeExistente = YapeCliente::where('id_cliente', $this->record->id_cliente)
+                    ->where('nombre', $nombreYape)
+                    ->whereNull('id_credito')
+                    ->first();
+
+                if ($yapeExistente) {
+                    // Actualizar el registro existente con el id_credito
+                    $yapeExistente->update([
+                        'id_credito' => $this->record->id_credito,
+                        'monto' => $concepto->monto,
+                        'valor' => $this->record->valor_credito,
+                        'entregar' => 0, // Inicializar en 0 para que aparezca en el filtro
+                        'user_id' => auth()->id(),
+                    ]);
+                } else {
+                    // Crear un nuevo registro
+                    YapeCliente::create([
+                        'id_cliente' => $this->record->id_cliente,
+                        'id_credito' => $this->record->id_credito,
+                        'nombre' => $nombreYape,
+                        'user_id' => auth()->id(),
+                        'monto' => $concepto->monto,
+                        'valor' => $this->record->valor_credito,
+                        'entregar' => 0, // Inicializar en 0 para que aparezca en el filtro
+                    ]);
+                }
+                break; // Solo procesar un registro por crédito
             }
         }
 

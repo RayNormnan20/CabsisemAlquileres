@@ -19,6 +19,7 @@ class YapeCliente extends Model
         'user_id',
         'monto',
         'entregar',
+        'valor',
     ];
 
     // Agregar este método para permitir que id_cliente sea null

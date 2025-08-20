@@ -7,6 +7,7 @@ use App\Models\Clientes;
 use App\Models\Creditos;
 use App\Models\OrdenCobro;
 use App\Models\TipoPago;
+use App\Models\YapeCliente;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
@@ -313,15 +314,55 @@ class CreditosResource extends Resource
                                             ])
                                             ->visible(fn (callable $get) => !$get('es_adicional')),
 
-                                        // Campo para nombre Yape
-                                        TextInput::make('nombre_yape')
+                                        // Campo para nombre Yape - Select con opciones existentes y posibilidad de escribir
+                                        Select::make('nombre_yape')
                                             ->label('Nombre Yape')
-                                            ->placeholder('Ingrese el nombre para Yape')
+                                            ->required()
+                                            ->options(function (callable $get) {
+                                                $clienteId = $get('id_cliente');
+                                                $options = [];
+
+                                                if ($clienteId) {
+                                                    // Obtener el nombre completo del cliente
+                                                    $cliente = \App\Models\Clientes::find($clienteId);
+                                                    if ($cliente) {
+                                                        $options[$cliente->nombre_completo] = $cliente->nombre_completo;
+                                                    }
+
+                                                    // Obtener SOLO nombres Yape existentes del mismo cliente SIN id_credito asignado
+                                                    $yapesExistentes = \App\Models\YapeCliente::where('id_cliente', $clienteId)
+                                                        ->whereNull('id_credito')
+                                                        ->whereNotNull('nombre')
+                                                        ->where('nombre', '!=', '')
+                                                        ->pluck('nombre')
+                                                        ->unique()
+                                                        ->sort();
+
+                                                    foreach ($yapesExistentes as $nombre) {
+                                                        $options[$nombre] = $nombre . ' (Yape disponible)';
+                                                    }
+                                                }
+
+                                                return $options;
+                                            })
+                                            ->searchable()
+                                            ->allowHtml()
+                                            ->placeholder('Seleccionar nombre existente o escribir nuevo')
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('nombre')
+                                                    ->label('Nuevo nombre Yape')
+                                                    ->required()
+                                                    ->placeholder('Escriba el nuevo nombre para Yape')
+                                            ])
+                                            ->createOptionUsing(function (array $data) {
+                                                return $data['nombre'];
+                                            })
                                             ->columnSpanFull()
                                             ->extraInputAttributes([
                                                 'class' => 'bg-cyan-100 text-cyan-900',
                                                 'style' => 'background-color:rgb(114, 237, 241) !important; color:rgb(0, 0, 0) !important;'
                                             ])
+                                            ->reactive()
                                             ->visible(fn (callable $get) => !$get('es_adicional')),
 
                                         TextInput::make('numero_cuotas')

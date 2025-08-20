@@ -68,7 +68,7 @@ public static function form(Form $form): Form
                 ->label('Monto del Crédito')
                 ->helperText('Valor total del crédito registrado'),
 
-            Forms\Components\TextInput::make('entregar')
+            Forms\Components\TextInput::make('valor')
                 ->numeric()
                 ->label('Monto a Entregar (Yape)')
                 ->helperText('Monto específico del Yape que se debe entregar'),
@@ -95,7 +95,7 @@ public static function form(Form $form): Form
                     ->label('Cobrador')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('entregar')
+                Tables\Columns\TextColumn::make('valor')
                     ->money('PEN', true)
                     ->label('Préstamo')
                     ->sortable(),

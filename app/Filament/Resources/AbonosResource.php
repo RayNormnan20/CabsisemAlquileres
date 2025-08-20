@@ -77,12 +77,25 @@ class AbonosResource extends Resource
                             Forms\Components\Select::make('nombres_yape_del_dia')
                                 ->label('Nombres Yape del Día')
                                 ->options(function (callable $get, $livewire) {
-                                    $options = \App\Models\YapeCliente::whereNotNull('nombre')
+                                    // Obtener todos los YapeClientes con nombres válidos
+                                    $yapeClientes = \App\Models\YapeCliente::whereNotNull('nombre')
                                         ->where('nombre', '!=', '')
-                                        ->whereColumn('entregar', '<', 'monto') // entregar debe ser menor que monto
-                                        ->pluck('nombre', 'id') // Usar ID como valor
-                                        ->sort()
-                                        ->toArray();
+                                        ->with('abonos')
+                                        ->get();
+
+                                    $options = [];
+                                    foreach ($yapeClientes as $yapeCliente) {
+                                        // Calcular el total de abonos realizados para este YapeCliente
+                                        $totalAbonos = $yapeCliente->abonos->sum('monto_abono');
+                                        
+                                        // Solo mostrar si el total de abonos es menor al monto objetivo
+                                        if ($totalAbonos < $yapeCliente->monto) {
+                                            $options[$yapeCliente->id] = $yapeCliente->nombre;
+                                        }
+                                    }
+                                    
+                                    // Ordenar las opciones
+                                    asort($options);
 
                                     // En modo EDIT, incluir el YapeCliente seleccionado aunque no cumpla la condición
                                     if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\EditAbonos) {

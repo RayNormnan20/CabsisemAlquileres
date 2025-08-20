@@ -45,6 +45,7 @@ class YapeClientesTableWidget extends BaseWidget
                 ->label('Mostrar')
                 ->options([
                     'pendientes_excesos' => 'Solo Pendientes y Excesos',
+                    'completados' => 'Solo Completados',
                     'todos' => 'Todos los registros',
                 ])
                 ->default('pendientes_excesos')
@@ -52,7 +53,23 @@ class YapeClientesTableWidget extends BaseWidget
                     $value = $data['value'] ?? 'pendientes_excesos';
 
                     if ($value === 'pendientes_excesos') {
-                        return $query->whereColumn('entregar', '!=', 'monto');
+                        // Filtrar solo registros que no están completos
+                        return $query->whereHas('abonos', function($q) {
+                            // Tiene abonos pero no está completo
+                        }, '>=', 0)->where(function($subQuery) {
+                            $subQuery->whereRaw('(
+                                SELECT COALESCE(SUM(monto_abono), 0) 
+                                FROM abonos 
+                                WHERE abonos.id_yape_cliente = yape_clientes.id
+                            ) != yape_clientes.monto');
+                        });
+                    } elseif ($value === 'completados') {
+                        // Filtrar solo registros completados
+                        return $query->whereRaw('(
+                            SELECT COALESCE(SUM(monto_abono), 0) 
+                            FROM abonos 
+                            WHERE abonos.id_yape_cliente = yape_clientes.id
+                        ) = yape_clientes.monto');
                     }
 
                     return $query; // Mostrar todos
@@ -387,6 +404,11 @@ class YapeClientesTableWidget extends BaseWidget
                 ->getStateUsing(function (YapeCliente $record) {
                     return $record->user ? $record->user->name : 'Sin asignar';
                 }),
+                // Valor (Préstamo)
+            TextColumn::make('valor')
+                ->label('Préstamo')
+                ->money('PEN', true)
+                ->sortable(),
 
             // Monto
             TextColumn::make('monto')
@@ -461,5 +483,20 @@ class YapeClientesTableWidget extends BaseWidget
     protected function getTableHeading(): ?string
     {
         return 'Yape Clientes - Control de Entregas';
+    }
+
+    protected function isTablePaginationEnabled(): bool
+    {
+        return true;
+    }
+
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return 25;
+    }
+
+    protected function getTableRecordsPerPageSelectOptions(): array
+    {
+        return [10, 25, 50, 100, 'all'];
     }
 }
