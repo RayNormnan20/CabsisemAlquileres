@@ -16,14 +16,134 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\HtmlString;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
+use Livewire\Component;
 
 class YapeClientesTableWidget extends BaseWidget
 {
     protected int|string|array $columnSpan = 'full';
+    
+    // Propiedades para el filtro de período
+    public ?string $fechaDesde = null;
+    public ?string $fechaHasta = null;
+    public string $periodoSeleccionado = 'mes_actual';
+    public bool $fechasValidas = true;
+    
+    public function mount(): void
+    {
+        parent::mount();
+        $this->aplicarPeriodo();
+    }
+    
+    public function aplicarPeriodo(): void
+    {
+        switch ($this->periodoSeleccionado) {
+            case 'hoy':
+                $this->fechaDesde = Carbon::today()->format('Y-m-d');
+                $this->fechaHasta = Carbon::today()->format('Y-m-d');
+                break;
+            case 'ayer':
+                $this->fechaDesde = Carbon::yesterday()->format('Y-m-d');
+                $this->fechaHasta = Carbon::yesterday()->format('Y-m-d');
+                break;
+            case 'esta_semana':
+                $this->fechaDesde = Carbon::now()->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = Carbon::now()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'semana_pasada':
+                $this->fechaDesde = Carbon::now()->subWeek()->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = Carbon::now()->subWeek()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'mes_actual':
+                $this->fechaDesde = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = Carbon::now()->endOfMonth()->format('Y-m-d');
+                break;
+            case 'mes_pasado':
+                $this->fechaDesde = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+                break;
+            case 'ultimos_7_dias':
+                $this->fechaDesde = Carbon::now()->subDays(6)->format('Y-m-d');
+                $this->fechaHasta = Carbon::today()->format('Y-m-d');
+                break;
+            case 'ultimos_30_dias':
+                $this->fechaDesde = Carbon::now()->subDays(29)->format('Y-m-d');
+                $this->fechaHasta = Carbon::today()->format('Y-m-d');
+                break;
+            case 'personalizado':
+                // No cambiar las fechas, mantener las que el usuario ha seleccionado
+                break;
+            default:
+                $this->fechaDesde = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = Carbon::now()->endOfMonth()->format('Y-m-d');
+                break;
+        }
+    }
+    
+    public function validarFechas(): void
+    {
+        if ($this->fechaDesde && $this->fechaHasta) {
+            $fechaDesde = Carbon::parse($this->fechaDesde);
+            $fechaHasta = Carbon::parse($this->fechaHasta);
+            
+            if ($fechaDesde->gt($fechaHasta)) {
+                $this->fechasValidas = false;
+                return;
+            }
+        }
+        
+        $this->fechasValidas = true;
+    }
+    
+    public function updatedPeriodoSeleccionado(): void
+     {
+         $this->aplicarPeriodo();
+     }
+     
+     public function limpiarFiltros(): void
+     {
+         $this->fechaDesde = null;
+         $this->fechaHasta = null;
+         $this->periodoSeleccionado = 'mes_actual';
+         $this->aplicarPeriodo();
+         $this->fechasValidas = true;
+     }
+     
+     public function updated($name): void
+     {
+         if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
+             if ($name === 'periodoSeleccionado') {
+                 $this->aplicarPeriodo();
+             }
+         }
+     }
+     
+     protected function getTableHeader(): ?\Illuminate\Contracts\View\View
+     {
+         return view('filament.widgets.yape-clientes-header', [
+             'fechaDesde' => $this->fechaDesde,
+             'fechaHasta' => $this->fechaHasta,
+             'fechasValidas' => $this->fechasValidas,
+             'periodoSeleccionado' => $this->periodoSeleccionado
+         ]);
+     }
 
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
+        $this->validarFechas();
+        
+        if (!$this->fechasValidas) {
+            return YapeCliente::with(['cliente', 'abonos'])->whereRaw('1=0');
+        }
+        
         $query = YapeCliente::with(['cliente', 'abonos']);
+
+        // Aplicar filtros de fecha
+        $query->when($this->fechaDesde, function (Builder $query) {
+            return $query->whereDate('created_at', '>=', $this->fechaDesde);
+        })
+        ->when($this->fechaHasta, function (Builder $query) {
+            return $query->whereDate('created_at', '<=', $this->fechaHasta);
+        });
 
         // Filtrar por ruta desde la sesión si es necesario
         $rutaId = Session::get('selected_ruta_id');
@@ -75,49 +195,36 @@ class YapeClientesTableWidget extends BaseWidget
                     return $query; // Mostrar todos
                 }),
 
-            // Filtro rápido por fechas predefinidas
-            SelectFilter::make('periodo_rapido')
-                ->label('Período')
-                ->options([
-                    'hoy' => 'Hoy',
-                    'ayer' => 'Ayer',
-                    'esta_semana' => 'Esta semana',
-                    'semana_pasada' => 'Semana pasada',
-                    'este_mes' => 'Este mes',
-                    'mes_pasado' => 'Mes pasado',
+            // Filtro de rango de fechas personalizado
+            Filter::make('fecha_rango')
+                ->form([
+                    DatePicker::make('desde')
+                        ->label('Fecha Desde')
+                        ->placeholder('Seleccionar fecha desde')
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, $livewire) {
+                            $livewire->fechaDesde = $state;
+                            $livewire->periodoSeleccionado = 'personalizado';
+                        }),
+                    DatePicker::make('hasta')
+                        ->label('Fecha Hasta')
+                        ->placeholder('Seleccionar fecha hasta')
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, $livewire) {
+                            $livewire->fechaHasta = $state;
+                            $livewire->periodoSeleccionado = 'personalizado';
+                        }),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
-                    $value = $data['value'] ?? null;
-
-                    if (!$value) {
-                        return $query;
-                    }
-
-                    // Aplicar el filtro de fecha correspondiente
-                    switch ($value) {
-                        case 'hoy':
-                            return $query->whereDate('created_at', Carbon::today());
-                        case 'ayer':
-                            return $query->whereDate('created_at', Carbon::yesterday());
-                        case 'esta_semana':
-                            return $query->whereBetween('created_at', [
-                                Carbon::now()->startOfWeek(),
-                                Carbon::now()->endOfWeek()
-                            ]);
-                        case 'semana_pasada':
-                            return $query->whereBetween('created_at', [
-                                Carbon::now()->subWeek()->startOfWeek(),
-                                Carbon::now()->subWeek()->endOfWeek()
-                            ]);
-                        case 'este_mes':
-                            return $query->whereMonth('created_at', Carbon::now()->month)
-                                ->whereYear('created_at', Carbon::now()->year);
-                        case 'mes_pasado':
-                            return $query->whereMonth('created_at', Carbon::now()->subMonth()->month)
-                                ->whereYear('created_at', Carbon::now()->subMonth()->year);
-                        default:
-                            return $query;
-                    }
+                    return $query
+                        ->when(
+                            $data['desde'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                        )
+                        ->when(
+                            $data['hasta'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                        );
                 }),
         ];
     }
@@ -481,9 +588,9 @@ class YapeClientesTableWidget extends BaseWidget
     }
 
     protected function getTableHeading(): ?string
-    {
-        return 'Yape Clientes - Control de Entregas';
-    }
+     {
+         return null; // El título se muestra en el header personalizado
+     }
 
     protected function isTablePaginationEnabled(): bool
     {
