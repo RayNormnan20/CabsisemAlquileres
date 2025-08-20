@@ -318,15 +318,21 @@ class CreditosResource extends Resource
                                         Select::make('nombre_yape')
                                             ->label('Nombre Yape')
                                             ->required()
-                                            ->options(function (callable $get) {
+                                            ->options(function (callable $get, $livewire) {
                                                 $clienteId = $get('id_cliente');
                                                 $options = [];
 
                                                 if ($clienteId) {
-                                                    // Obtener el nombre completo del cliente
-                                                    $cliente = \App\Models\Clientes::find($clienteId);
-                                                    if ($cliente) {
-                                                        $options[$cliente->nombre_completo] = $cliente->nombre_completo;
+                                                    // Si estamos editando y ya existe un YapeCliente asociado
+                                                    if (isset($livewire->record) && $livewire->record->yapeCliente) {
+                                                        $nombreActual = $livewire->record->yapeCliente->nombre;
+                                                        $options[$nombreActual] = $nombreActual;
+                                                    } else {
+                                                        // Solo mostrar el nombre completo del cliente si NO hay YapeCliente asociado
+                                                        $cliente = \App\Models\Clientes::find($clienteId);
+                                                        if ($cliente) {
+                                                            $options[$cliente->nombre_completo] = $cliente->nombre_completo;
+                                                        }
                                                     }
 
                                                     // Obtener SOLO nombres Yape existentes del mismo cliente SIN id_credito asignado
