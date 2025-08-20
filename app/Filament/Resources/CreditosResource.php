@@ -124,7 +124,7 @@ class CreditosResource extends Resource
     }
 
     public static function form(Form $form): Form
-    {   
+    {
 
         $isAdicional = request()->query('tipo') === 'adicional';
 
@@ -267,7 +267,7 @@ class CreditosResource extends Resource
                                                 $fechaCreditoStr = $get('fecha_credito');
                                                 static::calculateCreditValues($valorCredito, $porcentaje, (int) $state, $formaPagoNombre, $fechaCreditoStr, $set);
                                             }
-                                        }) 
+                                        })
                                         ->visible(fn (callable $get) => !$get('es_adicional')),
 
 
@@ -279,7 +279,7 @@ class CreditosResource extends Resource
                                             ->columnSpanFull()
 
 
-                                        
+
 
 
                                     ])
@@ -366,7 +366,7 @@ class CreditosResource extends Resource
                                                     ])
                                                     ->required()
                                                     ->reactive(), // Para mostrar/ocultar foto_comprobante según valor
-                                                
+
                                                 TextInput::make('monto')
                                                     ->label('Monto')
                                                     ->numeric()
@@ -377,20 +377,20 @@ class CreditosResource extends Resource
                                                         if (!$state || !is_numeric($state)) {
                                                             return;
                                                         }
-                                                        
+
                                                         $valorCredito = (float) ($livewire->data['valor_credito'] ?? 0);
                                                         $conceptos = $livewire->data['conceptosCredito'] ?? [];
-                                                        
+
                                                         $sumaTotal = 0;
                                                         foreach ($conceptos as $concepto) {
                                                             if (isset($concepto['monto']) && is_numeric($concepto['monto'])) {
                                                                 $sumaTotal += (float) $concepto['monto'];
                                                             }
                                                         }
-                                                        
+
                                                         // Solo mostrar notificación si hay diferencia significativa (falta dinero)
                                                         $diferencia = $valorCredito - $sumaTotal;
-                                                        
+
                                                         /*
                                                         if ($diferencia > 0.01) { // Falta dinero
                                                             \Filament\Notifications\Notification::make()
@@ -409,12 +409,12 @@ class CreditosResource extends Resource
                                                         }
                                                                 */
                                                         // No mostrar notificación cuando coincide exactamente para evitar spam
-                                                        
+
                                                         // ELIMINAR ESTE BLOQUE COMPLETO - CAUSA DUPLICACIÓN
                                                         // if ($get('tipo_concepto') === 'Yape' && $state) {
                                                         //     $nombreYape = $livewire->data['nombre_yape'] ?? null;
                                                         //     $clienteId = $livewire->data['id_cliente'] ?? null;
-                                                        //     
+                                                        //
                                                         //     if ($nombreYape && $clienteId) {
                                                         //         // Crear o actualizar registro en yape_clientes
                                                         //         \App\Models\YapeCliente::updateOrCreate(
@@ -431,8 +431,8 @@ class CreditosResource extends Resource
                                                         //     }
                                                         // }
                                                     }),
-                                                   
-                                                
+
+
                                                 FileUpload::make('foto_comprobante')
                                                     ->label(fn ($get) => match ($get('tipo_concepto')) {
                                                         'Yape' => 'Comprobante Yape',
@@ -474,7 +474,7 @@ class CreditosResource extends Resource
                                             ->columns(2),
                                     ])
                                     ->columnSpanFull(),
-                            ]) 
+                            ])
                         ]),
                 ])
             ]);

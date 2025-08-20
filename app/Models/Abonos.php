@@ -43,6 +43,10 @@ class Abonos extends Model
     {
         parent::boot();
 
+        // EVENTOS DESHABILITADOS: No actualizar automáticamente el campo 'entregar'
+        // El campo 'entregar' ahora representa el monto específico del Yape a entregar
+        
+        /*
         // Cuando se crea un abono
         static::created(function ($abono) {
             if ($abono->id_yape_cliente) {
@@ -63,11 +67,19 @@ class Abonos extends Model
                 $abono->actualizarEntregarYapeCliente();
             }
         });
+        */
     }
 
-    // Método para actualizar el campo entregar del YapeCliente
+    // MÉTODO DESHABILITADO: No actualizar automáticamente el campo 'entregar'
+    // El campo 'entregar' ahora representa el monto específico del Yape a entregar
+    // y no debe ser sobrescrito con la suma de abonos
     public function actualizarEntregarYapeCliente()
     {
+        // Método deshabilitado para preservar el valor original del campo 'entregar'
+        // que representa el monto específico del Yape que se debe entregar
+        return;
+        
+        /*
         if ($this->id_yape_cliente) {
             // Solo contar abonos que tienen conceptos de tipo "Yape"
             $totalEntregado = self::where('id_yape_cliente', $this->id_yape_cliente)
@@ -79,6 +91,7 @@ class Abonos extends Model
             YapeCliente::where('id', $this->id_yape_cliente)
                 ->update(['entregar' => $totalEntregado]);
         }
+        */
     }
 
     public function credito()

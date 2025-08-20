@@ -393,17 +393,12 @@ class YapeClientesTableWidget extends BaseWidget
                 ->label('Por Yapear')
                 ->money('PEN', true),
 
-            // Entregar (suma de abonos realizados)
-            TextColumn::make('entregar_calculado')
+            // Yapeado (suma de abonos realizados)
+            TextColumn::make('yapeado_calculado')
                 ->label('Yapeado')
                 ->getStateUsing(function (YapeCliente $record) {
                     // Sumar todos los abonos que tienen este id_yape_cliente
-                    $abonosSum = Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');
-
-                    // Actualizar el campo entregar en la base de datos
-                    $record->update(['entregar' => $abonosSum]);
-
-                    return $abonosSum;
+                    return Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');
                 })
                 ->money('PEN', true),
 
@@ -422,7 +417,7 @@ class YapeClientesTableWidget extends BaseWidget
                     return $faltante > 0 ? 'warning' : 'success';
                 }),
 
-            // Devolución (entregar - monto, solo si es positivo)
+            // Devolución (yapeado - monto del crédito, solo si es positivo)
             TextColumn::make('devolucion')
                 ->label('Devolución')
                 ->getStateUsing(function (YapeCliente $record) {

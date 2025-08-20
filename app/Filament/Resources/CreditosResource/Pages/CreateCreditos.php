@@ -58,7 +58,7 @@ class CreateCreditos extends CreateRecord
             )->format('Y-m-d');
 
             $data['fecha_vencimiento'] = Carbon::parse('2099-12-31');
-            
+
             $data['forma_pago'] = TipoPago::where('nombre', 'Diario')->value('id_forma_pago');
 
             $conceptoAdicional = Concepto::where('nombre', 'Adicional')->first();
@@ -173,12 +173,12 @@ class CreateCreditos extends CreateRecord
     {
         // Verificar si hay conceptos de tipo Yape para registrar en yape_clientes
         $this->record->load('conceptosCredito');
-        
+
         foreach ($this->record->conceptosCredito as $concepto) {
             if ($concepto->tipo_concepto === 'Yape') {
                 // Determinar el nombre a usar: nombre_yape o nombre del cliente
-                $nombreYape = !empty($this->data['nombre_yape']) 
-                    ? $this->data['nombre_yape'] 
+                $nombreYape = !empty($this->data['nombre_yape'])
+                    ? $this->data['nombre_yape']
                     : $this->record->cliente->nombre_completo;
 
                 YapeCliente::create([
@@ -186,7 +186,7 @@ class CreateCreditos extends CreateRecord
                     'nombre' => $nombreYape,
                     'user_id' => auth()->id(),
                     'monto' => $concepto->monto,
-                    'entregar' => $concepto->monto,
+                    'entregar' => $this->record->valor_credito,
                 ]);
                 break; // Solo crear un registro por crédito
             }
