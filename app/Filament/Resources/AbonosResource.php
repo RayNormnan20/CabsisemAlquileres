@@ -53,7 +53,7 @@ class AbonosResource extends Resource
             // Sección de fechas y montos
             Forms\Components\Section::make('Datos del Abono')
                 ->schema([
-                    Forms\Components\Grid::make(3)
+                    Forms\Components\Grid::make(4)
                         ->schema([
                             Forms\Components\TextInput::make('fecha_credito')
                                 ->label('Fecha de Crédito')
@@ -89,6 +89,8 @@ class AbonosResource extends Resource
                                 ->options(function (callable $get, $livewire) {
                                     // Verificar si es una devolución
                                     $esDevolucion = $get('es_devolucion') ?? false;
+                                    // Verificar si el checkbox está activo
+                                    $mostrarSoloCompletados = $get('mostrar_solo_completados') ?? false;
 
                                     $options = [];
 
@@ -124,7 +126,7 @@ class AbonosResource extends Resource
                                             }
                                         }
                                     } else {
-                                        // Lógica normal para pagos regulares
+                                        // Lógica para pagos regulares
                                         $yapeClientes = \App\Models\YapeCliente::whereNotNull('nombre')
                                             ->where('nombre', '!=', '')
                                             ->with('abonos')
@@ -142,9 +144,21 @@ class AbonosResource extends Resource
                                             }
                                             $montoAjustado = $yapeCliente->monto;
 
-                                            // Lógica normal: mostrar si el yapeado real es menor al monto objetivo
-                                            if ($yapeadoReal < $montoAjustado) {
-                                                $options[$yapeCliente->id] = $yapeCliente->nombre;
+                                            if ($mostrarSoloCompletados) {
+                                                // Si el checkbox está activo, mostrar solo completados o en exceso
+                                                if ($yapeadoReal >= $montoAjustado) {
+                                                    if ($yapeadoReal > $montoAjustado) {
+                                                        $exceso = $yapeadoReal - $montoAjustado;
+                                                        $options[$yapeCliente->id] = $yapeCliente->nombre;
+                                                    } else {
+                                                        $options[$yapeCliente->id] = $yapeCliente->nombre ;
+                                                    }
+                                                }
+                                            } else {
+                                                // Lógica normal: mostrar si el yapeado real es menor al monto objetivo
+                                                if ($yapeadoReal < $montoAjustado) {
+                                                    $options[$yapeCliente->id] = $yapeCliente->nombre;
+                                                }
                                             }
                                         }
                                     }
@@ -163,13 +177,19 @@ class AbonosResource extends Resource
                                         }
                                     }
 
-                                    // Agregar el nombre del cliente como opción por defecto solo si NO es devolución
-                                    if (!$esDevolucion) {
-                                        $clienteId = $get('id_cliente');
-                                        if ($clienteId) {
-                                            $cliente = \App\Models\Clientes::find($clienteId);
-                                            if ($cliente) {
+                                    // Agregar el nombre del cliente como opción por defecto
+                                    $clienteId = $get('id_cliente');
+                                    if ($clienteId) {
+                                        $cliente = \App\Models\Clientes::find($clienteId);
+                                        if ($cliente) {
+                                            if ($esDevolucion) {
+                                                // Para devoluciones, siempre agregar el cliente
                                                 $options['cliente_' . $clienteId] = $cliente->nombre_completo;
+                                            } else {
+                                                // Para pagos normales, agregar solo si el checkbox no está activo
+                                                if (!$mostrarSoloCompletados) {
+                                                    $options['cliente_' . $clienteId] = $cliente->nombre_completo;
+                                                }
                                             }
                                         }
                                     }
@@ -178,6 +198,7 @@ class AbonosResource extends Resource
                                 })
                                 ->searchable()
                                 ->allowHtml()
+                                ->reactive()
                                 ->placeholder('Seleccionar nombre Yape')
                                 ->dehydrated(false)
                                 ->reactive()
@@ -258,7 +279,29 @@ class AbonosResource extends Resource
                                             }
                                         }
                                     }
+                                }),
+
+                                // Checkbox para filtrar nombres Yape completados/en exceso
+                            Forms\Components\Checkbox::make('mostrar_solo_completados')
+                                ->label('Mostrar solo nombres Yape completados o en exceso')
+                                ->visible(function (callable $get) {
+                                    // Solo mostrar si hay al menos un concepto de tipo 'Yape' Y NO es devolución
+                                    $esDevolucion = $get('es_devolucion') ?? false;
+                                    if ($esDevolucion) {
+                                        return false;
+                                    }
+                                    
+                                    $conceptos = $get('conceptosabonos') ?? [];
+                                    foreach ($conceptos as $concepto) {
+                                        if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
                                 })
+                                ->reactive()
+                                ->dehydrated(false),
+                                
                         ]),
 
                     Forms\Components\Grid::make(3)
@@ -361,6 +404,7 @@ class AbonosResource extends Resource
                                         'otro ingresos' => 'otro ingresos',
                                         'Abono Sobrante COB' => 'Abono Sobrante COB',
                                         'Abono Faltante COB' => 'Abono Faltante COB',
+                                        'Efectivo CLi. No Regis.' => 'Efectivo CLi. No Regis.',
                                         'Entrega Caja COBRADOR' => 'Entrega Caja COBRADOR',
                                         'Abono de Descuento' => 'Abono de Descuento',
                                     ];

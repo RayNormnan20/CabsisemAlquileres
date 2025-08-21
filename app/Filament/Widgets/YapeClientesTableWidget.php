@@ -236,6 +236,13 @@ class YapeClientesTableWidget extends BaseWidget
     protected function getTableColumns(): array
     {
         return [
+             // Cobrador
+            TextColumn::make('user.name')
+                ->label('Cobrador')
+                ->searchable()
+                ->getStateUsing(function (YapeCliente $record) {
+                    return $record->user ? $record->user->name : 'Sin asignar';
+                }),
             // Cliente
             TextColumn::make('cliente.nombre_completo')
                 ->label('Cliente')
@@ -555,13 +562,6 @@ class YapeClientesTableWidget extends BaseWidget
                         ->modalWidth('4xl')
                 ),
 
-            // Cobrador
-            TextColumn::make('user.name')
-                ->label('Cobrador')
-                ->searchable()
-                ->getStateUsing(function (YapeCliente $record) {
-                    return $record->user ? $record->user->name : 'Sin asignar';
-                }),
                 // Valor (Préstamo)
             TextColumn::make('valor')
                 ->label('Préstamo')

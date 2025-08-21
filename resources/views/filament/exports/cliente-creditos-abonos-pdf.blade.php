@@ -203,7 +203,7 @@
                 <td class="value"></td>
             </tr>
             <tr>
-                <td class="label">E</td>
+                <td class="label">Efectivo</td>
                 <td class="value">
                     <span class="input-box">{{ number_format($totalEfectivo ?? 0, 0) }}</span>
                 </td>

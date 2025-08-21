@@ -114,29 +114,27 @@
                 </div>
             </div>
 
-            <!-- PAGOS YAPE (detalle) -->
-            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-yellow-500"
+            <!-- PAGOS COMBINADOS (YAPE + EFECTIVO) -->
+            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-blue-500"
                 onclick="window.location.href='{{ route('filament.resources.abonos.index') }}'">
                 <div class="text-center">
-                    <div class="bg-yellow-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
-                        <x-heroicon-o-eye class="w-5 h-5 text-yellow-600" />
+                    <div class="bg-blue-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                        <x-heroicon-o-eye class="w-5 h-5 text-blue-600" />
                     </div>
-                    <h3 class="text-xs font-bold text-gray-800 leading-tight">PAGOS YAPE</h3>
-                    <p class="text-[10px] text-gray-500 leading-tight">{{ $countPagosYapeHoy }} pagos hoy</p>
-                    <p class="text-[10px] text-gray-500 leading-tight">S/ {{ $totalPagosYapeHoy }} total</p>
-                </div>
-            </div>
-
-            <!-- PAGOS EFECTIVO (detalle) -->
-            <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-emerald-500"
-                onclick="window.location.href='{{ route('filament.resources.abonos.index') }}'">
-                <div class="text-center">
-                    <div class="bg-emerald-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
-                        <x-heroicon-o-eye class="w-5 h-5 text-emerald-600" />
+                    <h3 class="text-xs font-bold text-gray-800 leading-tight">PAGOS</h3>
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[9px] text-yellow-600 font-medium">YAPE:</span>
+                            <span class="text-[9px] text-gray-700"><span class="font-bold px-1">{{ $countPagosYapeHoy }}</span> (S/ {{ $totalPagosYapeHoy }})</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[9px] text-emerald-600 font-medium">EFECTIVO:</span>
+                            <span class="text-[9px] text-gray-700"><span class="font-bold px-1">{{ $countPagosEfectivoHoy }}</span> (S/ {{ $totalPagosEfectivoHoy }})</span>
+                        </div>
+                        <div class="border-t pt-1">
+                            <p class="text-[10px] text-gray-800 font-bold">Total: S/ {{ number_format((float)$totalPagosYapeHoy + (float)$totalPagosEfectivoHoy, 2) }}</p>
+                        </div>
                     </div>
-                    <h3 class="text-xs font-bold text-gray-800 leading-tight">PAGOS EFECTIVO</h3>
-                    <p class="text-[10px] text-gray-500 leading-tight">{{ $countPagosEfectivoHoy }} pagos hoy</p>
-                    <p class="text-[10px] text-gray-500 leading-tight">S/ {{ $totalPagosEfectivoHoy }} total</p>
                 </div>
             </div>
         </div>

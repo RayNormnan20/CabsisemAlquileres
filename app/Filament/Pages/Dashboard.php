@@ -7,6 +7,7 @@ use App\Filament\Widgets\FinancialStatsWidget;
 use App\Filament\Widgets\SegundoRecorridoWidget;
 use App\Filament\Widgets\YapeClientesTableWidget;
 use App\Filament\Widgets\YapesTotalesDelDiaWidget;
+use App\Filament\Widgets\YapeUsuariosWidget;
 use Filament\Pages\Dashboard as BasePage;
 use Illuminate\Support\Facades\Session;
 
@@ -48,9 +49,11 @@ class Dashboard extends BasePage
         return [
                    FinancialStatsWidget::class,
                    YapeClientesTableWidget::class,
+                   ClientesPorRenovarWidget::class,
                    YapesTotalesDelDiaWidget::class,
                    SegundoRecorridoWidget::class,
-                   ClientesPorRenovarWidget::class
+                   YapeUsuariosWidget::class,
+                   
 
         ];
     }

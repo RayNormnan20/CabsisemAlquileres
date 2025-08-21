@@ -33,7 +33,10 @@ class ClienteCreditosAbonosWidget extends Widget
     public string $periodoSeleccionado = 'hoy';
     public bool $fechasValidas = true;
     
-    protected $listeners = ['ruta-seleccionada' => 'actualizarRuta'];
+    protected $listeners = [
+        'ruta-seleccionada' => 'actualizarRuta',
+        'filtros-actualizados' => 'sincronizarFiltros'
+    ];
     
     public function mount(): void
     {
@@ -98,7 +101,14 @@ class ClienteCreditosAbonosWidget extends Widget
         $this->periodoSeleccionado = 'hoy';
         $this->aplicarPeriodo();
         $this->fechasValidas = true;
-        $this->cargarDatosUsuario();
+        $this->cargarDatosRuta();
+        
+        // Emitir evento para sincronizar con la página
+        $this->emit('sincronizar-filtros', [
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
+            'periodoSeleccionado' => $this->periodoSeleccionado
+        ]);
     }
     
     public function updated($name)
@@ -108,8 +118,35 @@ class ClienteCreditosAbonosWidget extends Widget
                 $this->aplicarPeriodo();
             }
             $this->cargarDatosRuta();
+            
+            // Emitir evento para sincronizar con la página
+            $this->emit('sincronizar-filtros', [
+                'fechaDesde' => $this->fechaDesde,
+                'fechaHasta' => $this->fechaHasta,
+                'periodoSeleccionado' => $this->periodoSeleccionado
+            ]);
         }
     }
+    
+    public function sincronizarFiltros($filtros)
+    {
+        $this->fechaDesde = $filtros['fechaDesde'] ?? null;
+        $this->fechaHasta = $filtros['fechaHasta'] ?? null;
+        $this->periodoSeleccionado = $filtros['periodoSeleccionado'] ?? 'hoy';
+        $this->validarFechas();
+        $this->cargarDatosRuta();
+    }
+    
+    public function validarFechas(): void
+    {
+        if ($this->fechaDesde && $this->fechaHasta) {
+            $this->fechasValidas = $this->fechaDesde <= $this->fechaHasta;
+        } else {
+            $this->fechasValidas = true;
+        }
+    }
+    
+
     
     protected function cargarDatosRuta(): void
     {

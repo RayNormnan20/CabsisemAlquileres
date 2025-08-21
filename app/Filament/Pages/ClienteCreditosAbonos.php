@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\On;
 use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 
 class ClienteCreditosAbonos extends Page
 {
@@ -25,8 +26,16 @@ class ClienteCreditosAbonos extends Page
     
     protected static string $view = 'filament.pages.cliente-creditos-abonos';
     
+    protected $listeners = ['sincronizar-filtros' => 'sincronizarFiltros'];
+    
     public ?int $rutaId = null;
     public $rutas = [];
+    
+    // Propiedades para filtro de fechas
+    public ?string $fechaDesde = null;
+    public ?string $fechaHasta = null;
+    public string $periodoSeleccionado = 'hoy';
+    public bool $fechasValidas = true;
     
     public function mount(): void
     {
@@ -43,6 +52,83 @@ class ClienteCreditosAbonos extends Page
             })
             ->pluck('nombre', 'id')
             ->toArray();
+            
+        // Aplicar período por defecto
+        $this->aplicarPeriodo();
+    }
+    
+    public function aplicarPeriodo(): void
+    {
+        $hoy = Carbon::today();
+        
+        switch ($this->periodoSeleccionado) {
+            case 'hoy':
+                $this->fechaDesde = $hoy->format('Y-m-d');
+                $this->fechaHasta = $hoy->format('Y-m-d');
+                break;
+            case 'ayer':
+                $ayer = $hoy->copy()->subDay();
+                $this->fechaDesde = $ayer->format('Y-m-d');
+                $this->fechaHasta = $ayer->format('Y-m-d');
+                break;
+            case 'semana_actual':
+                $this->fechaDesde = $hoy->copy()->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'mes_actual':
+                $this->fechaDesde = $hoy->copy()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = $hoy->copy()->endOfMonth()->format('Y-m-d');
+                break;
+            case 'personalizado':
+                // No cambiar las fechas si es personalizado
+                break;
+        }
+        
+        $this->validarFechas();
+    }
+    
+    public function validarFechas(): void
+    {
+        if ($this->fechaDesde && $this->fechaHasta) {
+            $this->fechasValidas = $this->fechaDesde <= $this->fechaHasta;
+        } else {
+            $this->fechasValidas = true;
+        }
+    }
+    
+    public function limpiarFiltros(): void
+    {
+        $this->fechaDesde = null;
+        $this->fechaHasta = null;
+        $this->periodoSeleccionado = 'hoy';
+        $this->aplicarPeriodo();
+        $this->fechasValidas = true;
+    }
+    
+    public function updated($name)
+    {
+        if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
+            if ($name === 'periodoSeleccionado') {
+                $this->aplicarPeriodo();
+            } else {
+                $this->validarFechas();
+            }
+            
+            // Emitir evento para sincronizar con el widget
+            $this->emit('filtros-actualizados', [
+                'fechaDesde' => $this->fechaDesde,
+                'fechaHasta' => $this->fechaHasta,
+                'periodoSeleccionado' => $this->periodoSeleccionado
+            ]);
+        }
+    }
+    
+    public function sincronizarFiltros($filtros)
+    {
+        $this->fechaDesde = $filtros['fechaDesde'] ?? null;
+        $this->fechaHasta = $filtros['fechaHasta'] ?? null;
+        $this->periodoSeleccionado = $filtros['periodoSeleccionado'] ?? 'hoy';
+        $this->validarFechas();
     }
     /*
     protected function getHeaderWidgets(): array
@@ -72,9 +158,12 @@ class ClienteCreditosAbonos extends Page
                 return;
             }
 
-            Log::info('Iniciando exportación PDF para ruta: ' . $this->rutaId);
+            Log::info('Iniciando exportación PDF para ruta: ' . $this->rutaId, [
+                'fechaDesde' => $this->fechaDesde,
+                'fechaHasta' => $this->fechaHasta
+            ]);
 
-            $export = new ClienteCreditosAbonosExport($this->rutaId, true); // true indica que es por ruta
+            $export = new ClienteCreditosAbonosExport($this->rutaId, true, $this->fechaDesde, $this->fechaHasta);
             return $export->exportToPDF();
 
         } catch (\Exception $e) {

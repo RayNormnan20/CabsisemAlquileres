@@ -33,6 +33,16 @@ class ListVistaMovimientos extends ListRecords
         ];
     }
 
+    protected function getTableRecordsPerPageSelectOptions(): array
+    {
+        return [10, 25, 50, 100];
+    }
+
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return 25;
+    }
+
     protected function getHeader(): View
     {
         return view('filament.resources.vista-movimiento-resource.header', [

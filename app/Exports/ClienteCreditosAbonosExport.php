@@ -16,6 +16,8 @@ class ClienteCreditosAbonosExport
 {
     protected $rutaId;
     protected $isRutaExport;
+    protected $fechaDesde;
+    protected $fechaHasta;
     protected $rutaData;
     protected $usuariosData;
     protected $creditosData;
@@ -28,10 +30,12 @@ class ClienteCreditosAbonosExport
     protected $sobranteCobranza;
     protected $efectivoClientesNoRegistrados;
 
-    public function __construct(int $rutaId, bool $isRutaExport = true)
+    public function __construct(int $rutaId, bool $isRutaExport = true, ?string $fechaDesde = null, ?string $fechaHasta = null)
     {
         $this->rutaId = $rutaId;
         $this->isRutaExport = $isRutaExport;
+        $this->fechaDesde = $fechaDesde;
+        $this->fechaHasta = $fechaHasta;
         $this->cargarDatos();
     }
 
@@ -81,8 +85,17 @@ class ClienteCreditosAbonosExport
 
         $clientesIds = $clientes->pluck('id_cliente')->toArray();
 
-        // Cargar créditos
-        $creditos = Creditos::whereIn('id_cliente', $clientesIds)->get();
+        // Cargar créditos con filtro de fechas
+        $creditosQuery = Creditos::whereIn('id_cliente', $clientesIds);
+        
+        if ($this->fechaDesde) {
+            $creditosQuery->whereDate('fecha_credito', '>=', $this->fechaDesde);
+        }
+        if ($this->fechaHasta) {
+            $creditosQuery->whereDate('fecha_credito', '<=', $this->fechaHasta);
+        }
+        
+        $creditos = $creditosQuery->get();
         $this->creditosData = [];
         $this->totalCreditos = 0;
 
@@ -112,8 +125,17 @@ class ClienteCreditosAbonosExport
             $this->totalCreditos += $credito->valor_credito;
         }
 
-        // Cargar abonos
-        $abonos = Abonos::whereIn('id_cliente', $clientesIds)->get();
+        // Cargar abonos con filtro de fechas
+        $abonosQuery = Abonos::whereIn('id_cliente', $clientesIds);
+        
+        if ($this->fechaDesde) {
+            $abonosQuery->whereDate('fecha_pago', '>=', $this->fechaDesde);
+        }
+        if ($this->fechaHasta) {
+            $abonosQuery->whereDate('fecha_pago', '<=', $this->fechaHasta);
+        }
+        
+        $abonos = $abonosQuery->get();
         $this->abonosData = [];
         $this->totalAbonos = 0;
 
@@ -171,20 +193,43 @@ class ClienteCreditosAbonosExport
             }
         }
         
-        // Luego buscar en conceptos de abono sin id_abono (filtrados por ruta específica)
+        // Luego buscar en conceptos de abono sin id_abono (filtrados por ruta específica y fecha)
         $usuariosIds = collect($this->usuariosData)->pluck('id')->toArray();
         $conceptosSinAbono = ConceptoAbono::whereIn('id_usuario', $usuariosIds)
             ->whereNull('id_abono')
             ->where('tipo_concepto', 'ABONO SOBRANTE COB')
             ->where('id_ruta', $this->rutaId) // Validar que pertenezca a la ruta específica
+            ->when($this->fechaDesde, function ($query) {
+                return $query->whereDate('created_at', '>=', $this->fechaDesde);
+            })
+            ->when($this->fechaHasta, function ($query) {
+                return $query->whereDate('created_at', '<=', $this->fechaHasta);
+            })
             ->get();
             
         foreach ($conceptosSinAbono as $concepto) {
             $this->sobranteCobranza += $concepto->monto;
         }
         
-        // EFECTIVO CLIENTES NO REGISTRADOS se mantiene en 0 por ahora
+        // EFECTIVO CLIENTES NO REGISTRADOS - Calcular específicamente con tipo 'Efectivo CLi. No Regis.'
         $this->efectivoClientesNoRegistrados = 0;
+        
+        // Buscar en conceptos de abono sin id_abono con tipo específico (filtrado por fecha)
+        $conceptosEfectivoNoRegistrados = ConceptoAbono::whereIn('id_usuario', $usuariosIds)
+            ->whereNull('id_abono')
+            ->where('tipo_concepto', 'Efectivo CLi. No Regis.')
+            ->where('id_ruta', $this->rutaId)
+            ->when($this->fechaDesde, function ($query) {
+                return $query->whereDate('created_at', '>=', $this->fechaDesde);
+            })
+            ->when($this->fechaHasta, function ($query) {
+                return $query->whereDate('created_at', '<=', $this->fechaHasta);
+            })
+            ->get();
+            
+        foreach ($conceptosEfectivoNoRegistrados as $concepto) {
+            $this->efectivoClientesNoRegistrados += $concepto->monto;
+        }
     }
 
     public function exportToPDF()
