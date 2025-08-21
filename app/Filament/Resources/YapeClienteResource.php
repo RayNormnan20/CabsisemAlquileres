@@ -72,6 +72,8 @@ public static function form(Form $form): Form
                 ->numeric()
                 ->label('Monto a Entregar (Yape)')
                 ->helperText('Monto específico del Yape que se debe entregar'),
+
+
     ]);
 }
 
@@ -104,6 +106,8 @@ public static function form(Form $form): Form
                     ->money('PEN', true)
                     ->label('Por Yapear')
                     ->sortable(),
+
+
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('d/m/Y H:i')

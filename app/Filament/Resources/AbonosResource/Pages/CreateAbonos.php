@@ -151,16 +151,26 @@ class CreateAbonos extends CreateRecord
         $data['id_credito'] = $credito->id_credito;
         $data['id_ruta'] = $this->currentRutaId;
         $data['saldo_anterior'] = $credito->saldo_actual;
-        $data['saldo_posterior'] = $credito->saldo_actual - $montoAbono;
+        
+        // Si es devolución, no descontar del saldo del crédito
+        $esDevolucion = $data['es_devolucion'] ?? false;
+        if ($esDevolucion) {
+            $data['saldo_posterior'] = $credito->saldo_actual; // Mantener el mismo saldo
+        } else {
+            $data['saldo_posterior'] = $credito->saldo_actual - $montoAbono; // Descontar normalmente
+        }
+        
         $data['id_usuario'] = auth()->id();
         $data['fecha_pago'] = now();
         
         // Establecer el checkbox activar_segundo_recorrido basado en el estado del crédito
         $data['activar_segundo_recorrido'] = $credito->segundo_recorrido ?? false;
 
-        // Actualizar el crédito con el nuevo saldo y ruta
-        $credito->saldo_actual = $data['saldo_posterior'];
-        $credito->save();
+        // Actualizar el crédito con el nuevo saldo y ruta solo si NO es devolución
+        if (!$esDevolucion) {
+            $credito->saldo_actual = $data['saldo_posterior'];
+            $credito->save();
+        }
 
         // SOLO guardar el id_yape_cliente si existe, sin crear/actualizar YapeCliente
         // El id_yape_cliente ya viene en $data desde el formulario
@@ -174,7 +184,10 @@ class CreateAbonos extends CreateRecord
         // Confirmar que el crédito se actualizó correctamente
         $credito = Creditos::find($this->record->id_credito);
         if ($credito) {
-            $credito->saldo_actual = $this->record->saldo_posterior;
+            // Solo actualizar el saldo si NO es devolución
+            if (!$this->record->es_devolucion) {
+                $credito->saldo_actual = $this->record->saldo_posterior;
+            }
             
             // Si el crédito tenía segundo_recorrido = true, cambiarlo a false después del abono
             if ($credito->segundo_recorrido) {
@@ -190,14 +203,17 @@ class CreateAbonos extends CreateRecord
             $credito->save();
         }
 
+
+
         // Obtener nombre completo del cliente y nombre de la ruta
         $clienteNombre = $this->record->cliente?->nombre . ' ' . $this->record->cliente?->apellido;
         $rutaNombre = $this->record->ruta?->nombre ?? 'Ruta desconocida';
 
         // Registrar actividad del abono con nombre del cliente y ruta
+        $tipoRegistro = $this->record->es_devolucion ? 'devolución' : 'abono';
         LogActividad::registrar(
             'Abonos',
-            "Se creó un abono de la ruta {$rutaNombre} para el cliente {$clienteNombre} por un monto de S/" . number_format($this->record->monto_abono, 2),
+            "Se creó un {$tipoRegistro} de la ruta {$rutaNombre} para el cliente {$clienteNombre} por un monto de S/" . number_format($this->record->monto_abono, 2),
             [
                 'id_abono' => $this->record->id,
                 'id_cliente' => $this->record->id_cliente,
@@ -206,6 +222,8 @@ class CreateAbonos extends CreateRecord
                 'saldo_anterior' => $this->record->saldo_anterior,
                 'saldo_posterior' => $this->record->saldo_posterior,
                 'id_ruta' => $this->record->id_ruta,
+                'es_devolucion' => $this->record->es_devolucion,
+                'id_yape_cliente' => $this->record->id_yape_cliente,
             ]
         );
     }

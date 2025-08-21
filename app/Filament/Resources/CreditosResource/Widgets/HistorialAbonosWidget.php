@@ -74,7 +74,29 @@ class HistorialAbonosWidget extends BaseWidget
             Tables\Columns\TextColumn::make('monto_abono')
                 ->label('Cantidad')
                 ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
-                ->sortable(),
+                ->sortable()
+                ->color(function ($record) {
+                    if ($record->tipo_registro === 'abono') {
+                        $abono = Abonos::find($record->id_abono);
+                        return $abono && $abono->es_devolucion ? 'danger' : null;
+                    }
+                    return null;
+                }),
+
+            Tables\Columns\BadgeColumn::make('tipo_abono')
+                ->label('Tipo')
+                ->formatStateUsing(function ($record) {
+                    if ($record->tipo_registro === 'credito') {
+                        return 'Crédito';
+                    }
+                    $abono = Abonos::find($record->id_abono);
+                    return $abono && $abono->es_devolucion ? 'Devolución' : 'Abono';
+                })
+                ->colors([
+                    'primary' => fn ($state) => $state === 'Crédito',
+                    'success' => fn ($state) => $state === 'Abono',
+                    'danger' => fn ($state) => $state === 'Devolución',
+                ]),
 
             Tables\Columns\TextColumn::make('saldo_calculado')
                 ->label('Saldo')
@@ -110,12 +132,12 @@ class HistorialAbonosWidget extends BaseWidget
     {
         // Obtener el monto total del crédito con intereses
         $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
-        
+
         // Si es el registro del crédito (desembolso), devolver el monto total
         if ($recordActual->tipo_registro === 'credito') {
             return $montoTotalConIntereses;
         }
-        
+
         // Obtener todos los abonos hasta la fecha del registro actual (inclusive)
         $abonosHasta = Abonos::where('id_credito', $this->record->id_credito)
             ->where(function($query) use ($recordActual) {
@@ -126,7 +148,7 @@ class HistorialAbonosWidget extends BaseWidget
                       });
             })
             ->sum('monto_abono');
-        
+
         return $montoTotalConIntereses - $abonosHasta;
     }
 
@@ -147,7 +169,7 @@ class HistorialAbonosWidget extends BaseWidget
     {
         $totalAbonos = Abonos::where('id_credito', $this->record->id_credito)
             ->sum('monto_abono');
-        
+
         // Calcular el saldo actual correctamente
         $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
         $saldoActual = $montoTotalConIntereses - $totalAbonos;
@@ -172,7 +194,7 @@ class HistorialAbonosWidget extends BaseWidget
                             'return_to_credito_view' => true,
                             'credito_id_return' => $this->record->id_credito
                         ]);
-                        
+
                         return AbonosResource::getUrl('edit', ['record' => $record->id_abono]);
                     }
                     return null;
@@ -192,19 +214,19 @@ class HistorialAbonosWidget extends BaseWidget
                     DB::transaction(function () use ($record) {
                         // Obtener el abono completo
                         $abono = Abonos::findOrFail($record->id_abono);
-                        
+
                         // Obtener datos para el log antes de eliminar
                         $clienteNombre = $abono->cliente?->nombre . ' ' . $abono->cliente?->apellido;
                         $rutaNombre = $abono->ruta?->nombre ?? 'Ruta desconocida';
-                        
+
                         $credito = $abono->credito()->lockForUpdate()->first();
-                        
+
                         if (! $credito) {
                             throw new \Exception('Crédito asociado no encontrado.');
                         }
                         $credito->saldo_actual += $abono->monto_abono;
                         $credito->save();
-                        
+
                         // Registrar log de actividad antes de eliminar
                         LogActividad::registrar(
                             'Abonos',
@@ -217,10 +239,10 @@ class HistorialAbonosWidget extends BaseWidget
                                 'monto_abono' => $abono->monto_abono
                             ]
                         );
-                        
+
                         $abono->delete();
                     });
-                    
+
                     Notification::make()
                         ->title('Abono eliminado')
                         ->body('El abono ha sido eliminado correctamente.')
@@ -234,9 +256,9 @@ class HistorialAbonosWidget extends BaseWidget
                 ->visible(fn ($record) => $record->tipo_registro === 'abono'),
         ];
     }
-    
- 
 
-    
+
+
+
 
 }

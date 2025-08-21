@@ -21,19 +21,19 @@ use Livewire\Component;
 class YapeClientesTableWidget extends BaseWidget
 {
     protected int|string|array $columnSpan = 'full';
-    
+
     // Propiedades para el filtro de período
     public ?string $fechaDesde = null;
     public ?string $fechaHasta = null;
     public string $periodoSeleccionado = 'mes_actual';
     public bool $fechasValidas = true;
-    
+
     public function mount(): void
     {
         parent::mount();
         $this->aplicarPeriodo();
     }
-    
+
     public function aplicarPeriodo(): void
     {
         switch ($this->periodoSeleccionado) {
@@ -78,27 +78,27 @@ class YapeClientesTableWidget extends BaseWidget
                 break;
         }
     }
-    
+
     public function validarFechas(): void
     {
         if ($this->fechaDesde && $this->fechaHasta) {
             $fechaDesde = Carbon::parse($this->fechaDesde);
             $fechaHasta = Carbon::parse($this->fechaHasta);
-            
+
             if ($fechaDesde->gt($fechaHasta)) {
                 $this->fechasValidas = false;
                 return;
             }
         }
-        
+
         $this->fechasValidas = true;
     }
-    
+
     public function updatedPeriodoSeleccionado(): void
      {
          $this->aplicarPeriodo();
      }
-     
+
      public function limpiarFiltros(): void
      {
          $this->fechaDesde = null;
@@ -107,7 +107,7 @@ class YapeClientesTableWidget extends BaseWidget
          $this->aplicarPeriodo();
          $this->fechasValidas = true;
      }
-     
+
      public function updated($name): void
      {
          if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
@@ -116,7 +116,7 @@ class YapeClientesTableWidget extends BaseWidget
              }
          }
      }
-     
+
      protected function getTableHeader(): ?\Illuminate\Contracts\View\View
      {
          return view('filament.widgets.yape-clientes-header', [
@@ -130,11 +130,11 @@ class YapeClientesTableWidget extends BaseWidget
     protected function getTableQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $this->validarFechas();
-        
+
         if (!$this->fechasValidas) {
             return YapeCliente::with(['cliente', 'abonos'])->whereRaw('1=0');
         }
-        
+
         $query = YapeCliente::with(['cliente', 'abonos']);
 
         // Aplicar filtros de fecha
@@ -173,21 +173,25 @@ class YapeClientesTableWidget extends BaseWidget
                     $value = $data['value'] ?? 'pendientes_excesos';
 
                     if ($value === 'pendientes_excesos') {
-                        // Filtrar solo registros que no están completos
+                        // Filtrar solo registros que no están completos (considerando devoluciones)
                         return $query->whereHas('abonos', function($q) {
                             // Tiene abonos pero no está completo
                         }, '>=', 0)->where(function($subQuery) {
                             $subQuery->whereRaw('(
-                                SELECT COALESCE(SUM(monto_abono), 0) 
-                                FROM abonos 
+                                SELECT COALESCE(
+                                    SUM(CASE WHEN es_devolucion = 1 THEN -monto_abono ELSE monto_abono END), 0
+                                )
+                                FROM abonos
                                 WHERE abonos.id_yape_cliente = yape_clientes.id
                             ) != yape_clientes.monto');
                         });
                     } elseif ($value === 'completados') {
-                        // Filtrar solo registros completados
+                        // Filtrar solo registros completados (considerando devoluciones)
                         return $query->whereRaw('(
-                            SELECT COALESCE(SUM(monto_abono), 0) 
-                            FROM abonos 
+                            SELECT COALESCE(
+                                SUM(CASE WHEN es_devolucion = 1 THEN -monto_abono ELSE monto_abono END), 0
+                            )
+                            FROM abonos
                             WHERE abonos.id_yape_cliente = yape_clientes.id
                         ) = yape_clientes.monto');
                     }
@@ -286,12 +290,17 @@ class YapeClientesTableWidget extends BaseWidget
                                     // Verificar si tiene comprobante
                                     $tieneComprobante = $abono->conceptosabonos->where('foto_comprobante', '!=', null)->count() > 0;
 
+                                    // Determinar color del monto según si es devolución
+                                    $colorMonto = $abono->es_devolucion ? 'text-red-600' : 'text-green-600';
+                                    $prefijoMonto = $abono->es_devolucion ? '-S/ ' : 'S/ ';
+                                    $montoFormateado = $prefijoMonto . number_format($abono->monto_abono, 2);
+
                                     $html .= '<tr>';
                                     $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 text-xs sm:text-sm lg:text-base text-gray-900">';
                                     $html .= '<div class="font-medium lg:whitespace-nowrap lg:overflow-visible">' . $clienteNombre . '</div>';
                                     $html .= '<div class="text-gray-500 sm:hidden text-xs">' . $fechaHora . '</div>';
                                     $html .= '</td>';
-                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 whitespace-nowrap text-xs sm:text-sm lg:text-base font-semibold text-green-600">' . $monto . '</td>';
+                                    $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 whitespace-nowrap text-xs sm:text-sm lg:text-base font-semibold ' . $colorMonto . '">' . $montoFormateado . '</td>';
                                     $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 whitespace-nowrap text-xs sm:text-sm lg:text-base text-gray-900 hidden sm:table-cell">' . $fechaHora . '</td>';
                                     $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">';
 
@@ -305,6 +314,7 @@ class YapeClientesTableWidget extends BaseWidget
                                                 'cliente' => $a->cliente ? $a->cliente->nombre_completo : 'Sin cliente',
                                                 'fecha' => $a->created_at->format('d/m/Y H:i'),
                                                 'monto' => $a->monto_abono,
+                                                'es_devolucion' => $a->es_devolucion,
                                                 'usuario' => $a->usuario ? $a->usuario->name : 'Sin usuario',
                                                 'metodos' => $a->conceptosabonos->pluck('tipo_concepto')->implode(', '),
                                                 'url' => optional($a->conceptosabonos->firstWhere('foto_comprobante', '!=', null))->foto_comprobante
@@ -388,7 +398,9 @@ class YapeClientesTableWidget extends BaseWidget
                                         $html .= '</div>';
                                         $html .= '<div class="space-y-1">';
                                         $html .= '<p class="font-medium text-gray-500">Monto</p>';
-                                        $html .= '<p class="text-green-600 font-bold text-lg">S/ <span x-text="items[index].monto"></span></p>';
+                                        $html .= '<p :class="items[index].es_devolucion ? \'text-red-600 font-bold text-lg\' : \'text-green-600 font-bold text-lg\'">';
+                                        $html .= '<span x-text="items[index].es_devolucion ? \'-S/ \' + items[index].monto : \'S/ \' + items[index].monto"></span>';
+                                        $html .= '</p>';
                                         $html .= '</div>';
                                         $html .= '</div>';
 
@@ -427,24 +439,63 @@ class YapeClientesTableWidget extends BaseWidget
                             $html .= '</div>';
                             $html .= '</div>';
 
-                            // Mostrar totales
-                            $totalPagos = $abonos->sum('monto_abono');
-                            $devolucion = max(0, $totalPagos - $record->monto);
+                            // Mostrar totales (calculando correctamente abonos - devoluciones)
+                            $totalPagos = 0;
+                            foreach ($abonos as $abono) {
+                                if ($abono->es_devolucion) {
+                                    $totalPagos -= $abono->monto_abono;
+                                } else {
+                                    $totalPagos += $abono->monto_abono;
+                                }
+                            }
+                            $colorTotal = $totalPagos >= 0 ? 'text-green-600' : 'text-red-600';
                             $html .= '<div class="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg">';
                             $html .= '<div class="flex justify-between items-center">';
-                            $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Total de Pagos:</span>';
-                            $html .= '<span class="text-base sm:text-lg font-bold text-green-600">S/ ' . number_format($totalPagos, 2) . '</span>';
+                            $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Total Neto:</span>';
+                            $html .= '<span class="text-base sm:text-lg font-bold ' . $colorTotal . '">S/ ' . number_format($totalPagos, 2) . '</span>';
                             $html .= '</div>';
-                            if ($devolucion > 0) {
-                                $html .= '<div class="flex justify-between items-center mt-2">';
-                                $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Devolución:</span>';
-                                $html .= '<span class="text-base sm:text-lg font-bold text-red-600">S/ ' . number_format($devolucion, 2) . '</span>';
-                                $html .= '</div>';
-                            }
+
                             $html .= '<div class="flex justify-between items-center mt-2">';
                             $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Cantidad de Pagos:</span>';
                             $html .= '<span class="text-xs sm:text-sm font-semibold text-blue-600">' . $abonos->count() . ' pagos</span>';
                             $html .= '</div>';
+                            /*
+                            $html .= '<div class="flex justify-between items-center mt-2">';
+                            $html .= '<span class="text-xs sm:text-sm font-medium text-gray-700">Monto Objetivo:</span>';
+                            $html .= '<span class="text-xs sm:text-sm font-semibold text-gray-900">S/ ' . number_format($record->monto, 2) . '</span>';
+                            $html .= '</div>';
+
+                           */
+                            // Calcular y mostrar devoluciones específicamente
+                            $totalDevoluciones = 0;
+                            $cantidadDevoluciones = 0;
+                            foreach ($abonos as $abono) {
+                                if ($abono->es_devolucion) {
+                                    $totalDevoluciones += $abono->monto_abono;
+                                    $cantidadDevoluciones++;
+                                }
+                            }
+
+                            // No mostrar la sección de devoluciones en el resumen
+                            // Las devoluciones ya aparecen en la tabla de abonos con signo negativo
+                            // Mostrar exceso si existe (solo si no hay devoluciones)
+                            if ($totalPagos > $record->monto && $totalDevoluciones == 0) {
+                                $exceso = $totalPagos - $record->monto;
+                                $html .= '<div class="flex justify-between items-center mt-2 p-2 bg-orange-50 rounded border-l-4 border-orange-400">';
+                                $html .= '<span class="text-xs sm:text-sm font-medium text-orange-700">Exceso:</span>';
+                                $html .= '<span class="text-xs sm:text-sm font-bold text-orange-600">S/ ' . number_format($exceso, 2) . '</span>';
+                                $html .= '</div>';
+                            }
+
+                            // Mostrar faltante si existe
+                            if ($totalPagos < $record->monto) {
+                                $faltante = $record->monto - $totalPagos;
+                                $html .= '<div class="flex justify-between items-center mt-2 p-2 bg-red-50 rounded border-l-4 border-red-400">';
+                                $html .= '<span class="text-xs sm:text-sm font-medium text-red-700">Faltante:</span>';
+                                $html .= '<span class="text-xs sm:text-sm font-bold text-red-600">S/ ' . number_format($faltante, 2) . '</span>';
+                                $html .= '</div>';
+                            }
+
                             $html .= '</div>';
 
                             // Agregar botón de descarga PDF
@@ -522,40 +573,82 @@ class YapeClientesTableWidget extends BaseWidget
                 ->label('Por Yapear')
                 ->money('PEN', true),
 
-            // Yapeado (suma de abonos realizados)
+            // Yapeado (suma de abonos realizados, restando devoluciones)
             TextColumn::make('yapeado_calculado')
                 ->label('Yapeado')
                 ->getStateUsing(function (YapeCliente $record) {
-                    // Sumar todos los abonos que tienen este id_yape_cliente
-                    return Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');
+                    // Sumar abonos normales y restar devoluciones
+                    $abonos = Abonos::where('id_yape_cliente', $record->id)->get();
+                    $total = 0;
+                    foreach ($abonos as $abono) {
+                        if ($abono->es_devolucion) {
+                            $total -= $abono->monto_abono; // Restar devoluciones
+                        } else {
+                            $total += $abono->monto_abono; // Sumar abonos normales
+                        }
+                    }
+                    return max(0, $total); // No mostrar valores negativos
                 })
                 ->money('PEN', true),
 
-            // Faltante (monto - entregar)
+            // Faltante (monto - yapeado real)
             TextColumn::make('faltante')
                 ->label('Faltante')
                 ->getStateUsing(function (YapeCliente $record) {
-                    $abonosSum = Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');
-                    $faltante = $record->monto - $abonosSum;
+                    // Calcular yapeado real (abonos - devoluciones)
+                    $abonos = Abonos::where('id_yape_cliente', $record->id)->get();
+                    $yapeadoReal = 0;
+                    foreach ($abonos as $abono) {
+                        if ($abono->es_devolucion) {
+                            $yapeadoReal -= $abono->monto_abono;
+                        } else {
+                            $yapeadoReal += $abono->monto_abono;
+                        }
+                    }
+                    // Monto objetivo
+                    $montoAjustado = $record->monto;
+                    $faltante = $montoAjustado - $yapeadoReal;
                     return max(0, $faltante);
                 })
                 ->money('PEN', true)
                 ->color(function (YapeCliente $record) {
-                    $abonosSum = Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');
-                    $faltante = $record->monto - $abonosSum;
+                    // Calcular yapeado real (abonos - devoluciones)
+                    $abonos = Abonos::where('id_yape_cliente', $record->id)->get();
+                    $yapeadoReal = 0;
+                    foreach ($abonos as $abono) {
+                        if ($abono->es_devolucion) {
+                            $yapeadoReal -= $abono->monto_abono;
+                        } else {
+                            $yapeadoReal += $abono->monto_abono;
+                        }
+                    }
+                    $montoAjustado = $record->monto;
+                    $faltante = $montoAjustado - $yapeadoReal;
                     return $faltante > 0 ? 'warning' : 'success';
                 }),
 
-            // Devolución (yapeado - monto del crédito, solo si es positivo)
-            TextColumn::make('devolucion')
-                ->label('Devolución')
+
+
+            // Exceso (yapeado real - monto ajustado, solo si es positivo)
+            TextColumn::make('exceso')
+                ->label('Exceso')
                 ->getStateUsing(function (YapeCliente $record) {
-                    $abonosSum = Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');
-                    $devolucion = $abonosSum - $record->monto;
-                    return max(0, $devolucion);
+                    // Calcular yapeado real (abonos - devoluciones)
+                    $abonos = Abonos::where('id_yape_cliente', $record->id)->get();
+                    $yapeadoReal = 0;
+                    foreach ($abonos as $abono) {
+                        if ($abono->es_devolucion) {
+                            $yapeadoReal -= $abono->monto_abono;
+                        } else {
+                            $yapeadoReal += $abono->monto_abono;
+                        }
+                    }
+                    $montoAjustado = $record->monto;
+                    $exceso = $yapeadoReal - $montoAjustado;
+                    return max(0, $exceso);
                 })
                 ->money('PEN', true)
-                ->color('success'),
+                ->color('primary'),
 
                 /*
             // Fecha de Registro
@@ -565,15 +658,25 @@ class YapeClientesTableWidget extends BaseWidget
                 ->sortable(),
                 */
 
-            // Estado (usando BadgeColumn en lugar de TextColumn con badge)
+            // Estado (usando BadgeColumn considerando devoluciones)
             BadgeColumn::make('estado')
                 ->label('Estado')
                 ->getStateUsing(function (YapeCliente $record) {
-                    $abonosSum = Abonos::where('id_yape_cliente', $record->id)->sum('monto_abono');
+                    // Calcular yapeado real (abonos - devoluciones)
+                    $abonos = Abonos::where('id_yape_cliente', $record->id)->get();
+                    $yapeadoReal = 0;
+                    foreach ($abonos as $abono) {
+                        if ($abono->es_devolucion) {
+                            $yapeadoReal -= $abono->monto_abono;
+                        } else {
+                            $yapeadoReal += $abono->monto_abono;
+                        }
+                    }
+                    $montoAjustado = $record->monto;
 
-                    if ($abonosSum == $record->monto) {
+                    if ($yapeadoReal == $montoAjustado) {
                         return 'Completo';
-                    } elseif ($abonosSum > $record->monto) {
+                    } elseif ($yapeadoReal > $montoAjustado) {
                         return 'Exceso';
                     } else {
                         return 'Pendiente';

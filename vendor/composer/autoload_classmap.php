@@ -147,6 +147,7 @@ return array(
     'App\\Filament\\Widgets\\LatestComments' => $baseDir . '/app/Filament/Widgets/LatestComments.php',
     'App\\Filament\\Widgets\\LatestProjects' => $baseDir . '/app/Filament/Widgets/LatestProjects.php',
     'App\\Filament\\Widgets\\LatestTickets' => $baseDir . '/app/Filament/Widgets/LatestTickets.php',
+    'App\\Filament\\Widgets\\SegundoRecorridoWidget' => $baseDir . '/app/Filament/Widgets/SegundoRecorridoWidget.php',
     'App\\Filament\\Widgets\\TicketsByPriority' => $baseDir . '/app/Filament/Widgets/TicketsByPriority.php',
     'App\\Filament\\Widgets\\TicketsByType' => $baseDir . '/app/Filament/Widgets/TicketsByType.php',
     'App\\Filament\\Widgets\\Timesheet\\ActivitiesReport' => $baseDir . '/app/Filament/Widgets/Timesheet/ActivitiesReport.php',

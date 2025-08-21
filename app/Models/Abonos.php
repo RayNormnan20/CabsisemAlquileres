@@ -27,7 +27,8 @@ class Abonos extends Model
         'coordenadas_gps',
         'observaciones',
         'estado',
-        'activar_segundo_recorrido'
+        'activar_segundo_recorrido',
+        'es_devolucion'
     ];
 
     protected $casts = [
@@ -37,7 +38,8 @@ class Abonos extends Model
         'saldo_posterior' => 'decimal:2',
         'coordenadas_gps' => 'array',
         'estado' => 'boolean',
-        'activar_segundo_recorrido' => 'boolean'
+        'activar_segundo_recorrido' => 'boolean',
+        'es_devolucion' => 'boolean'
     ];
 
     // Eventos del modelo

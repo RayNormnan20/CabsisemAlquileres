@@ -77,23 +77,68 @@ class AbonosResource extends Resource
                             Forms\Components\Select::make('nombres_yape_del_dia')
                                 ->label('Nombres Yape del Día')
                                 ->options(function (callable $get, $livewire) {
-                                    // Obtener todos los YapeClientes con nombres válidos
-                                    $yapeClientes = \App\Models\YapeCliente::whereNotNull('nombre')
-                                        ->where('nombre', '!=', '')
-                                        ->with('abonos')
-                                        ->get();
+                                    // Verificar si es una devolución
+                                    $esDevolucion = $get('es_devolucion') ?? false;
 
                                     $options = [];
-                                    foreach ($yapeClientes as $yapeCliente) {
-                                        // Calcular el total de abonos realizados para este YapeCliente
-                                        $totalAbonos = $yapeCliente->abonos->sum('monto_abono');
-                                        
-                                        // Solo mostrar si el total de abonos es menor al monto objetivo
-                                        if ($totalAbonos < $yapeCliente->monto) {
-                                            $options[$yapeCliente->id] = $yapeCliente->nombre;
+
+                                    if ($esDevolucion) {
+                                         // Si es devolución, solo mostrar YapeClientes de este cliente que tengan exceso
+                                         $clienteId = $get('id_cliente');
+
+                                         if ($clienteId) {
+                                             // Buscar YapeClientes del mismo cliente
+                                             $yapeClientes = \App\Models\YapeCliente::whereNotNull('nombre')
+                                                 ->where('nombre', '!=', '')
+                                                 ->where('id_cliente', $clienteId)
+                                                 ->with('abonos')
+                                                 ->get();
+
+                                            foreach ($yapeClientes as $yapeCliente) {
+                                                // Calcular el yapeado real (abonos - devoluciones)
+                                                $yapeadoReal = 0;
+                                                foreach ($yapeCliente->abonos as $abono) {
+                                                    if ($abono->es_devolucion) {
+                                                        $yapeadoReal -= $abono->monto_abono;
+                                                    } else {
+                                                        $yapeadoReal += $abono->monto_abono;
+                                                    }
+                                                }
+                                                $montoAjustado = $yapeCliente->monto;
+
+                                                // Solo mostrar si tiene exceso
+                                                if ($yapeadoReal > $montoAjustado) {
+                                                    $exceso = $yapeadoReal - $montoAjustado;
+                                                    $options[$yapeCliente->id] = $yapeCliente->nombre . ' (Exceso: S/' . number_format($exceso, 2) . ')';
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // Lógica normal para pagos regulares
+                                        $yapeClientes = \App\Models\YapeCliente::whereNotNull('nombre')
+                                            ->where('nombre', '!=', '')
+                                            ->with('abonos')
+                                            ->get();
+
+                                        foreach ($yapeClientes as $yapeCliente) {
+                                            // Calcular el yapeado real (abonos - devoluciones)
+                                            $yapeadoReal = 0;
+                                            foreach ($yapeCliente->abonos as $abono) {
+                                                if ($abono->es_devolucion) {
+                                                    $yapeadoReal -= $abono->monto_abono;
+                                                } else {
+                                                    $yapeadoReal += $abono->monto_abono;
+                                                }
+                                            }
+                                            $montoAjustado = $yapeCliente->monto;
+
+                                            // Lógica normal: mostrar si el yapeado real es menor al monto objetivo
+                                            if ($yapeadoReal < $montoAjustado) {
+                                                $options[$yapeCliente->id] = $yapeCliente->nombre;
+                                            }
                                         }
                                     }
-                                    
+
                                     // Ordenar las opciones
                                     asort($options);
 
@@ -108,12 +153,14 @@ class AbonosResource extends Resource
                                         }
                                     }
 
-                                    // Agregar el nombre del cliente como opción por defecto
-                                    $clienteId = $get('id_cliente');
-                                    if ($clienteId) {
-                                        $cliente = \App\Models\Clientes::find($clienteId);
-                                        if ($cliente) {
-                                            $options['cliente_' . $clienteId] = $cliente->nombre_completo;
+                                    // Agregar el nombre del cliente como opción por defecto solo si NO es devolución
+                                    if (!$esDevolucion) {
+                                        $clienteId = $get('id_cliente');
+                                        if ($clienteId) {
+                                            $cliente = \App\Models\Clientes::find($clienteId);
+                                            if ($cliente) {
+                                                $options['cliente_' . $clienteId] = $cliente->nombre_completo;
+                                            }
                                         }
                                     }
 
@@ -251,7 +298,11 @@ class AbonosResource extends Resource
                                     $set('conceptosabonos', $conceptos);
                                 }),
 
-
+                            Forms\Components\Toggle::make('es_devolucion')
+                                ->label('Es Devolución')
+                                ->helperText('Marcar si este registro es una devolución (no afectará el saldo del crédito)')
+                                ->default(false)
+                                ->reactive(),
 
                         ]),
                 ])
@@ -395,7 +446,7 @@ class AbonosResource extends Resource
                                     return $credito ? (bool)$credito->segundo_recorrido : false;
                                 }
                             }
-                            
+
                             // En modo creación, buscar el crédito activo del cliente
                             $clienteId = $get('id_cliente');
                             if ($clienteId) {
@@ -423,12 +474,12 @@ class AbonosResource extends Resource
                         ->afterStateUpdated(function ($state, callable $get, callable $set, $livewire) {
                             // Obtener el ID del crédito desde el formulario
                             $creditoId = $get('id_credito');
-                            
+
                             if ($creditoId && $state) {
                                 // Actualizar el crédito inmediatamente cuando se activa el checkbox
                                 \App\Models\Creditos::where('id_credito', $creditoId)
                                     ->update(['segundo_recorrido' => true]);
-                                
+
                                 // Mostrar notificación
                                 \Filament\Notifications\Notification::make()
                                     ->title('Segundo recorrido activado')
@@ -439,7 +490,7 @@ class AbonosResource extends Resource
                                 // Desactivar segundo recorrido
                                 \App\Models\Creditos::where('id_credito', $creditoId)
                                     ->update(['segundo_recorrido' => false]);
-                                
+
                                 // Mostrar notificación
                                 \Filament\Notifications\Notification::make()
                                     ->title('Segundo recorrido desactivado')
@@ -483,6 +534,15 @@ public static function table(Table $table): Table
                     ->money('PEN', true)
                     ->sortable(),
 
+                Tables\Columns\BadgeColumn::make('es_devolucion')
+                    ->label('Tipo')
+                    ->formatStateUsing(fn ($state) => $state ? 'Devolución' : 'Abono')
+                    ->colors([
+                        'success' => fn ($state) => !$state, // Verde para abonos normales
+                        'danger' => fn ($state) => $state,   // Rojo para devoluciones
+                    ])
+                    ->sortable(),
+
                     Tables\Columns\TextColumn::make('conceptosabonos')
                     ->label('Detalle Entrega')
                     ->formatStateUsing(function ($record) {
@@ -497,6 +557,19 @@ public static function table(Table $table): Table
                 Tables\Filters\SelectFilter::make('cliente')
                     ->relationship('cliente', 'nombre')
                     ->searchable(),
+
+                Tables\Filters\SelectFilter::make('es_devolucion')
+                    ->label('Tipo de Registro')
+                    ->options([
+                        '0' => 'Abonos',
+                        '1' => 'Devoluciones',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (isset($data['value'])) {
+                            return $query->where('es_devolucion', (bool) $data['value']);
+                        }
+                        return $query;
+                    }),
 
                 Filter::make('fecha_pago') // Usando la clase importada directamente
                     ->form([

@@ -1008,6 +1008,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'App\\Filament\\Widgets\\LatestComments' => __DIR__ . '/../..' . '/app/Filament/Widgets/LatestComments.php',
         'App\\Filament\\Widgets\\LatestProjects' => __DIR__ . '/../..' . '/app/Filament/Widgets/LatestProjects.php',
         'App\\Filament\\Widgets\\LatestTickets' => __DIR__ . '/../..' . '/app/Filament/Widgets/LatestTickets.php',
+        'App\\Filament\\Widgets\\SegundoRecorridoWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/SegundoRecorridoWidget.php',
         'App\\Filament\\Widgets\\TicketsByPriority' => __DIR__ . '/../..' . '/app/Filament/Widgets/TicketsByPriority.php',
         'App\\Filament\\Widgets\\TicketsByType' => __DIR__ . '/../..' . '/app/Filament/Widgets/TicketsByType.php',
         'App\\Filament\\Widgets\\Timesheet\\ActivitiesReport' => __DIR__ . '/../..' . '/app/Filament/Widgets/Timesheet/ActivitiesReport.php',

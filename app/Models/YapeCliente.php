@@ -20,6 +20,11 @@ class YapeCliente extends Model
         'monto',
         'entregar',
         'valor',
+
+    ];
+
+    protected $casts = [
+
     ];
 
     // Agregar este método para permitir que id_cliente sea null
