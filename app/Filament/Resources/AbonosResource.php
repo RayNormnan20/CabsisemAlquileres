@@ -76,6 +76,16 @@ class AbonosResource extends Resource
                             // Campo: Lista de nombres Yape del día (permite seleccionar y crear nuevos)
                             Forms\Components\Select::make('nombres_yape_del_dia')
                                 ->label('Nombres Yape del Día')
+                                ->visible(function (callable $get) {
+                                    // Solo mostrar si hay al menos un concepto de tipo 'Yape'
+                                    $conceptos = $get('conceptosabonos') ?? [];
+                                    foreach ($conceptos as $concepto) {
+                                        if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                })
                                 ->options(function (callable $get, $livewire) {
                                     // Verificar si es una devolución
                                     $esDevolucion = $get('es_devolucion') ?? false;
@@ -356,6 +366,7 @@ class AbonosResource extends Resource
                                     ];
                                 })
                                 ->required()
+                                ->reactive()
                                 ->columnSpan([
                                     'default' => 2,
                                     'sm' => 1,

@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Exports\ClienteCreditosAbonosExport;
 use App\Filament\Widgets\ClienteCreditosAbonosWidget;
 use App\Models\User;
+use App\Models\Ruta;
 use Filament\Forms\Components\Actions\Modal\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
@@ -17,26 +18,27 @@ class ClienteCreditosAbonos extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-document-report';
     protected static ?string $navigationLabel = 'Liquidaciones';
-    protected static ?string $title = 'Liquidaciones';
+    protected static ?string $title = 'Liquidaciones por Ruta';
     protected static ?string $slug = 'liquidaciones';
     protected static ?int $navigationSort = 4;
     protected static ?string $navigationGroup = 'Movimientos';
     
     protected static string $view = 'filament.pages.cliente-creditos-abonos';
     
-    public ?int $userId = null;
-    public $usuarios = [];
+    public ?int $rutaId = null;
+    public $rutas = [];
     
     public function mount(): void
     {
-        // Cargar usuarios que tienen rutas asignadas
-        $this->usuarios = User::whereHas('rutas')
-            ->orderBy('name')
+        // Cargar rutas que tienen usuarios asignados
+        $this->rutas = Ruta::whereHas('usuarios')
+            ->orderBy('nombre')
             ->get()
-            ->map(function ($usuario) {
+            ->map(function ($ruta) {
+                $usuariosCount = $ruta->usuarios()->count();
                 return [
-                    'id' => $usuario->id,
-                    'nombre' => $usuario->name,
+                    'id' => $ruta->id_ruta,
+                    'nombre' => $ruta->nombre . ' (' . $usuariosCount . ' usuario' . ($usuariosCount > 1 ? 's' : '') . ')',
                 ];
             })
             ->pluck('nombre', 'id')
@@ -50,29 +52,29 @@ class ClienteCreditosAbonos extends Page
         ];
     }
     */
-    public function actualizarUsuario(): void
+    public function actualizarRuta(): void
     {
-        if ($this->userId) {
-            $this->emit('usuario-seleccionado', $this->userId);
+        if ($this->rutaId) {
+            $this->emit('ruta-seleccionada', $this->rutaId);
         }
     }
     
-    public function handleUsuarioSeleccionado($userId): void
+    public function handleRutaSeleccionada($rutaId): void
     {
-        $this->userId = $userId;
+        $this->rutaId = $rutaId;
     }
 
     public function exportToPDF()
     {
         try {
-            if (!$this->userId) {
-                $this->notify('warning', 'Debe seleccionar un usuario primero');
+            if (!$this->rutaId) {
+                $this->notify('warning', 'Debe seleccionar una ruta primero');
                 return;
             }
 
-            Log::info('Iniciando exportación PDF para usuario: ' . $this->userId);
+            Log::info('Iniciando exportación PDF para ruta: ' . $this->rutaId);
 
-            $export = new ClienteCreditosAbonosExport($this->userId);
+            $export = new ClienteCreditosAbonosExport($this->rutaId, true); // true indica que es por ruta
             return $export->exportToPDF();
 
         } catch (\Exception $e) {
@@ -110,13 +112,13 @@ class ClienteCreditosAbonos extends Page
     protected function getFormSchema(): array
     {
         return [
-            Select::make('userId')
-                ->label('Usuario')
-                ->options($this->usuarios)
-                ->placeholder('Seleccione un usuario')
+            Select::make('rutaId')
+                ->label('Ruta')
+                ->options($this->rutas)
+                ->placeholder('Seleccione una ruta')
                 ->reactive()
                 ->afterStateUpdated(function () {
-                    $this->actualizarUsuario();
+                    $this->actualizarRuta();
                 }),
         ];
     }

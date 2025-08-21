@@ -150,6 +150,7 @@ class CreateAbonos extends CreateRecord
         // Calcular los saldos
         $data['id_credito'] = $credito->id_credito;
         $data['id_ruta'] = $this->currentRutaId;
+        $data['id_usuario'] = auth()->id(); // Asignar el usuario autenticado
         $data['saldo_anterior'] = $credito->saldo_actual;
         
         // Si es devolución, no descontar del saldo del crédito
@@ -160,7 +161,6 @@ class CreateAbonos extends CreateRecord
             $data['saldo_posterior'] = $credito->saldo_actual - $montoAbono; // Descontar normalmente
         }
         
-        $data['id_usuario'] = auth()->id();
         $data['fecha_pago'] = now();
         
         // Establecer el checkbox activar_segundo_recorrido basado en el estado del crédito

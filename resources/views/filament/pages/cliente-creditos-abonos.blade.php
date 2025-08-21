@@ -7,7 +7,7 @@
                     <h2 class="text-lg font-medium text-gray-900">Seleccione un Usuario</h2>
                     
                     <!-- Botones de exportación (solo visibles cuando hay usuario seleccionado) -->
-                    @if($this->userId)
+                    @if($this->rutaId)
                         <div class="flex gap-2">
                             <!-- Botón PDF -->
                             <button wire:click="exportToPDF" wire:loading.attr="disabled" wire:target="exportToPDF" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50">
@@ -35,10 +35,10 @@
         
         <!-- Widget de créditos y abonos -->
         <div>
-            @if($this->userId)
+            @if($this->rutaId)
                 @livewire(\App\Filament\Widgets\ClienteCreditosAbonosWidget::class, [
-                    'wire:key' => "usuario-creditos-abonos-{$this->userId}",
-                    'userId' => $this->userId,
+                    'wire:key' => "ruta-creditos-abonos-{$this->rutaId}",
+                    'rutaId' => $this->rutaId,
                 ])
             @endif
         </div>

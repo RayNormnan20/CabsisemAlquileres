@@ -8,6 +8,7 @@ use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Session;
 
 class ListConceptosAbonos extends ListRecords
 {
@@ -15,8 +16,15 @@ class ListConceptosAbonos extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        return ConceptoAbono::query()
+        $query = ConceptoAbono::query()
             ->whereNull('id_abono');
+            
+        $rutaSeleccionada = Session::get('selected_ruta_id');
+        if ($rutaSeleccionada) {
+            $query->where('id_ruta', $rutaSeleccionada);
+        }
+        
+        return $query;
     }
        protected function getActions(): array
     {

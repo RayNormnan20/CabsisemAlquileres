@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuadre Diario de Cobrador - {{ $usuario['nombres'] }}</title>
+    <title>Cuadre Diario de Cobrador - Ruta {{ $ruta['nombre'] }}</title>
     <style>
     body {
         font-family: Arial, sans-serif;
@@ -177,226 +177,58 @@
     </div>
 
     <div class="info-line">
-        <span>Nombre: {{ $usuario['nombres'] }}</span>
+        <span>Ruta: {{ $ruta['nombre'] }}</span>
         <span>Fecha: {{ date('d/m/Y') }}</span>
     </div>
-
-    <!-- SECCIÓN DE INGRESOS -->
-    <div class="section">
-        <div class="section-title">INGRESOS</div>
-
-        <table class="form-table">
-            <tr>
-                <td class="label">1.- Ingresos realizados al cobrador.</td>
-                <td class="value">
-                    <span class="input-box">{{ number_format($totalAbonos, 0) }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Efectivo realizado al cobrador</td>
-                <td class="value">
-                    <span class="input-box">{{ number_format($totalAbonos * 0.8, 0) }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Efectivo no registrado</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Sobrante de ruta</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label" style="font-weight: bold;">Total efectivo</td>
-                <td class="value">
-                    <span class="input-box total-box">{{ number_format($totalAbonos * 0.8, 0) }}</span>
-                </td>
-            </tr>
-        </table>
-
-        <table class="form-table">
-            <tr>
-                <td class="label">Yapes realizados al cobrador</td>
-                <td class="value">
-                    <span class="input-box">{{ number_format($totalAbonos * 0.2, 0) }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Plin realizado al cobrador</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">2.- Ingresos realizados a Cristian.</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Efectivo realizado a Cristian</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Yapes realizados a Cristian</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Plin realizado a Cristian</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">3.- Abono a préstamos.</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Cobrador</td>
-                <td class="value">
-                    <span class="input-box">0</span>
-                </td>
-            </tr>
-        </table>
-
-        <div class="section-title">4.- Ingresos realizados a nuevos préstamos de clientes.</div>
-
-        <table class="prestamos-table">
-            <tr>
-                <td style="font-weight: bold;">Cobrador</td>
-                <td style="font-weight: bold;">Registrados</td>
-                <td style="font-weight: bold;">Devolución</td>
-                <td style="font-weight: bold;">Total YAPE</td>
-            </tr>
-            @php
-            $creditosHoy = collect($creditos)->filter(function($credito) {
-                return \Carbon\Carbon::parse($credito['fecha'])->isToday(); // Usar fecha sin formatear
-            });
-            $totalCreditosHoy = $creditosHoy->sum('valor');
-            @endphp
-            @foreach(collect($creditosHoy)->take(5) as $credito)
-            <tr>
-                <td class="cliente-col">{{ $credito['cliente_nombre'] ?? 'Cliente' }}</td>
-                <td><span class="yape-label">YAPE</span> <span
-                        class="input-box small-box">{{ number_format($credito['valor'], 0) }}</span></td>
-                <td><span class="input-box small-box">0</span></td>
-                <td><span class="input-box small-box">{{ number_format($credito['valor'], 0) }}</span></td>
-            </tr>
+    
+    @if(count($usuarios) > 0)
+    <div class="info-line">
+        <span>Usuarios: 
+            @foreach($usuarios as $index => $usuario)
+                {{ $usuario['nombres'] }}@if($index < count($usuarios) - 1), @endif
             @endforeach
-            @for($i = collect($creditosHoy)->count(); $i < 5; $i++) <tr>
-                <td class="cliente-col">Cliente</td>
-                <td><span class="yape-label">YAPE</span> <span class="input-box small-box">0</span></td>
-                <td><span class="input-box small-box">0</span></td>
-                <td><span class="input-box small-box">0</span></td>
-                </tr>
-                @endfor
-                <tr>
-                    <td style="font-weight: bold;">Cobrador No registrados</td>
-                    <td><span class="input-box small-box">0</span></td>
-                    <td><span class="input-box small-box">0</span></td>
-                    <td><span class="input-box small-box">0</span></td>
-                </tr>
-                <tr style="background-color: #f0f0f0;">
-                    <td style="font-weight: bold;">* TOTAL INGRESOS AL COBRADOR</td>
-                    <td colspan="3">
-                        <span
-                            class="input-box total-box large-box">{{ number_format($totalAbonos + $totalCreditosHoy, 0) }}</span>
-                    </td>
-                </tr>
-        </table>
+        </span>
     </div>
+    @endif
 
-    <!-- SECCIÓN DE EGRESOS -->
+  
+
+    <!-- SECCIÓN DE RENDICIÓN DE COBRADOR -->
     <div class="section">
-        <div class="section-title">EGRESOS</div>
+       <!-- <div class="section-title">RENDICIÓN DE COBRADOR</div> -->
 
         <table class="form-table">
             <tr>
-                <td class="label">1.- Egresos para nuevos préstamos (Del mismo cob PRESTAMO)</td>
+                <td class="label">Ingresos al Cobrador</td>
+                <td class="value"></td>
+            </tr>
+            <tr>
+                <td class="label">E</td>
                 <td class="value">
-                    <span class="input-box">{{ number_format($totalCreditos, 0) }}</span>
+                    <span class="input-box">{{ number_format($totalEfectivo ?? 0, 0) }}</span>
                 </td>
             </tr>
-        </table>
-
-        <table class="prestamos-table">
             <tr>
-                <td style="font-weight: bold;">Telf.</td>
-                <td style="font-weight: bold;">Cliente</td>
-                <td style="font-weight: bold;">Entregado</td>
-                <td style="font-weight: bold;">Devolución</td>
-            </tr>
-            @foreach(collect($creditos)->take(5) as $credito)
-            <tr>
-                <td>{{ $credito['cliente_telefono'] ?? 'N/A' }}</td>
-                <td class="cliente-col">{{ $credito['cliente_nombre'] ?? 'Cliente' }}</td>
-                <td><span class="input-box small-box">{{ number_format($credito['valor'], 0) }}</span></td>
-                <td><span class="input-box small-box">0</span></td>
-            </tr>
-            @endforeach
-            @for($i = count($creditos); $i < 5; $i++) <tr>
-                <td>Telf.</td>
-                <td class="cliente-col">Cliente</td>
-                <td><span class="input-box small-box">0</span></td>
-                <td><span class="input-box small-box">0</span></td>
-                </tr>
-                @endfor
-                <tr style="background-color: #f0f0f0;">
-                    <td colspan="2" style="font-weight: bold;">TOTAL</td>
-                    <td><span class="input-box total-box small-box">{{ number_format($totalCreditos, 0) }}</span></td>
-                    <td><span class="input-box small-box">0</span></td>
-                </tr>
-        </table>
-
-        <table class="form-table">
-            <tr>
-                <td class="label">Transferencia a cobrador</td>
+                <td class="label">EFECTIVO CLIENTES NO REGISTRADOS</td>
                 <td class="value">
-                    <span class="input-box">0</span>
+                    <span class="input-box">{{ number_format($efectivoClientesNoRegistrados ?? 0, 0) }}</span>
                 </td>
             </tr>
-            <tr style="background-color: #f0f0f0;">
-                <td class="label" style="font-weight: bold;">* TOTAL EGRESOS DEL COBRADOR</td>
+            <tr>
+                <td class="label">Sobrante de cobranza</td>
                 <td class="value">
-                    <span class="input-box total-box">{{ number_format($totalCreditos, 0) }}</span>
+                    <span class="input-box">{{ number_format($sobranteCobranza ?? 0, 0) }}</span>
                 </td>
             </tr>
-            <tr style="background-color: #ffe6e6;">
-                <td class="label" style="font-weight: bold;">SALDO A RENDIR (Efectivo - Egresos)</td>
+            <tr>
+                <td class="label" style="font-weight: bold;">TOTAL EFECTIVO</td>
                 <td class="value">
-                    <span class="input-box total-box">{{ number_format($saldoPendiente, 0) }}</span>
-                    <span class="calculation">(= {{ number_format($totalAbonos, 0) }} -
-                        {{ number_format($totalCreditos, 0) }})</span>
+                    <span class="input-box total-box">{{ number_format(($totalEfectivo ?? 0) + ($efectivoClientesNoRegistrados ?? 0) + ($sobranteCobranza ?? 0), 0) }}</span>
                 </td>
             </tr>
         </table>
     </div>
 
-    <!-- OTROS INGRESOS Y EGRESOS -->
-    <div class="otros-section">
-        <div class="section-title">Otros ingresos y egresos (Campo obligatorio)</div>
-        <div class="grid-2">
-            <div>
-                <strong>Otros ingresos:</strong><br>
-                Otros ingresos: <span class="input-box medium-box">0</span><br>
-                Otros egresos: <span class="input-box medium-box">0</span>
-            </div>
-            <div style="text-align: right;">
-                <strong>*Efectivo a entregar*</strong><br>
-                <span class="input-box total-box large-box">{{ number_format($saldoPendiente, 0) }}</span>
-            </div>
-        </div>
-    </div>
 
     <!-- FIRMA -->
     <div class="firma-section">
@@ -411,7 +243,7 @@
         Total Créditos: S/. {{ number_format($totalCreditos, 2) }} |
         Total Abonos: S/. {{ number_format($totalAbonos, 2) }} |
         Saldo: S/. {{ number_format($saldoPendiente, 2) }}<br>
-        Generado: {{ date('d/m/Y H:i:s') }} | Usuario: {{ $usuario['nombres'] }}
+        Generado: {{ date('d/m/Y H:i:s') }} | Ruta: {{ $ruta['nombre'] }}
     </div>
 </body>
 

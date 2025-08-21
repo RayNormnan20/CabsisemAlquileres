@@ -16,7 +16,7 @@ class ListVistaMovimientos extends ListRecords
 
     public ?string $fechaDesde = null;
     public ?string $fechaHasta = null;
-    public string $periodoSeleccionado = 'mes_actual';
+    public string $periodoSeleccionado = 'hoy';
     public bool $fechasValidas = true;
 
     public function mount(): void

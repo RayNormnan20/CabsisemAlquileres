@@ -12,6 +12,7 @@ class ConceptoAbono extends Model
     protected $fillable = [
         'id_abono',
         'id_usuario',
+        'id_ruta',
         'tipo_concepto',
         'monto',
         'foto_comprobante',
@@ -29,6 +30,59 @@ class ConceptoAbono extends Model
     {
         return $this->belongsTo(User::class, 'id_usuario');
     }
+
+    public function ruta()
+    {
+        return $this->belongsTo(Ruta::class, 'id_ruta');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($conceptoAbono) {
+            // Asignar id_usuario automáticamente para todos los tipos de concepto
+            if (!$conceptoAbono->id_usuario) {
+                $conceptoAbono->id_usuario = auth()->id();
+            }
+            
+            // Si no tiene ruta asignada, obtener la ruta de la sesión
+            if (!$conceptoAbono->id_ruta) {
+                // Prioridad 1: Ruta seleccionada en la sesión
+                $rutaSesion = session('selected_ruta_id');
+                if ($rutaSesion) {
+                    $conceptoAbono->id_ruta = $rutaSesion;
+                }
+                // Prioridad 2: Si tiene abono asociado, obtener la ruta del abono
+                elseif ($conceptoAbono->id_abono) {
+                    $abono = Abonos::find($conceptoAbono->id_abono);
+                    if ($abono && $abono->id_ruta) {
+                        $conceptoAbono->id_ruta = $abono->id_ruta;
+                    }
+                }
+                /*
+                // Prioridad 3: Si tiene usuario, obtener la primera ruta del usuario
+                elseif ($conceptoAbono->id_usuario) {
+                    $usuario = User::find($conceptoAbono->id_usuario);
+                    if ($usuario) {
+                        $ruta = $usuario->rutas()->first();
+                        if ($ruta) {
+                            $conceptoAbono->id_ruta = $ruta->id_ruta;
+                        }
+                    }
+                }
+                    */
+            }
+        });
+        
+        static::updating(function ($conceptoAbono) {
+            // Asignar id_usuario automáticamente cuando se edita
+            if (!$conceptoAbono->id_usuario) {
+                $conceptoAbono->id_usuario = auth()->id();
+            }
+        });
+    }
+
 /*
     public function caja()
     {

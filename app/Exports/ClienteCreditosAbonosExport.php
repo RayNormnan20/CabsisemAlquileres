@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\User;
+use App\Models\Ruta;
 use App\Models\Clientes;
 use App\Models\Creditos;
 use App\Models\Abonos;
@@ -13,41 +14,57 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ClienteCreditosAbonosExport
 {
-    protected $userId;
-    protected $userData;
+    protected $rutaId;
+    protected $isRutaExport;
+    protected $rutaData;
+    protected $usuariosData;
     protected $creditosData;
     protected $abonosData;
     protected $clientesData;
     protected $totalCreditos;
     protected $totalAbonos;
     protected $saldoPendiente;
+    protected $totalEfectivo;
+    protected $sobranteCobranza;
+    protected $efectivoClientesNoRegistrados;
 
-    public function __construct(int $userId)
+    public function __construct(int $rutaId, bool $isRutaExport = true)
     {
-        $this->userId = $userId;
+        $this->rutaId = $rutaId;
+        $this->isRutaExport = $isRutaExport;
         $this->cargarDatos();
     }
 
     protected function cargarDatos(): void
     {
-        // Obtener datos del usuario
-        $usuario = User::find($this->userId);
-        if (!$usuario) {
-            throw new \Exception('Usuario no encontrado');
+        // Obtener datos de la ruta
+        $ruta = Ruta::find($this->rutaId);
+        if (!$ruta) {
+            throw new \Exception('Ruta no encontrada');
         }
 
-        $this->userData = [
-            'id' => $usuario->id,
-            'nombres' => $usuario->name ?? $usuario->nombres ?? 'Usuario',
-            'email' => $usuario->email,
-            'celular' => $usuario->celular ?? $usuario->telefono ?? 'No disponible',
-            'ruta' => $usuario->getRutaPrincipalAttribute() ? $usuario->getRutaPrincipalAttribute()->nombre : 'Sin ruta',
-            'estado' => $usuario->estado ?? 'activo'
+        $this->rutaData = [
+            'id' => $ruta->id_ruta,
+            'nombre' => $ruta->nombre,
+            'descripcion' => $ruta->descripcion,
         ];
+        
+        // Obtener usuarios de la ruta
+        $usuarios = $ruta->usuarios;
+        $this->usuariosData = [];
+        foreach ($usuarios as $usuario) {
+            $this->usuariosData[] = [
+                'id' => $usuario->id,
+                'nombres' => $usuario->name,
+                'email' => $usuario->email,
+                'celular' => $usuario->celular,
+            ];
+        }
+        
+        $usuariosIds = $usuarios->pluck('id')->toArray();
 
-        // Obtener IDs de clientes asociados a las rutas del usuario
-        $rutasIds = $usuario->rutas()->pluck('id_ruta')->toArray();
-        $clientes = Clientes::whereIn('id_ruta', $rutasIds)->get();
+        // Obtener clientes de la ruta
+        $clientes = Clientes::where('id_ruta', $this->rutaId)->get();
 
         // Almacenar datos de clientes
         $this->clientesData = [];
@@ -82,8 +99,8 @@ class ClienteCreditosAbonosExport
 
             $this->creditosData[] = [
                 'id' => $credito->id_credito,
-                'fecha' => $credito->fecha_inicio, // Pasar fecha sin formatear
-                'fecha_formateada' => Carbon::parse($credito->fecha_inicio)->format('d/m/Y'), // Agregar versión formateada
+                'fecha' => $credito->fecha_credito, // Pasar fecha sin formatear
+                'fecha_formateada' => Carbon::parse($credito->fecha_credito)->format('d/m/Y'), // Agregar versión formateada
                 'valor' => $credito->valor_credito,
                 'saldo' => $credito->saldo_actual,
                 'estado' => $credito->estado,
@@ -113,7 +130,7 @@ class ClienteCreditosAbonosExport
 
             $this->abonosData[] = [
                 'id' => $abono->id_abono,
-                'fecha' => Carbon::parse($abono->fecha)->format('d/m/Y'),
+                'fecha' => Carbon::parse($abono->fecha_pago)->format('d/m/Y'),
                 'monto' => $abono->monto_abono,
                 'credito_id' => $abono->id_credito,
                 'conceptos' => $conceptosArray,
@@ -125,19 +142,66 @@ class ClienteCreditosAbonosExport
         }
 
         $this->saldoPendiente = $this->totalCreditos - $this->totalAbonos;
+        
+        // Calcular totales específicos para el PDF
+        $this->calcularTotalesEspecificos();
+    }
+    
+    protected function calcularTotalesEspecificos(): void
+    {
+        // Calcular total de abonos efectivos
+        $this->totalEfectivo = 0;
+        foreach ($this->abonosData as $abono) {
+            foreach ($abono['conceptos'] as $concepto) {
+                if (stripos($concepto['tipo'], 'efectivo') !== false) {
+                    $this->totalEfectivo += $concepto['monto'];
+                }
+            }
+        }
+        
+        // Calcular sobrante de cobranza (ABONO SOBRANTE COB sin id_abono, filtrado por usuario)
+        $this->sobranteCobranza = 0;
+        
+        // Primero buscar en los abonos normales
+        foreach ($this->abonosData as $abono) {
+            foreach ($abono['conceptos'] as $concepto) {
+                if (stripos($concepto['tipo'], 'ABONO SOBRANTE COB') !== false) {
+                    $this->sobranteCobranza += $concepto['monto'];
+                }
+            }
+        }
+        
+        // Luego buscar en conceptos de abono sin id_abono (filtrados por ruta específica)
+        $usuariosIds = collect($this->usuariosData)->pluck('id')->toArray();
+        $conceptosSinAbono = ConceptoAbono::whereIn('id_usuario', $usuariosIds)
+            ->whereNull('id_abono')
+            ->where('tipo_concepto', 'ABONO SOBRANTE COB')
+            ->where('id_ruta', $this->rutaId) // Validar que pertenezca a la ruta específica
+            ->get();
+            
+        foreach ($conceptosSinAbono as $concepto) {
+            $this->sobranteCobranza += $concepto->monto;
+        }
+        
+        // EFECTIVO CLIENTES NO REGISTRADOS se mantiene en 0 por ahora
+        $this->efectivoClientesNoRegistrados = 0;
     }
 
     public function exportToPDF()
     {
         try {
             $data = [
-                'usuario' => $this->userData,
+                'ruta' => $this->rutaData,
+                'usuarios' => $this->usuariosData,
                 'clientes' => $this->clientesData,
                 'creditos' => $this->creditosData,
                 'abonos' => $this->abonosData,
                 'totalCreditos' => $this->totalCreditos,
                 'totalAbonos' => $this->totalAbonos,
                 'saldoPendiente' => $this->saldoPendiente,
+                'totalEfectivo' => $this->totalEfectivo,
+                'sobranteCobranza' => $this->sobranteCobranza,
+                'efectivoClientesNoRegistrados' => $this->efectivoClientesNoRegistrados,
                 'fechaGeneracion' => now()->format('d/m/Y H:i:s'),
             ];
 
@@ -149,7 +213,7 @@ class ClienteCreditosAbonosExport
                          'isRemoteEnabled' => true,
                      ]);
             
-            $fileName = 'liquidacion-' . str_replace(' ', '-', $this->userData['nombres']) . '-' . now()->format('Y-m-d') . '.pdf';
+            $fileName = 'liquidacion-' . str_replace(' ', '-', $this->rutaData['nombre']) . '-' . now()->format('Y-m-d') . '.pdf';
             
             return response()->streamDownload(
                 fn () => print($pdf->stream()),
