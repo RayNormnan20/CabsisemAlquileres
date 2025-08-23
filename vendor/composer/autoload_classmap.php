@@ -156,6 +156,7 @@ return array(
     'App\\Filament\\Widgets\\TrasladosStatsWidget' => $baseDir . '/app/Filament/Widgets/TrasladosStatsWidget.php',
     'App\\Filament\\Widgets\\UserTimeLogged' => $baseDir . '/app/Filament/Widgets/UserTimeLogged.php',
     'App\\Filament\\Widgets\\YapeClientesTableWidget' => $baseDir . '/app/Filament/Widgets/YapeClientesTableWidget.php',
+    'App\\Filament\\Widgets\\YapeUsuariosWidget' => $baseDir . '/app/Filament/Widgets/YapeUsuariosWidget.php',
     'App\\Filament\\Widgets\\YapesTotalesDelDiaWidget' => $baseDir . '/app/Filament/Widgets/YapesTotalesDelDiaWidget.php',
     'App\\Helpers\\FechaHelper' => $baseDir . '/app/Helpers/FechaHelper.php',
     'App\\Helpers\\JiraHelper' => $baseDir . '/app/Helpers/JiraHelper.php',

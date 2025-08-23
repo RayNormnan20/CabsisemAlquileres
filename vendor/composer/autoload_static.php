@@ -1017,6 +1017,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'App\\Filament\\Widgets\\TrasladosStatsWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/TrasladosStatsWidget.php',
         'App\\Filament\\Widgets\\UserTimeLogged' => __DIR__ . '/../..' . '/app/Filament/Widgets/UserTimeLogged.php',
         'App\\Filament\\Widgets\\YapeClientesTableWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/YapeClientesTableWidget.php',
+        'App\\Filament\\Widgets\\YapeUsuariosWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/YapeUsuariosWidget.php',
         'App\\Filament\\Widgets\\YapesTotalesDelDiaWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/YapesTotalesDelDiaWidget.php',
         'App\\Helpers\\FechaHelper' => __DIR__ . '/../..' . '/app/Helpers/FechaHelper.php',
         'App\\Helpers\\JiraHelper' => __DIR__ . '/../..' . '/app/Helpers/JiraHelper.php',

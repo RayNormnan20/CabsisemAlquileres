@@ -180,22 +180,20 @@
         <span>Ruta: {{ $ruta['nombre'] }}</span>
         <span>Fecha: {{ date('d/m/Y') }}</span>
     </div>
-    
+
     @if(count($usuarios) > 0)
     <div class="info-line">
-        <span>Usuarios: 
+        <span>Usuarios:
             @foreach($usuarios as $index => $usuario)
-                {{ $usuario['nombres'] }}@if($index < count($usuarios) - 1), @endif
-            @endforeach
-        </span>
+            {{ $usuario['nombres'] }}@if($index < count($usuarios) - 1), @endif @endforeach </span>
     </div>
     @endif
 
-  
+
 
     <!-- SECCIÓN DE RENDICIÓN DE COBRADOR -->
     <div class="section">
-       <!-- <div class="section-title">RENDICIÓN DE COBRADOR</div> -->
+        <!-- <div class="section-title">RENDICIÓN DE COBRADOR</div> -->
 
         <table class="form-table">
             <tr>
@@ -223,11 +221,79 @@
             <tr>
                 <td class="label" style="font-weight: bold;">TOTAL EFECTIVO</td>
                 <td class="value">
-                    <span class="input-box total-box">{{ number_format(($totalEfectivo ?? 0) + ($efectivoClientesNoRegistrados ?? 0) + ($sobranteCobranza ?? 0), 0) }}</span>
+                    <span
+                        class="input-box total-box">{{ number_format(($totalEfectivo ?? 0) + ($efectivoClientesNoRegistrados ?? 0) + ($sobranteCobranza ?? 0), 0) }}</span>
                 </td>
             </tr>
         </table>
     </div>
+
+    <!-- SECCIÓN DE NUEVOS PRÉSTAMOS -->
+    <div class="section">
+        <div class="section-title">NUEVOS PRÉSTAMOS</div>
+        <table class="prestamos-table">
+            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                <td>DESCRIPCIÓN</td>
+                <td class="cliente-col">NOMBRE</td>
+                <td>MONTO</td>
+                <td>EFECTIVO</td>
+                <td>YAPE</td>
+                <td>TOTAL</td>
+            </tr>
+            @if(count($nuevosPrestamos ?? []) > 0)
+            @foreach($nuevosPrestamos as $prestamo)
+            <tr>
+                <td>{{ $prestamo['descripcion'] }}</td>
+                <td class="cliente-col">{{ $prestamo['cliente_nombre'] }}</td>
+                <td style="color: red; font-weight: bold;">-S/.
+                    {{ number_format($prestamo['valor_credito'] ?? ($prestamo['monto_efectivo'] + $prestamo['monto_yape']), 0) }}
+                </td>
+                <td>{{ $prestamo['monto_efectivo'] > 0 ? 'S/. ' . number_format($prestamo['monto_efectivo'], 0) : '-' }}
+                </td>
+                <td>{{ $prestamo['monto_yape'] > 0 ? 'S/. ' . number_format($prestamo['monto_yape'], 0) : '-' }}</td>
+                <td>S/. {{ number_format($prestamo['monto_efectivo'] + $prestamo['monto_yape'], 0) }}</td>
+            </tr>
+            @endforeach
+            @endif
+
+            @if(isset($renovaciones) && count($renovaciones) > 0)
+                @foreach($renovaciones as $index => $renovacion)
+                    <tr>
+                        <td>RENOVACIÓN {{ $index + 1 }}</td>
+                        <td class="cliente-col">{{ $renovacion['cliente_nombre'] }}</td>
+                        <td style="color: red; font-weight: bold;">-S/. {{ number_format($renovacion['valor_credito'], 0) }}</td>
+                        <td>{{ $renovacion['monto_efectivo'] > 0 ? 'S/. ' . number_format($renovacion['monto_efectivo'], 0) : '-' }}</td>
+                        <td>{{ $renovacion['monto_yape'] > 0 ? 'S/. ' . number_format($renovacion['monto_yape'], 0) : '-' }}</td>
+                        <td>S/. {{ number_format($renovacion['monto_efectivo'] + $renovacion['monto_yape'], 0) }}</td>
+                    </tr>
+                @endforeach
+            @endif
+
+            @if(count($nuevosPrestamos ?? []) == 0 && (!isset($renovaciones) || count($renovaciones) == 0))
+            <tr>
+                <td colspan="6" style="text-align: center; font-style: italic; color: #666;">No hay
+                    nuevos préstamos ni renovaciones en este período</td>
+            </tr>
+            @endif
+            <tr style="background-color: #ffe6e6; font-weight: bold;">
+                <td>TOTAL PRÉSTAMOS Y RENOVACIONES</td>
+                <td class="cliente-col">{{ count($nuevosPrestamos ?? []) + count($renovaciones ?? []) }}</td>
+                <td style="color: red; font-weight: bold;">-S/.
+                    {{ number_format((collect($nuevosPrestamos ?? [])->sum('valor_credito') ?: (collect($nuevosPrestamos ?? [])->sum('monto_efectivo') + collect($nuevosPrestamos ?? [])->sum('monto_yape'))) + collect($renovaciones ?? [])->sum('valor_credito'), 0) }}
+                </td>
+                <td>S/.
+                    {{ number_format(collect($nuevosPrestamos ?? [])->sum('monto_efectivo') + collect($renovaciones ?? [])->sum('monto_efectivo'), 0) }}
+                </td>
+                <td>S/.
+                    {{ number_format(collect($nuevosPrestamos ?? [])->sum('monto_yape') + collect($renovaciones ?? [])->sum('monto_yape'), 0) }}
+                </td>
+                <td>S/.
+                    {{ number_format(collect($nuevosPrestamos ?? [])->sum('monto_efectivo') + collect($nuevosPrestamos ?? [])->sum('monto_yape') + collect($renovaciones ?? [])->sum('monto_efectivo') + collect($renovaciones ?? [])->sum('monto_yape'), 0) }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
 
 
     <!-- FIRMA -->
@@ -243,6 +309,8 @@
         Total Créditos: S/. {{ number_format($totalCreditos, 2) }} |
         Total Abonos: S/. {{ number_format($totalAbonos, 2) }} |
         Saldo: S/. {{ number_format($saldoPendiente, 2) }}<br>
+        Nuevos Préstamos: {{ count($nuevosPrestamos ?? []) }} |
+        Valor Nuevos Préstamos: S/. {{ number_format(collect($nuevosPrestamos ?? [])->sum('valor_credito'), 2) }}<br>
         Generado: {{ date('d/m/Y H:i:s') }} | Ruta: {{ $ruta['nombre'] }}
     </div>
 </body>
