@@ -294,7 +294,84 @@
         </table>
     </div>
 
+    <!-- SECCIÓN DE OTROS INGRESOS -->
+    <div class="section">
+        <div class="section-title">OTROS INGRESOS</div>
+        <table class="prestamos-table">
+            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                <td>CAJA CHICA INGRESO</td>
+                <td class="value">-</td>
+            </tr>
+            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                <td>CAJA CHICA EGRESO</td>
+                <td class="value">-</td>
+            </tr>
+            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                <td>Sobrante de cobranza</td>
+                <td class="value">-</td>
+            </tr>
+            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                <td>Otros ingresos</td>
+                <td class="value">
+                    @if(count($otrosIngresos ?? []) > 0)
+                        @foreach($otrosIngresos as $ingreso)
+                            <div style="font-size: 8px; margin-bottom: 2px;">
+                                S/. {{ number_format($ingreso['monto'], 0) }}
+                            </div>
+                        @endforeach
+                    @else
+                        -
+                    @endif
+                </td>
+            </tr>
+            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                <td>Otros egresos</td>
+                <td class="value">
+                    @if(count($otrosEgresos ?? []) > 0)
+                        @foreach($otrosEgresos as $egreso)
+                            <div style="font-size: 8px; margin-bottom: 2px;">
+                                 S/. {{ number_format($egreso['monto'], 0) }}
+                            </div>
+                        @endforeach
+                    @else
+                        -
+                    @endif
+                </td>
+            </tr>
+            <tr style="background-color: #ffe6e6; font-weight: bold;">
+                <td>Total otros ingresos</td>
+                <td class="value" style="color: yellow; background-color: yellow;">
+                    S/. {{ number_format(collect($otrosIngresos ?? [])->sum('monto'), 0) }}
+                </td>
+            </tr>
+        </table>
+    </div>
 
+    <!-- SUELDO COBRADOR -->
+    <div class="prestamos-section">
+        <h3>SUELDO COBRADOR</h3>
+        <table class="prestamos-table">
+            @if(count($sueldoCobrador ?? []) > 0)
+                @foreach($sueldoCobrador as $sueldo)
+                    <tr>
+                        <td>{{ $sueldo['usuario'] }}</td>
+                        <td class="value">S/. {{ number_format($sueldo['monto'], 0) }}</td>
+                    </tr>
+                @endforeach
+                <tr style="background-color: #ffe6e6; font-weight: bold;">
+                    <td>Total sueldo cobrador</td>
+                    <td class="value" style="color: red; background-color: #ffe6e6;">
+                        S/. {{ number_format(collect($sueldoCobrador ?? [])->sum('monto'), 0) }}
+                    </td>
+                </tr>
+            @else
+                <tr>
+                    <td>No hay registros de sueldo cobrador</td>
+                    <td class="value">S/. 0</td>
+                </tr>
+            @endif
+        </table>
+    </div>
 
     <!-- FIRMA -->
     <div class="firma-section">

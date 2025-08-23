@@ -32,6 +32,9 @@ class ClienteCreditosAbonosExport
     protected $efectivoClientesNoRegistrados;
     protected $nuevosPrestamos;
     protected $renovaciones;
+    protected $otrosIngresos;
+    protected $otrosEgresos;
+    protected $sueldoCobrador;
 
     public function __construct(int $rutaId, bool $isRutaExport = true, ?string $fechaDesde = null, ?string $fechaHasta = null)
     {
@@ -176,6 +179,9 @@ class ClienteCreditosAbonosExport
         
         // Identificar renovaciones
         $this->identificarRenovaciones();
+        
+        // Obtener otros ingresos y egresos
+        $this->obtenerOtrosIngresosEgresos();
     }
     
     protected function calcularTotalesEspecificos(): void
@@ -238,6 +244,80 @@ class ClienteCreditosAbonosExport
             
         foreach ($conceptosEfectivoNoRegistrados as $concepto) {
             $this->efectivoClientesNoRegistrados += $concepto->monto;
+        }
+    }
+    
+    protected function obtenerOtrosIngresosEgresos(): void
+    {
+        $usuariosIds = collect($this->usuariosData)->pluck('id')->toArray();
+        
+        // Obtener OTROS INGRESOS
+        $otrosIngresosQuery = ConceptoAbono::whereIn('id_usuario', $usuariosIds)
+            ->where('tipo_concepto', 'OTROS INGRESOS')
+            ->where('id_ruta', $this->rutaId)
+            ->when($this->fechaDesde, function ($query) {
+                return $query->whereDate('created_at', '>=', $this->fechaDesde);
+            })
+            ->when($this->fechaHasta, function ($query) {
+                return $query->whereDate('created_at', '<=', $this->fechaHasta);
+            })
+            ->with('usuario')
+            ->get();
+            
+        $this->otrosIngresos = [];
+        foreach ($otrosIngresosQuery as $concepto) {
+            $this->otrosIngresos[] = [
+                'referencia' => $concepto->referencia ?? 'Sin referencia',
+                'monto' => $concepto->monto,
+                'usuario' => $concepto->usuario->name ?? 'Usuario no encontrado',
+                'fecha' => $concepto->created_at->format('d/m/Y')
+            ];
+        }
+        
+        // Obtener OTROS EGRESOS
+        $otrosEgresosQuery = ConceptoAbono::whereIn('id_usuario', $usuariosIds)
+            ->where('tipo_concepto', 'OTROS EGRESOS')
+            ->where('id_ruta', $this->rutaId)
+            ->when($this->fechaDesde, function ($query) {
+                return $query->whereDate('created_at', '>=', $this->fechaDesde);
+            })
+            ->when($this->fechaHasta, function ($query) {
+                return $query->whereDate('created_at', '<=', $this->fechaHasta);
+            })
+            ->with('usuario')
+            ->get();
+            
+        $this->otrosEgresos = [];
+        foreach ($otrosEgresosQuery as $concepto) {
+            $this->otrosEgresos[] = [
+                'referencia' => $concepto->referencia ?? 'Sin referencia',
+                'monto' => $concepto->monto,
+                'usuario' => $concepto->usuario->name ?? 'Usuario no encontrado',
+                'fecha' => $concepto->created_at->format('d/m/Y')
+            ];
+        }
+        
+        // Obtener SUELDO COBRADOR (separado en su propia variable)
+        $sueldoCobradorQuery = ConceptoAbono::whereIn('id_usuario', $usuariosIds)
+            ->where('tipo_concepto', 'SUELDO COBRADOR')
+            ->where('id_ruta', $this->rutaId)
+            ->when($this->fechaDesde, function ($query) {
+                return $query->whereDate('created_at', '>=', $this->fechaDesde);
+            })
+            ->when($this->fechaHasta, function ($query) {
+                return $query->whereDate('created_at', '<=', $this->fechaHasta);
+            })
+            ->with('usuario')
+            ->get();
+            
+        $this->sueldoCobrador = [];
+        foreach ($sueldoCobradorQuery as $concepto) {
+            $this->sueldoCobrador[] = [
+                'referencia' => $concepto->referencia ?? 'Sin referencia',
+                'monto' => $concepto->monto,
+                'usuario' => $concepto->usuario->name ?? 'Usuario no encontrado',
+                'fecha' => $concepto->created_at->format('d/m/Y')
+            ];
         }
     }
     
@@ -384,6 +464,9 @@ class ClienteCreditosAbonosExport
                 'efectivoClientesNoRegistrados' => $this->efectivoClientesNoRegistrados,
                 'nuevosPrestamos' => $this->nuevosPrestamos,
                 'renovaciones' => $this->renovaciones,
+                'otrosIngresos' => $this->otrosIngresos,
+                'otrosEgresos' => $this->otrosEgresos,
+                'sueldoCobrador' => $this->sueldoCobrador,
                 'fechaGeneracion' => now()->format('d/m/Y H:i:s'),
             ];
 
