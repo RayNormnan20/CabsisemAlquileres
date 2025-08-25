@@ -116,7 +116,7 @@
 
             <!-- PAGOS COMBINADOS (YAPE + EFECTIVO) -->
             <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-blue-500"
-                onclick="window.location.href='{{ route('filament.resources.abonos.index') }}'">
+                onclick="window.location.href='{{ route('filament.pages.pagos-del-dia') }}'">
                 <div class="text-center">
                     <div class="bg-blue-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
                         <x-heroicon-o-eye class="w-5 h-5 text-blue-600" />
