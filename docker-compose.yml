@@ -46,11 +46,15 @@ services:
     depends_on:
       sqldb:
         condition: service_healthy
-    restart: "unless-stopped" # O 'unless-stopped'
+    restart: unless-stopped
     ports:
       - 8001:8000
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./src:/var/www/html # O .:/var/www/html si el código está en la raíz
-      - ./storage:/var/www/html/storage
+      - ./src:/var/www/html
+      - ./uploads/comprobantes/abonos:/var/www/html/storage/app/public/comprobantes/abonos
+      - ./uploads/clientes/fotos:/var/www/html/storage/app/public/clientes/fotos
+      - ./uploads/comprobantes/yape:/var/www/html/storage/app/public/comprobantes/yape
+      - ./uploads/comprobantes/efectivo:/var/www/html/storage/app/public/comprobantes/efectivo
+      - ./uploads/departamentos:/var/www/html/storage/app/public/departamentos
       - ./bootstrap/cache:/var/www/html/bootstrap/cache
