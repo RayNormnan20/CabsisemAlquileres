@@ -453,6 +453,7 @@ class AbonosResource extends Resource
                             ->image()
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg']) // <- formatos aceptados
                             ->directory('comprobantes/abonos')
+                            ->disk('public')
                             ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
                             ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
                             ->columnSpan(2),

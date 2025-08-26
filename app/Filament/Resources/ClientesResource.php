@@ -85,12 +85,14 @@ class ClientesResource extends Resource
                            FileUpload::make('foto1_path')
                                 ->label('Foto 1 del Cliente')
                                 ->directory('clientes/fotos') // Carpeta donde se guardarán
+                                ->disk('public')
                                 ->image(),
                                 //->required(),
 
                             FileUpload::make('foto2_path')
                                 ->label('Foto 2 del Cliente')
                                 ->directory('clientes/fotos')
+                                ->disk('public')
                                 ->image(),         // Opcional: Convertir a WebP para reducir peso
                         ])->columns(2),
 
