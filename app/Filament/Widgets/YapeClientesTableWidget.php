@@ -489,7 +489,7 @@ class YapeClientesTableWidget extends BaseWidget
                             if ($totalPagos > $record->monto && $totalDevoluciones == 0) {
                                 $exceso = $totalPagos - $record->monto;
                                 $html .= '<div class="flex justify-between items-center mt-2 p-2 bg-orange-50 rounded border-l-4 border-orange-400">';
-                                $html .= '<span class="text-xs sm:text-sm font-medium text-orange-700">Exceso:</span>';
+                                $html .= '<span class="text-xs sm:text-sm font-medium text-orange-700">Devolución:</span>';
                                 $html .= '<span class="text-xs sm:text-sm font-bold text-orange-600">S/ ' . number_format($exceso, 2) . '</span>';
                                 $html .= '</div>';
                             }
