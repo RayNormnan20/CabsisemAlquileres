@@ -1,4 +1,15 @@
 <x-filament::page>
+    <!-- Botón Atrás -->
+    <div class="mb-4 flex justify-end">
+        <a href="{{ route('filament.pages.dashboard') }}" 
+           class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Atrás
+        </a>
+    </div>
+    
     <div class="w-full space-y-6">
         <!-- Encabezado con totales -->
         <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
