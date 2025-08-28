@@ -455,7 +455,7 @@ class AbonosResource extends Resource
                             ->directory('comprobantes/abonos')
                             ->disk('public')
                             ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
-                            ->required(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
+                            ->required(fn ($get) => $get('tipo_concepto') === 'Yape')
                             ->columnSpan(2),
 
                             TextInput::make('referencia')
