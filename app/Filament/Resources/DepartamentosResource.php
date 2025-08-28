@@ -68,11 +68,6 @@ class DepartamentosResource extends Resource
                                 ->label('Número/Código')
                                 ->required()
                                 ->maxLength(20)
-                                ->unique(
-                                    table: 'departamentos',
-                                    column: 'numero_departamento',
-                                    ignoreRecord: true
-                                )
                                 ->rules([
                                     function ($get) {
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
