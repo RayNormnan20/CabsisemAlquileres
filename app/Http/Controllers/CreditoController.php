@@ -421,6 +421,7 @@ class CreditoController extends Controller
                 'observaciones' => 'Cancelación de crédito',
                 'id_concepto' => $conceptoAbono->id,
                 'estado' => true,
+                'activar_segundo_recorrido' => false, // Agregar este campo para evitar el error de null
             ]);
 
             // Crear el concepto de cancelación en conceptos_abono
