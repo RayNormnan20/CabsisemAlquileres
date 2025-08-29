@@ -398,8 +398,9 @@ $cliente->loadMissing('creditos');
                         const interesMensual = capitalOriginal * (interes / 100);
                         const interesCalculado = interesMensual * mesesExactos;
 
-                        // Calcular el total antes del descuento (capital original + interés)
-                        const totalSinDescuento = capitalOriginal + interesCalculado;
+                        // Tanto para renovaciones como para bajo cuenta: usar saldo actual + interés
+                        // El interés siempre se calcula sobre el capital original
+                        const totalSinDescuento = saldoActual + interesCalculado;
                         
                         // Aplicar descuento al total final
                         const totalPagar = totalSinDescuento - descuento;
