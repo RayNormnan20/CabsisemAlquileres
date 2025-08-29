@@ -774,7 +774,8 @@ $cliente->loadMissing('creditos');
                         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                         x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
                         x-transition:leave-end="opacity-0"
-                        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" aria-hidden="true"
+                        @click="showDeactivationModal = false"></div>
 
                     {{-- Este span es para centrar el contenido del modal horizontalmente --}}
                     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
