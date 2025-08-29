@@ -28,6 +28,7 @@ class CreditoController extends Controller
                 'fecha_vencimiento' => 'required|date',
                 'fecha_credito' => 'nullable|date', // Agregar validación para fecha editada
                 'descuento' => 'nullable|numeric|min:0', // Nuevo campo
+                'tipo_operacion' => 'nullable|string', // Nuevo campo para distinguir el tipo
             ]);
 
             DB::beginTransaction();
@@ -90,10 +91,15 @@ class CreditoController extends Controller
 
             $credito->save();
 
-            // Registrar en el log de actividad
+            // Registrar en el log de actividad según el tipo de operación
+            $tipoActividad = ($request->tipo_operacion === 'bajo_cuenta') ? 'Bajo Cuenta' : 'Actualización de Crédito';
+            $mensajeActividad = ($request->tipo_operacion === 'bajo_cuenta') 
+                ? "Bajo cuenta realizado para cliente: {$credito->cliente->nombre_completo}"
+                : "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}";
+            
             \App\Models\LogActividad::registrar(
-                'Actualización de Crédito',
-                "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}" .
+                $tipoActividad,
+                $mensajeActividad .
                 ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
                 [
                     'tabla_afectada' => 'creditos',
@@ -230,10 +236,15 @@ class CreditoController extends Controller
 
             $credito->save();
 
-            // Registrar en el log de actividad
+            // Registrar en el log de actividad según el tipo de operación
+            $tipoActividad = ($request->tipo_operacion === 'bajo_cuenta') ? 'Bajo Cuenta' : 'Actualización de Crédito';
+            $mensajeActividad = ($request->tipo_operacion === 'bajo_cuenta') 
+                ? "Bajo cuenta realizado para cliente: {$credito->cliente->nombre_completo}"
+                : "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}";
+            
             \App\Models\LogActividad::registrar(
-                'Actualización de Crédito',
-                "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}" .
+                $tipoActividad,
+                $mensajeActividad .
                 ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
                 [
                     'tabla_afectada' => 'creditos',

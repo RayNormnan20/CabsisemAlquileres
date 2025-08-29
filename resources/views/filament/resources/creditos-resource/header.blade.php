@@ -430,6 +430,7 @@ $cliente->loadMissing('creditos');
                                 nueva_cuenta: parseFloat(this.newCuenta),
                                 valor_cuota: parseFloat(this.newValorCuota),
                                 fecha_vencimiento: this.newVencimientoDate,
+                                tipo_operacion: 'edicion' // Identificar como edición
                             })
                         })
                         .then(r => r.json())
@@ -536,6 +537,7 @@ $cliente->loadMissing('creditos');
                                     fecha_vencimiento: this.newVencimientoDate,
                                     fecha_credito: this.fechaActualEditable, // Agregar fecha editada
                                     descuento: parseFloat(this.descuento) || 0, // Agregar descuento
+                                    tipo_operacion: 'bajo_cuenta' // Identificar como bajo cuenta
                                 })
                             })
                             .then(r => r.json())
