@@ -15,7 +15,7 @@ class PermissionsSeeder extends Seeder
     private array $modules = [
         'Permisos', 'Rol', 'Usuario', 'Clientes', 'Oficina', 'Ruta',
         'Creditos', 'Abonos', 'Concepto', 'Planilla Recaudador', 'YapeCliente',
-        'Alquiler', 'Pago Alquiler', 'Cliente Alquiler', 'Departamento', 'Estado Departamento',
+        'Alquiler', 'Pagos Alquiler', 'Cliente Alquiler', 'Departamento', 'Estado Departamento',
         'Edificio'
     ];
 

@@ -19,7 +19,7 @@ class EstadoDepartamentoPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->can('Listar Estados Departamento')
+        return $user->can('Listar Estado Departamentos')
             ? Response::allow()
             : Response::deny('No tienes permiso para listar estados de departamento.');
     }
@@ -33,7 +33,7 @@ class EstadoDepartamentoPolicy
      */
     public function view(User $user, EstadoDepartamento $estadoDepartamento)
     {
-        return $user->can('Ver Estado Departamento')
+        return $user->can('Ver Estado Departamentos')
             ? Response::allow()
             : Response::deny('No tienes permiso para ver este estado de departamento.');
     }

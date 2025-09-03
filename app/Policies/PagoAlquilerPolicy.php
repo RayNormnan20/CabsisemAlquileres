@@ -19,7 +19,7 @@ class PagoAlquilerPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->can('Listar Pagos Alquiler')
+        return $user->can('Listar Pagos Alquilers')
             ? Response::allow()
             : Response::deny('No tienes permiso para listar pagos de alquiler.');
     }
@@ -33,7 +33,7 @@ class PagoAlquilerPolicy
      */
     public function view(User $user, PagoAlquiler $pagoAlquiler)
     {
-        return $user->can('Ver Pago Alquiler')
+        return $user->can('Ver Pagos Alquiler')
             ? Response::allow()
             : Response::deny('No tienes permiso para ver este pago de alquiler.');
     }
@@ -46,7 +46,7 @@ class PagoAlquilerPolicy
      */
     public function create(User $user)
     {
-        return $user->can('Crear Pago Alquiler')
+        return $user->can('Crear Pagos Alquiler')
             ? Response::allow()
             : Response::deny('No tienes permiso para registrar pagos de alquiler.');
     }
@@ -60,7 +60,7 @@ class PagoAlquilerPolicy
      */
     public function update(User $user, PagoAlquiler $pagoAlquiler)
     {
-        return $user->can('Actualizar Pago Alquiler')
+        return $user->can('Actualizar Pagos Alquiler')
             ? Response::allow()
             : Response::deny('No tienes permiso para actualizar este pago de alquiler.');
     }
@@ -79,19 +79,7 @@ class PagoAlquilerPolicy
             : Response::deny('No tienes permiso para eliminar este pago de alquiler.');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\PagoAlquiler  $pagoAlquiler
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function restore(User $user, PagoAlquiler $pagoAlquiler)
-    {
-        return $user->can('Restaurar Pago Alquiler')
-            ? Response::allow()
-            : Response::deny('No tienes permiso para restaurar este pago de alquiler.');
-    }
+
 
     /**
      * Determine whether the user can permanently delete the model.
@@ -107,43 +95,5 @@ class PagoAlquilerPolicy
             : Response::deny('No tienes permiso para eliminar permanentemente este pago de alquiler.');
     }
 
-    /**
-     * Determine whether the user can generate payment receipts.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\PagoAlquiler  $pagoAlquiler
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function generateReceipt(User $user, PagoAlquiler $pagoAlquiler)
-    {
-        return $user->can('Generar Recibo Pago')
-            ? Response::allow()
-            : Response::deny('No tienes permiso para generar recibos de pago.');
-    }
 
-    /**
-     * Determine whether the user can manage rental payments.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function manage(User $user)
-    {
-        return $user->can('Gestionar Pagos Alquiler')
-            ? Response::allow()
-            : Response::deny('No tienes permiso para gestionar pagos de alquiler.');
-    }
-
-    /**
-     * Determine whether the user can view payment reports.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function viewReports(User $user)
-    {
-        return $user->can('Ver Reportes Pagos')
-            ? Response::allow()
-            : Response::deny('No tienes permiso para ver reportes de pagos.');
-    }
 }

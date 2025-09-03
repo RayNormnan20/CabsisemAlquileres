@@ -19,7 +19,7 @@ class ClienteAlquilerPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->can('Listar Clientes Alquiler')
+        return $user->can('Listar Cliente Alquilers')
             ? Response::allow()
             : Response::deny('No tienes permiso para listar clientes de alquiler.');
     }

@@ -19,7 +19,7 @@ class AlquilerPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->can('Listar Alquileres')
+        return $user->can('Listar Alquilers')
             ? Response::allow()
             : Response::deny('No tienes permiso para listar alquileres.');
     }
