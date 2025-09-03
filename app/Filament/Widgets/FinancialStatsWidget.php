@@ -115,7 +115,7 @@ class FinancialStatsWidget extends Widget
         $totalPagosEfectivoHoy = $pagosEfectivoHoyQuery->sum('monto_abono');
 
         // Cálculo de cuotas
-        $creditos = $creditosQuery->get();
+        $creditos = $creditosQuery->where('saldo_actual', '>', 0)->get(); // Solo créditos activos
         $hoy = now()->toDateString();
 
         foreach ($creditos as $credito) {
@@ -127,12 +127,13 @@ class FinancialStatsWidget extends Widget
                 $cuotasVencidas += 1;
             }
             
-            // Cuotas programadas para hoy 
-            if ($credito->fecha_proximo_pago && $credito->fecha_proximo_pago->toDateString() == $hoy) {
+            // NUEVA LÓGICA: Contar todos los créditos activos como "Cuotas Hoy"
+            // ya que cada crédito activo representa una cuota diaria por cobrar
+            if ($credito->saldo_actual > 0) {
                 $cuotasHoy += 1;
-                $totalCuotasHoySum += $credito->valor_cuota; // Suma el valor de la cuota
+                $totalCuotasHoySum += $credito->valor_cuota;
                 
-                // Verificar si ya pagó la cuota de hoy
+                // Verificar si ya pagó hoy (independientemente de fecha programada)
                 $pagoHoy = $credito->abonos->contains(function($abono) use ($hoy) {
                     return $abono->created_at->toDateString() == $hoy;
                 });
