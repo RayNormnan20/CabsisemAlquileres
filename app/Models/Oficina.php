@@ -19,32 +19,12 @@ class Oficina extends Model
         'codigo',
         'max_abonos_diarios', // Nuevo campo
         'porcentajes_credito',
-        'activar_seguros', // Nuevo campo
-        'ver_caja_anterior',
-        'ver_entradas_salidas',
-        'consultar_cuadre_pasado',
-        'cobrador_edita_clientes',
-        'cobrador_ingresos_gastos',
-        'pedir_base_al_ingresar',
-        'liquidar_rutas',
-        'foto_documento_obligatoria',
-        'cambiar_claves_usuarios',
-        'creditos_requieren_autorizacion'
+        'activar_seguros' // Nuevo campo
     ];
 
     protected $casts = [
         'max_abonos_diarios' => 'integer',
-        'activar_seguros' => 'boolean',
-        'ver_caja_anterior' => 'boolean',
-        'ver_entradas_salidas' => 'boolean',
-        'consultar_cuadre_pasado' => 'boolean',
-        'cobrador_edita_clientes' => 'boolean',
-        'cobrador_ingresos_gastos' => 'boolean',
-        'pedir_base_al_ingresar' => 'boolean',
-        'liquidar_rutas' => 'boolean',
-        'foto_documento_obligatoria' => 'boolean',
-        'cambiar_claves_usuarios' => 'boolean',
-        'creditos_requieren_autorizacion' => 'boolean'
+        'activar_seguros' => 'boolean'
     ];
 
     public function moneda()

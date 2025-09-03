@@ -67,7 +67,7 @@ class OficinasResource extends Resource
                         ->label('País'),
 
                     TextInput::make('codigo')
-                        ->required()
+                       // ->required()
                         ->maxLength(255)
                         ->label('Código'),
                 ])->columns(3),
@@ -115,51 +115,7 @@ class OficinasResource extends Resource
                         ->inline(false),
                 ])->columns(2),
 
-            Section::make('Cuadre Recaudador en Aplicativo')
-                ->schema([
-                    Toggle::make('ver_caja_anterior')
-                        ->label('Ver Caja Anterior y Actual')
-                        ->inline(false),
 
-                    Toggle::make('ver_entradas_salidas')
-                        ->label('Ver Entradas y Salidas de Efectivo')
-                        ->inline(false),
-
-                    Toggle::make('consultar_cuadre_pasado')
-                        ->label('Consultar Cuadre de Días Pasados')
-                        ->inline(false),
-                ])->columns(3),
-
-            Section::make('Opciones Generales en Aplicativo')
-                ->schema([
-                    Toggle::make('cobrador_edita_clientes')
-                        ->label('Cobrador edita información de Clientes')
-                        ->inline(false),
-
-                    Toggle::make('cobrador_ingresos_gastos')
-                        ->label('Cobrador realiza Ingresos y Gastos')
-                        ->inline(false),
-
-                    Toggle::make('pedir_base_al_ingresar')
-                        ->label('Pedir Base al ingresar a la Ruta')
-                        ->inline(false),
-
-                    Toggle::make('liquidar_rutas')
-                        ->label('Liquidar Rutas')
-                        ->inline(false),
-
-                    Toggle::make('foto_documento_obligatoria')
-                        ->label('Foto de Documento Obligatoria')
-                        ->inline(false),
-
-                    Toggle::make('cambiar_claves_usuarios')
-                        ->label('Cambiar Claves de Usuarios')
-                        ->inline(false),
-
-                    Toggle::make('creditos_requieren_autorizacion')
-                        ->label('Créditos Requieren Autorización')
-                        ->inline(false),
-                ])->columns(2)
         ]);
     }
 

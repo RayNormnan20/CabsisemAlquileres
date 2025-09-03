@@ -23,17 +23,7 @@ return new class extends Migration
                   ->comment('Porcentajes separados por comas. Ejemplo: 20,24,30');
             $table->boolean('activar_seguros')->default(false);
 
-            // Campos booleanos con sus valores por defecto
-            $table->boolean('ver_caja_anterior')->default(false);
-            $table->boolean('ver_entradas_salidas')->default(false);
-            $table->boolean('consultar_cuadre_pasado')->default(false);
-            $table->boolean('cobrador_edita_clientes')->default(false);
-            $table->boolean('cobrador_ingresos_gastos')->default(true);
-            $table->boolean('pedir_base_al_ingresar')->default(false);
-            $table->boolean('liquidar_rutas')->default(false);
-            $table->boolean('foto_documento_obligatoria')->default(false);
-            $table->boolean('cambiar_claves_usuarios')->default(false);
-            $table->boolean('creditos_requieren_autorizacion')->default(false);
+
 
             $table->timestamps();
 
