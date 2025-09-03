@@ -92,6 +92,18 @@ class PermissionsSeeder extends Seeder
 
         $collectorRole->syncPermissions($collectorPermissions);
 
+        // Rol Encargado de oficina (sin permisos específicos por ahora)
+        $officeManagerRole = Role::firstOrCreate(['name' => 'Encargado de oficina']);
+        // TODO: Asignar permisos específicos para Encargado de oficina
+
+        // Rol Revisador (sin permisos específicos por ahora)
+        $reviewerRole = Role::firstOrCreate(['name' => 'Revisador']);
+        // TODO: Asignar permisos específicos para Revisador
+
+        // Rol Super Admin (todos los permisos)
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin']);
+        $superAdminRole->syncPermissions(Permission::all()->pluck('name'));
+
         // Asignar rol admin al primer usuario si existe
         if ($user = User::first()) {
             $user->syncRoles([$this->defaultRole]);

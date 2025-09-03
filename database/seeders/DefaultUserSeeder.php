@@ -23,15 +23,15 @@ class DefaultUserSeeder extends Seeder
                 'password' => bcrypt('999111222'),
                 'email_verified_at' => now()
             ]);
-/*
+
             $user = User::create([
-                'name' => 'Juan',
+                'name' => 'Fiorela',
                 'celular' => '222333444',
-                'email' => 'juan@helper.app',
-                'password' => bcrypt('Passw@rd'),
+                'email' => 'fiorela@helper.app',
+                'password' => bcrypt('222333444'),
                 'email_verified_at' => now()
             ]);
-
+/*
             $user = User::create([
                 'name' => 'Sebas',
                 'celular' => '888777333',
