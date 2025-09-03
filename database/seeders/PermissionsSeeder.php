@@ -24,7 +24,7 @@ class PermissionsSeeder extends Seeder
     private array $listOnlyModules = [
         'Liquidaciones', 'Trasladar Clientes', 'Clientes Por Renovar',
         'Yapes Totales Del Dia', 'Segundo Recorrido', 'Usuarios Que Abonaron A Yape',
-        'Yape Clientes Control De Entregas'
+        'Yape Clientes Control De Entregas', 'Planilla Recaudador'
     ];
 
     private array $pluralActions = [
