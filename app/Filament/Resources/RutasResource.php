@@ -95,7 +95,13 @@ class RutasResource extends Resource
                             ->helperText('Agregue uno o más porcentajes separados por comas. Ejemplo: 20,24,30')
                             ->regex('/^[\d,]+$/')
                             ->maxLength(255),
-                    ]),
+
+                             Toggle::make('activa')
+                            ->label('Ruta activa')
+                            ->default(true)
+                            ->inline(false),
+
+                    ])->columns(2),
 
                 // En el formulario
                 // En App\Filament\Resources\RutasResource
@@ -109,33 +115,8 @@ class RutasResource extends Resource
 
 
 
-                // Sección 5: Opciones adicionales
-                Section::make('Opciones Adicionales')
-                    ->schema([
-                        Toggle::make('cobradores_agregan_gastos')
-                            ->label('Los cobradores agregan gastos en el App')
-                            ->inline(false),
-
-                        Toggle::make('editar_interes_credito')
-                            ->label('Editar interés de Crédito')
-                            ->inline(false),
-
-                        Toggle::make('considerar_domingos_pago')
-                            ->label('Considerar domingos como día de pago')
-                            ->inline(false),
-
-                        Toggle::make('enrutamiento_automatico')
-                            ->label('Enrutamiento automático')
-                            ->inline(false),
-
-                        Toggle::make('activa')
-                            ->label('Ruta activa')
-                            ->default(true)
-                            ->inline(false),
-
-                              Hidden::make('creada_en')
-            ->default(now()->toDateString()),
-                    ])->columns(2),
+                Hidden::make('creada_en')
+                    ->default(now()->toDateString()),
             ])
         ]);
 }
@@ -204,7 +185,7 @@ class RutasResource extends Resource
                         'class' => 'hover:bg-primary-50 rounded-full'
                     ]),
 
-                
+
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

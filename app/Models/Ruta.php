@@ -22,20 +22,12 @@ class Ruta extends Model
         'id_tipo_documento',
         'id_tipo_cobro',
         'agregar_ceros_cantidades',
-        'editar_interes_credito',
-        'considerar_domingos_pago',
-        'enrutamiento_automatico',
-        'porcentajes_credito',
-        'cobradores_agregan_gastos'
+        'porcentajes_credito'
     ];
 
     protected $casts = [
         'activa' => 'boolean',
         'agregar_ceros_cantidades' => 'boolean',
-        'editar_interes_credito' => 'boolean',
-        'considerar_domingos_pago' => 'boolean',
-        'enrutamiento_automatico' => 'boolean',
-        'cobradores_agregan_gastos' => 'boolean',
         'creada_en' => 'date'
     ];
 

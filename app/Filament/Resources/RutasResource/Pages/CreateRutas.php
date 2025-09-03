@@ -11,6 +11,15 @@ class CreateRutas extends CreateRecord
 {
     protected static string $resource = RutasResource::class;
 
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+            $this->getCancelFormAction(),
+        ];
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
@@ -36,7 +45,7 @@ class CreateRutas extends CreateRecord
             ]
         );
     }
-
+/*
     protected function getActions(): array
     {
         return [
@@ -45,5 +54,5 @@ class CreateRutas extends CreateRecord
                 ->url($this->getResource()::getUrl('index'))
                 ->color('secondary'),
         ];
-    }
+    }  */
 }

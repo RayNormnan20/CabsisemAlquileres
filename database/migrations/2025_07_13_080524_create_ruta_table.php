@@ -18,11 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_tipo_documento')->nullable();
             $table->unsignedBigInteger('id_tipo_cobro')->nullable();
             $table->boolean('agregar_ceros_cantidades')->default(false)->comment('Agregar 3 ceros a las cantidades');
-            $table->boolean('editar_interes_credito')->default(false);
-            $table->boolean('considerar_domingos_pago')->default(false);
-            $table->boolean('enrutamiento_automatico')->default(false);
             $table->string('porcentajes_credito', 255)->nullable();
-            $table->boolean('cobradores_agregan_gastos')->default(true);
             $table->timestamps();
 
             // Claves foráneas
