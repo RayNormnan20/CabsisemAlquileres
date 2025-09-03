@@ -12,13 +12,10 @@ use Illuminate\Support\Facades\Auth;
 class SegundoRecorridoWidget extends BaseWidget
 {
     protected int|string|array $columnSpan = 1;
-/*
     public static function canView(): bool
     {
-        // Solo mostrar si el usuario tiene el rol "Administrador"
-       // return Auth::user()?->hasRole('Administrador');
+        return auth()->check() && auth()->user()->can('Listar Segundo Recorridos');
     }
-*/
     protected function getTableQuery(): Builder
     {
         return Creditos::query()

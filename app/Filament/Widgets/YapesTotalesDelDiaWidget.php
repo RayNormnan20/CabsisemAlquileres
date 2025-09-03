@@ -17,8 +17,7 @@ class YapesTotalesDelDiaWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        // Solo mostrar si el usuario tiene el rol "Administrador"
-        return Auth::user()?->hasRole('Administrador');
+        return auth()->check() && auth()->user()->can('Listar Yapes Totales Del Dias');
     }
 
 

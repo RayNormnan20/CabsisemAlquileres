@@ -22,6 +22,11 @@ class YapeClientesTableWidget extends BaseWidget
 {
     protected int|string|array $columnSpan = 'full';
 
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('Listar Yape Clientes Control De Entregas');
+    }
+
     // Propiedades para el filtro de período
     public ?string $fechaDesde = null;
     public ?string $fechaHasta = null;

@@ -11,6 +11,11 @@ class ClientesPorRenovarWidget extends BaseWidget
 {
 protected int|string|array $columnSpan = 1;
 
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('Listar Clientes Por Renovars');
+    }
+
     protected function getTableQuery(): Builder
     {
         return Clientes::whereHas('creditos', function ($query) {

@@ -16,6 +16,11 @@ class YapeUsuariosWidget extends BaseWidget
 {
     protected int|string|array $columnSpan = 1;
 
+    public static function canView(): bool
+    {
+        return auth()->check() && auth()->user()->can('Listar Usuarios Que Abonaron A Yapes');
+    }
+
     protected function getTableQuery(): Builder
     {
         // Consulta base para obtener abonos con información de Yape
@@ -35,7 +40,7 @@ class YapeUsuariosWidget extends BaseWidget
 
         // Permitir que Filament maneje los filtros naturalmente
         // Los filtros se aplicarán automáticamente a la consulta base
-        
+
         return $query;
     }
 

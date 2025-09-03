@@ -16,12 +16,15 @@ class PermissionsSeeder extends Seeder
         'Permisos', 'Rol', 'Usuario', 'Clientes', 'Oficina', 'Ruta',
         'Creditos', 'Abonos', 'Concepto', 'Planilla Recaudador', 'YapeCliente',
         'Alquiler', 'Pagos Alquiler', 'Cliente Alquiler', 'Departamento', 'Estado Departamento',
-        'Edificio', 'Concepto Abono', 'Dia No Laborable', 'Movimiento', 'Liquidaciones', 'Trasladar Clientes'
+        'Edificio', 'Concepto Abono', 'Dia No Laborable', 'Movimiento', 'Liquidaciones', 'Trasladar Clientes', 'Clientes Por Renovar',
+        'Yapes Totales Del Dia', 'Segundo Recorrido', 'Usuarios Que Abonaron A Yape', 'Yape Clientes Control De Entregas'
     ];
 
     // Módulos que solo deben tener permisos de 'Listar'
     private array $listOnlyModules = [
-        'Liquidaciones', 'Trasladar Clientes'
+        'Liquidaciones', 'Trasladar Clientes', 'Clientes Por Renovar',
+        'Yapes Totales Del Dia', 'Segundo Recorrido', 'Usuarios Que Abonaron A Yape',
+        'Yape Clientes Control De Entregas'
     ];
 
     private array $pluralActions = [
