@@ -4,20 +4,32 @@ namespace App\Providers;
 
 use App\Filament\Resources\ReportesResource\Pages\PlanillaRecaudador;
 use App\Models\Abonos;
+use App\Models\Alquiler;
+use App\Models\ClienteAlquiler;
 use App\Models\Clientes;
 use App\Models\Concepto;
 use App\Models\Creditos;
+use App\Models\Departamento;
+use App\Models\EstadoDepartamento;
+use App\Models\Edificio;
 use App\Models\Oficina;
+use App\Models\PagoAlquiler;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use App\Models\Ruta;
 use App\Models\YapeCliente;
 use App\Policies\AbonoPolicy;
+use App\Policies\AlquilerPolicy;
+use App\Policies\ClienteAlquilerPolicy;
 use App\Policies\ClientesPolicy;
 use App\Policies\ConceptoPolicy;
 use App\Policies\CreditosPolicy;
+use App\Policies\DepartamentoPolicy;
+use App\Policies\EstadoDepartamentoPolicy;
+use App\Policies\EdificioPolicy;
 use App\Policies\OficinaPolicy;
+use App\Policies\PagoAlquilerPolicy;
 use App\Policies\PlanillaRecaudadorPolicy;
 use App\Policies\RutaPolicy;
 use App\Policies\YapeClientePolicy;
@@ -27,12 +39,18 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
             Abonos::class => AbonoPolicy::class,
-            Oficina::class => OficinaPolicy::class,
-            Ruta::class => RutaPolicy::class,
+            Alquiler::class => AlquilerPolicy::class,
+            ClienteAlquiler::class => ClienteAlquilerPolicy::class,
             Clientes::class => ClientesPolicy::class,
-            Creditos::class => CreditosPolicy::class,
-            PlanillaRecaudador::class => PlanillaRecaudadorPolicy::class,
             Concepto::class => ConceptoPolicy::class,
+            Creditos::class => CreditosPolicy::class,
+            Departamento::class => DepartamentoPolicy::class,
+            EstadoDepartamento::class => EstadoDepartamentoPolicy::class,
+            Edificio::class => EdificioPolicy::class,
+            Oficina::class => OficinaPolicy::class,
+            PagoAlquiler::class => PagoAlquilerPolicy::class,
+            PlanillaRecaudador::class => PlanillaRecaudadorPolicy::class,
+            Ruta::class => RutaPolicy::class,
             YapeCliente::class => YapeClientePolicy::class,
     ];
 

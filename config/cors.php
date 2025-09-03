@@ -18,7 +18,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://servenvicava.com'],  // Asegúrate de cambiar el dominio aquí
+    'allowed_origins' => ['https://cabsisem.net.pe'],  // Asegúrate de cambiar el dominio aquí
 
     'allowed_origins_patterns' => [],
 
