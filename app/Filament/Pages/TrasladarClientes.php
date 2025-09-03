@@ -33,28 +33,34 @@ class TrasladarClientes extends Page implements HasForms
     protected static ?string $slug = 'trasladar-clientes';
     protected static ?int $navigationSort = 4;
     protected static ?string $navigationGroup = 'Movimientos';
-    
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string $view = 'filament.pages.trasladar-clientes';
-    
+
+    public static function canAccess(): bool
+    {
+        return auth()->check() && auth()->user()->can('Listar Trasladar Clientes');
+    }
+
     public $rutaOrigen = null;
     public $rutaDestino = null;
     public $tipoTraslado = 'solo_saldo';
     public $clientesSeleccionados = [];
     public $clientesDisponibles = [];
     public $clientesConDatos = [];
-    
+
      public function mount(): void
     {
         $this->clientesSeleccionados = [];
         $this->clientesDisponibles = [];
         $this->clientesConDatos = [];
         $this->tipoTraslado = 'solo_saldo';
-        
+
         // Obtener la ruta de la sesión como ruta de origen por defecto
         $rutaSesion = Session::get('selected_ruta_id');
         $this->rutaOrigen = $rutaSesion;
         $this->rutaDestino = null;
-        
+
         $this->form->fill([
             'rutaOrigen' => $rutaSesion,
             'rutaDestino' => null,
@@ -65,39 +71,39 @@ class TrasladarClientes extends Page implements HasForms
         if ($this->rutaOrigen) {
             $this->cargarClientesDisponibles();
         }
-        
+
     }
-    
+
     public function getClientesDisponiblesProperty(): array
     {
         return is_array($this->clientesDisponibles) ? $this->clientesDisponibles : [];
     }
-    
+
     public function getClientesSeleccionadosProperty(): array
     {
         return is_array($this->clientesSeleccionados) ? $this->clientesSeleccionados : [];
     }
-    
+
     public function getClientesConDatosProperty(): array
     {
         return is_array($this->clientesConDatos) ? $this->clientesConDatos : [];
     }
-    
+
     public function getRutaOrigenProperty()
     {
         return $this->rutaOrigen;
     }
-    
+
     public function getRutaDestinoProperty()
     {
         return $this->rutaDestino;
     }
-    
+
     public function getTipoTrasladoProperty(): string
     {
         return is_string($this->tipoTraslado) ? $this->tipoTraslado : 'solo_saldo';
     }
-    
+
     protected function getFormSchema(): array
     {
         return [
@@ -134,7 +140,7 @@ class TrasladarClientes extends Page implements HasForms
                                     $this->clientesSeleccionados = [];
                                 })
                                 ->required(),
-                                
+
                             Select::make('rutaDestino')
                                 ->label('A la Ruta')
                                 ->options(function () {
@@ -167,7 +173,7 @@ class TrasladarClientes extends Page implements HasForms
                                 })
                                 ->required(),
                         ]),
-                        
+
                     Radio::make('tipoTraslado')
                         ->label('Tipo de Traslado')
                         ->options([
@@ -182,7 +188,7 @@ class TrasladarClientes extends Page implements HasForms
                 ])
         ];
     }
-    
+
     public function cargarClientesDisponibles(): void
     {
         if (!$this->rutaOrigen) {
@@ -190,7 +196,7 @@ class TrasladarClientes extends Page implements HasForms
             $this->clientesConDatos = [];
             return;
         }
-        
+
         try {
             $clientes = Clientes::where('id_ruta', $this->rutaOrigen)
                 ->where('activo', true)
@@ -199,20 +205,20 @@ class TrasladarClientes extends Page implements HasForms
                           ->orderBy('fecha_credito', 'desc');
                 }])
                 ->get();
-                
+
             $options = [];
             $clientesConDatos = [];
-            
+
             foreach ($clientes as $cliente) {
                 $nombre = trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellido ?? ''));
                 if (empty($nombre)) {
                     $nombre = 'Cliente ' . $cliente->id_cliente;
                 }
                 $options[$cliente->id_cliente] = $nombre;
-                
+
                 // Obtener el crédito más reciente con saldo
                 $creditoActivo = $cliente->creditos->first();
-                
+
                 $clientesConDatos[] = [
                     'id_cliente' => $cliente->id_cliente,
                     'nombre' => $nombre,
@@ -223,7 +229,7 @@ class TrasladarClientes extends Page implements HasForms
                     'saldo_numerico' => $creditoActivo ? $creditoActivo->saldo_actual : 0,
                 ];
             }
-            
+
             $this->clientesDisponibles = $options;
             $this->clientesConDatos = $clientesConDatos;
         } catch (\Exception $e) {
@@ -236,7 +242,7 @@ class TrasladarClientes extends Page implements HasForms
                 ->send();
         }
     }
-    
+
     public function toggleClienteSeleccion($clienteId): void
     {
         if (in_array($clienteId, $this->clientesSeleccionados)) {
@@ -245,7 +251,7 @@ class TrasladarClientes extends Page implements HasForms
             $this->clientesSeleccionados[] = $clienteId;
         }
     }
-    
+
     protected function getFormActions(): array
     {
         return [
@@ -256,7 +262,7 @@ class TrasladarClientes extends Page implements HasForms
                 ->disabled(fn () => empty($this->clientesSeleccionados))
         ];
     }
-    
+
     public function trasladar(): void
     {
         if (!is_array($this->clientesSeleccionados) || empty($this->clientesSeleccionados)) {
@@ -267,17 +273,17 @@ class TrasladarClientes extends Page implements HasForms
                 ->send();
             return;
         }
-        
+
         try {
             DB::beginTransaction();
-            
+
             $clientesTrasladados = 0;
             $clientesInfo = []; // Para almacenar información de los clientes trasladados
-            
+
             // Obtener información de las rutas para el log
             $rutaOrigen = Ruta::find($this->rutaOrigen);
             $rutaDestino = Ruta::find($this->rutaDestino);
-            
+
             foreach ($this->clientesSeleccionados as $clienteId) {
                 $cliente = Clientes::find($clienteId);
                 if ($cliente) {
@@ -288,24 +294,24 @@ class TrasladarClientes extends Page implements HasForms
                         'ruta_origen_id' => $this->rutaOrigen,
                         'ruta_destino_id' => $this->rutaDestino
                     ];
-                    
+
                     $cliente->update(['id_ruta' => $this->rutaDestino]);
                     $clientesTrasladados++;
                 }
             }
-            
+
             DB::commit();
-            
+
             // Registrar el log de actividad después del traslado exitoso
             $nombreRutaOrigen = $rutaOrigen ? ($rutaOrigen->codigo . ' - ' . $rutaOrigen->nombre) : 'Ruta desconocida';
             $nombreRutaDestino = $rutaDestino ? ($rutaDestino->codigo . ' - ' . $rutaDestino->nombre) : 'Ruta desconocida';
-            
+
             $nombresClientes = array_map(function($cliente) {
                 return $cliente['nombre'];
             }, $clientesInfo);
-            
+
             $tipoTrasladoTexto = $this->tipoTraslado === 'solo_saldo' ? 'solo saldo' : 'historial completo';
-            
+
             LogActividad::registrar(
                 'Traslados',
                 "Trasladó {$clientesTrasladados} cliente(s) de la ruta {$nombreRutaOrigen} a la ruta {$nombreRutaDestino} ({$tipoTrasladoTexto}): " . implode(', ', $nombresClientes),
@@ -319,16 +325,16 @@ class TrasladarClientes extends Page implements HasForms
                     'ruta_destino_nombre' => $nombreRutaDestino,
                 ]
             );
-            
+
             Notification::make()
                 ->title('Traslado Exitoso')
                 ->body("Se trasladaron {$clientesTrasladados} cliente(s) exitosamente.")
                 ->success()
                 ->send();
-                
+
             // Obtener la ruta de la sesión para volver a seleccionarla
             $rutaSesion = Session::get('selected_ruta_id');
-            
+
             // Limpiar solo los datos necesarios pero mantener la ruta de origen de la sesión
             $this->clientesSeleccionados = [];
             $this->clientesDisponibles = [];
@@ -336,7 +342,7 @@ class TrasladarClientes extends Page implements HasForms
             $this->rutaDestino = null;
             $this->rutaOrigen = $rutaSesion;
             $this->tipoTraslado = 'solo_saldo';
-            
+
             // Llenar el formulario con la ruta de la sesión preseleccionada
             $this->form->fill([
                 'rutaOrigen' => $rutaSesion,
@@ -344,15 +350,15 @@ class TrasladarClientes extends Page implements HasForms
                 'tipoTraslado' => 'solo_saldo',
                 'clientesSeleccionados' => [],
             ]);
-            
+
             // Si hay una ruta de origen, cargar los clientes automáticamente
             if ($this->rutaOrigen) {
                 $this->cargarClientesDisponibles();
             }
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Notification::make()
                 ->title('Error en el Traslado')
                 ->body('Ocurrió un error al trasladar los clientes')

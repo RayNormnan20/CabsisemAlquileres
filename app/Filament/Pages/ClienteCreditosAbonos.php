@@ -23,6 +23,13 @@ class ClienteCreditosAbonos extends Page
     protected static ?string $slug = 'liquidaciones';
     protected static ?int $navigationSort = 4;
     protected static ?string $navigationGroup = 'Movimientos';
+    protected static bool $shouldRegisterNavigation = false;
+    
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->can('Listar Liquidaciones');
+    }
     
     protected static string $view = 'filament.pages.cliente-creditos-abonos';
     

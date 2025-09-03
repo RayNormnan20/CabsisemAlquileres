@@ -16,7 +16,12 @@ class PermissionsSeeder extends Seeder
         'Permisos', 'Rol', 'Usuario', 'Clientes', 'Oficina', 'Ruta',
         'Creditos', 'Abonos', 'Concepto', 'Planilla Recaudador', 'YapeCliente',
         'Alquiler', 'Pagos Alquiler', 'Cliente Alquiler', 'Departamento', 'Estado Departamento',
-        'Edificio'
+        'Edificio', 'Concepto Abono', 'Dia No Laborable', 'Movimiento', 'Liquidaciones', 'Trasladar Clientes'
+    ];
+
+    // Módulos que solo deben tener permisos de 'Listar'
+    private array $listOnlyModules = [
+        'Liquidaciones', 'Trasladar Clientes'
     ];
 
     private array $pluralActions = [
@@ -44,8 +49,11 @@ class PermissionsSeeder extends Seeder
                 Permission::firstOrCreate(['name' => "$action $plural"]);
             }
 
-            foreach ($this->singularActions as $action) {
-                Permission::firstOrCreate(['name' => "$action $module"]);
+            // Solo crear permisos singulares si el módulo no está en la lista de solo-listar
+            if (!in_array($module, $this->listOnlyModules)) {
+                foreach ($this->singularActions as $action) {
+                    Permission::firstOrCreate(['name' => "$action $module"]);
+                }
             }
         }
 

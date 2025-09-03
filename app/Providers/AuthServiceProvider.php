@@ -2,16 +2,20 @@
 
 namespace App\Providers;
 
+use App\Filament\Pages\TrasladarClientes;
 use App\Filament\Resources\ReportesResource\Pages\PlanillaRecaudador;
 use App\Models\Abonos;
 use App\Models\Alquiler;
 use App\Models\ClienteAlquiler;
 use App\Models\Clientes;
 use App\Models\Concepto;
+use App\Models\ConceptoAbono;
 use App\Models\Creditos;
 use App\Models\Departamento;
+use App\Models\DiaNoLaborable;
 use App\Models\EstadoDepartamento;
 use App\Models\Edificio;
+use App\Models\Movimiento;
 use App\Models\Oficina;
 use App\Models\PagoAlquiler;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -23,16 +27,22 @@ use App\Policies\AbonoPolicy;
 use App\Policies\AlquilerPolicy;
 use App\Policies\ClienteAlquilerPolicy;
 use App\Policies\ClientesPolicy;
+use App\Policies\ConceptoAbonoPolicy;
+use App\Policies\LiquidacionPolicy;
 use App\Policies\ConceptoPolicy;
 use App\Policies\CreditosPolicy;
 use App\Policies\DepartamentoPolicy;
+use App\Policies\DiaNoLaborablePolicy;
 use App\Policies\EstadoDepartamentoPolicy;
 use App\Policies\EdificioPolicy;
+use App\Policies\MovimientoPolicy;
 use App\Policies\OficinaPolicy;
 use App\Policies\PagoAlquilerPolicy;
 use App\Policies\PlanillaRecaudadorPolicy;
 use App\Policies\RutaPolicy;
+use App\Policies\TrasladarClientePolicy;
 use App\Policies\YapeClientePolicy;
+use Filament\Tables\Filters\TrashedFilter;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -43,10 +53,15 @@ class AuthServiceProvider extends ServiceProvider
             ClienteAlquiler::class => ClienteAlquilerPolicy::class,
             Clientes::class => ClientesPolicy::class,
             Concepto::class => ConceptoPolicy::class,
+            ConceptoAbono::class => ConceptoAbonoPolicy::class,
             Creditos::class => CreditosPolicy::class,
             Departamento::class => DepartamentoPolicy::class,
+            DiaNoLaborable::class => DiaNoLaborablePolicy::class,
             EstadoDepartamento::class => EstadoDepartamentoPolicy::class,
             Edificio::class => EdificioPolicy::class,
+            Movimiento::class => MovimientoPolicy::class,
+            TrasladarClientes::class => TrasladarClientePolicy::class,
+            'Liquidacion' => LiquidacionPolicy::class,
             Oficina::class => OficinaPolicy::class,
             PagoAlquiler::class => PagoAlquilerPolicy::class,
             PlanillaRecaudador::class => PlanillaRecaudadorPolicy::class,
