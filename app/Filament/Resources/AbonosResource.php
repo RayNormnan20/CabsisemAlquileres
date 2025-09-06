@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AbonosResource\Pages;
 use App\Models\Abonos;
 use App\Models\LogActividad;
+use App\Settings\GeneralSettings;
 use Illuminate\Support\HtmlString;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
@@ -285,6 +286,16 @@ class AbonosResource extends Resource
                             Forms\Components\Checkbox::make('mostrar_solo_completados')
                                 ->label('Mostrar solo nombres Yape completados o en exceso')
                                 ->visible(function (callable $get) {
+                                    // Verificar primero si la configuración general está habilitada
+                                    try {
+                                        $settings = app(GeneralSettings::class);
+                                        if (!($settings->enable_yape_filter ?? true)) {
+                                            return false;
+                                        }
+                                    } catch (\Exception $e) {
+                                        // Si hay error al obtener settings, mostrar por defecto
+                                    }
+                                    
                                     // Solo mostrar si hay al menos un concepto de tipo 'Yape' Y NO es devolución
                                     $esDevolucion = $get('es_devolucion') ?? false;
                                     if ($esDevolucion) {
@@ -355,7 +366,17 @@ class AbonosResource extends Resource
                                 ->label('Es Devolución')
                                 ->helperText('Marcar si este registro es una devolución (no afectará el saldo del crédito)')
                                 ->default(false)
-                                ->reactive(),
+                                ->reactive()
+                                ->visible(function () {
+                                    // Verificar si la configuración general está habilitada
+                                    try {
+                                        $settings = app(GeneralSettings::class);
+                                        return $settings->enable_devolucion_filter ?? false;
+                                    } catch (\Exception $e) {
+                                        // Si hay error al obtener settings, no mostrar por defecto
+                                        return false;
+                                    }
+                                }),
 
                         ]),
                 ])
@@ -493,6 +514,16 @@ class AbonosResource extends Resource
                     Forms\Components\Checkbox::make('activar_segundo_recorrido')
                         ->label('Activar Segundo Recorrido')
                         ->helperText('Al activar esta opción, el crédito será marcado automáticamente como "segundo recorrido" basado al crédito.')
+                        ->visible(function () {
+                            // Verificar si la configuración general está habilitada
+                            try {
+                                $settings = app(GeneralSettings::class);
+                                return $settings->enable_segundo_recorrido_filter ?? false;
+                            } catch (\Exception $e) {
+                                // Si hay error al obtener settings, no mostrar por defecto
+                                return false;
+                            }
+                        })
                         ->default(function (callable $get, $livewire) {
                             // En modo edición, usar el crédito del abono
                             if (isset($livewire->record)) {

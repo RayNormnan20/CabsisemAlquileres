@@ -65,21 +65,33 @@ class ManageGeneralSettings extends SettingsPage
                                         ->default(fn() => config('app.name'))
                                         ->required(),
 
-                                    Toggle::make('enable_registration')
-                                        ->label(__('Enable registration?'))
-                                        ->helperText(__('If enabled, any user can create an account in this platform. But an administration need to give them permissions.')),
+                                    // Toggle::make('enable_registration')
+                                    //     ->label(__('Enable registration?'))
+                                    //     ->helperText(__('If enabled, any user can create an account in this platform. But an administration need to give them permissions.')),
 
-                                    Toggle::make('enable_social_login')
-                                        ->label(__('Enable social login?'))
-                                        ->helperText(__('If enabled, configured users can login via their social accounts.')),
+                                    // Toggle::make('enable_social_login')
+                                    //     ->label(__('Enable social login?'))
+                                    //     ->helperText(__('If enabled, configured users can login via their social accounts.')),
 
-                                    Toggle::make('enable_login_form')
-                                        ->label(__('Enable form login?'))
-                                        ->helperText(__('If enabled, a login form will be visible on the login page.')),
+                                    // Toggle::make('enable_login_form')
+                                    //     ->label(__('Enable form login?'))
+                                    //     ->helperText(__('If enabled, a login form will be visible on the login page.')),
 
-                                    Toggle::make('enable_oidc_login')
-                                        ->label(__('Enable OIDC login?'))
-                                        ->helperText(__('If enabled, an OIDC Connect button will be visible on the login page.')),
+                                    // Toggle::make('enable_oidc_login')
+                                    //     ->label(__('Enable OIDC login?'))
+                                    //     ->helperText(__('If enabled, an OIDC Connect button will be visible on the login page.')),
+
+                                    Toggle::make('enable_yape_filter')
+                                        ->label('Habilitar filtro de Yape en abonos')
+                                        ->helperText('Si está habilitado, se mostrará la opción "Mostrar solo nombres Yape completados o en exceso" en el formulario de abonos.'),
+
+                                    Toggle::make('enable_devolucion_filter')
+                                        ->label('Habilitar opción de devolución')
+                                        ->helperText('Si está habilitado, se mostrará la opción "Es Devolución" en el formulario de abonos para marcar registros como devolución.'),
+
+                                    Toggle::make('enable_segundo_recorrido_filter')
+                                        ->label('Mostrar campo "Activar Segundo Recorrido"')
+                                        ->helperText('Controla la visibilidad del checkbox "Activar Segundo Recorrido" en el formulario de abonos'),
 
                                     Select::make('site_language')
                                         ->label(__('Site language'))
