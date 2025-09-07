@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Models\PlanillaRecaudador;
 use App\Models\Creditos;
+use App\Settings\GeneralSettings;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
@@ -103,7 +104,7 @@ class PlanillaRecaudadorResource extends Resource
                     ->getStateUsing(function ($record) {
                         $credito = Creditos::find($record->id_credito);
                         $diasAtraso = self::getDiasAtraso($record);
-                        
+
                         if ($record->saldo_actual <= 0) {
                             return 'Pagado';
                         } elseif ($credito && $credito->por_renovar) {
@@ -130,11 +131,11 @@ class PlanillaRecaudadorResource extends Resource
                     ->visible(function ($record) {
                         $credito = Creditos::find($record->id_credito);
                         $diasAtraso = self::getDiasAtraso($record);
-                        
+
                         // Solo mostrar si el crédito está vencido, tiene saldo y no está marcado para renovar
-                        return $record->saldo_actual > 0 && 
-                               $diasAtraso > 0 && 
-                               $credito && 
+                        return $record->saldo_actual > 0 &&
+                               $diasAtraso > 0 &&
+                               $credito &&
                                !$credito->por_renovar;
                     })
                     ->requiresConfirmation()
@@ -145,14 +146,59 @@ class PlanillaRecaudadorResource extends Resource
                     })
                     ->action(function ($record) {
                         $credito = Creditos::find($record->id_credito);
-                        
+
                         if ($credito) {
                             $credito->por_renovar = true;
                             $credito->save();
-                            
+
                             Notification::make()
                                 ->title('Crédito habilitado para renovación')
                                 ->warning()
+                                ->send();
+                        }
+                    }),
+                Action::make('deshabilitar_renovacion')
+                    ->label('Deshabilitar Renovación')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(function ($record) {
+                        // Verificar si la configuración está habilitada
+                         try {
+                             $settings = app(GeneralSettings::class);
+                             $configEnabled = $settings->enable_renovacion_filter ?? false;
+                         } catch (\Exception $e) {
+                             $configEnabled = false;
+                         }
+
+                        if (!$configEnabled) {
+                            return false;
+                        }
+
+                        $credito = Creditos::find($record->id_credito);
+                        $diasAtraso = self::getDiasAtraso($record);
+
+                        // Solo mostrar si el crédito está vencido, tiene saldo y SÍ está marcado para renovar
+                        return $record->saldo_actual > 0 &&
+                               $diasAtraso > 0 &&
+                               $credito &&
+                               $credito->por_renovar;
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirmar Deshabilitación de Renovación')
+                    ->modalSubheading(function ($record) {
+                        $diasAtraso = self::getDiasAtraso($record);
+                        return "¿Está seguro que desea deshabilitar este crédito para renovación?\n\nCliente: {$record->cliente_completo}\nDías vencidos: {$diasAtraso}\nSaldo: S/ " . number_format($record->saldo_actual, 2);
+                    })
+                    ->action(function ($record) {
+                        $credito = Creditos::find($record->id_credito);
+
+                        if ($credito) {
+                            $credito->por_renovar = false;
+                            $credito->save();
+
+                            Notification::make()
+                                ->title('Crédito deshabilitado para renovación')
+                                ->success()
                                 ->send();
                         }
                     })

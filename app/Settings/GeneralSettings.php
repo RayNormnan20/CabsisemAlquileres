@@ -17,6 +17,7 @@ class GeneralSettings extends Settings
     public string|null $enable_oidc_login;
     public bool $enable_yape_filter;
     public bool $enable_devolucion_filter;
+    public bool $enable_renovacion_filter;
 
     public bool $enable_segundo_recorrido_filter;
 

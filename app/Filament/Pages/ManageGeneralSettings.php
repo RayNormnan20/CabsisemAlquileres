@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Role;
+use App\Models\LogActividad;
 use App\Settings\GeneralSettings;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\Checkbox;
@@ -93,6 +94,10 @@ class ManageGeneralSettings extends SettingsPage
                                         ->label('Mostrar campo "Activar Segundo Recorrido"')
                                         ->helperText('Controla la visibilidad del checkbox "Activar Segundo Recorrido" en el formulario de abonos'),
 
+                                        Toggle::make('enable_renovacion_filter')
+                                        ->label('Habilitar opción de renovación')
+                                        ->helperText('Si está habilitado, se mostrará la opción "Habilitar Renovación" en la planilla del recaudador para créditos vencidos.'),
+
                                     Select::make('site_language')
                                         ->label(__('Site language'))
                                         ->helperText(__('The language used by the platform.'))
@@ -112,7 +117,7 @@ class ManageGeneralSettings extends SettingsPage
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label(__('Save'));
+        return parent::getSaveFormAction()->label(__('Guadar'));
     }
 
     private function getLanguages(): array
