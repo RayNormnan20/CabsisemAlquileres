@@ -77,6 +77,16 @@ class AbonosResource extends Resource
                             // Campo: Lista de nombres Yape del día (permite seleccionar y crear nuevos)
                             Forms\Components\Select::make('nombres_yape_del_dia')
                                 ->label('Nombres Yape del Día')
+                                ->required(function (callable $get) {
+                                    // Requerido si hay al menos un concepto de tipo 'Yape'
+                                    $conceptos = $get('conceptosabonos') ?? [];
+                                    foreach ($conceptos as $concepto) {
+                                        if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
+                                            return true;
+                                        }
+                                    }
+                                    return false;
+                                })
                                 ->visible(function (callable $get) {
                                     // Solo mostrar si hay al menos un concepto de tipo 'Yape'
                                     $conceptos = $get('conceptosabonos') ?? [];
@@ -178,22 +188,8 @@ class AbonosResource extends Resource
                                         }
                                     }
 
-                                    // Agregar el nombre del cliente como opción por defecto
-                                    $clienteId = $get('id_cliente');
-                                    if ($clienteId) {
-                                        $cliente = \App\Models\Clientes::find($clienteId);
-                                        if ($cliente) {
-                                            if ($esDevolucion) {
-                                                // Para devoluciones, siempre agregar el cliente
-                                                $options['cliente_' . $clienteId] = $cliente->nombre_completo;
-                                            } else {
-                                                // Para pagos normales, agregar solo si el checkbox no está activo
-                                                if (!$mostrarSoloCompletados) {
-                                                    $options['cliente_' . $clienteId] = $cliente->nombre_completo;
-                                                }
-                                            }
-                                        }
-                                    }
+                                    // NO agregar el nombre del cliente como opción
+                                    // Solo mostrar nombres Yape del día
 
                                     return $options;
                                 })
@@ -205,52 +201,22 @@ class AbonosResource extends Resource
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                     if ($state) {
-                                        // Verificar si es el cliente o un YapeCliente
-                                        if (str_starts_with($state, 'cliente_')) {
-                                            // Es el cliente
-                                            $clienteId = str_replace('cliente_', '', $state);
-                                            $cliente = \App\Models\Clientes::find($clienteId);
-                                            if ($cliente) {
-                                                $set('nombre_yape', $cliente->nombre_completo);
-                                                $set('id_yape_cliente', null);
-                                            }
-                                        } else {
-                                            // Es un YapeCliente
-                                            $yapeCliente = \App\Models\YapeCliente::find($state);
-                                            if ($yapeCliente) {
-                                                $set('id_yape_cliente', $yapeCliente->id);
-                                                $set('nombre_yape', $yapeCliente->nombre);
-                                            }
+                                        // Solo manejar YapeClientes
+                                        $yapeCliente = \App\Models\YapeCliente::find($state);
+                                        if ($yapeCliente) {
+                                            $set('id_yape_cliente', $yapeCliente->id);
+                                            $set('nombre_yape', $yapeCliente->nombre);
                                         }
                                     } else {
-                                        // Si no se selecciona nada, usar el nombre del cliente
-                                        $clienteId = $get('id_cliente');
-                                        if ($clienteId) {
-                                            $cliente = \App\Models\Clientes::find($clienteId);
-                                            if ($cliente) {
-                                                $set('nombre_yape', $cliente->nombre_completo);
-                                                $set('id_yape_cliente', null);
-                                            }
-                                        }
+                                        // Si no se selecciona nada, limpiar los campos
+                                        $set('id_yape_cliente', null);
+                                        $set('nombre_yape', '');
                                     }
                                 })
                                 ->afterStateHydrated(function ($state, callable $set, callable $get, $livewire) {
-                                    // Lógica diferente para CREATE vs EDIT
-                                    if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\CreateAbonos) {
-                                        // En CREATE: siempre seleccionar el cliente por defecto
-                                        $clienteId = $get('id_cliente');
-                                        if ($clienteId && !$state) {
-                                            $cliente = \App\Models\Clientes::find($clienteId);
-                                            if ($cliente) {
-                                                $set('nombres_yape_del_dia', 'cliente_' . $clienteId);
-                                                $set('nombre_yape', $cliente->nombre_completo);
-                                                $set('id_yape_cliente', null);
-                                            }
-                                        }
-                                    } elseif ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\EditAbonos) {
-                                        // En EDIT: respetar la selección original
+                                    // Solo manejar YapeClientes en modo EDIT
+                                    if ($livewire instanceof \App\Filament\Resources\AbonosResource\Pages\EditAbonos) {
                                         $idYapeCliente = $get('id_yape_cliente');
-                                        $clienteId = $get('id_cliente');
 
                                         if ($idYapeCliente) {
                                             // Hay un YapeCliente seleccionado, mostrarlo
@@ -258,28 +224,10 @@ class AbonosResource extends Resource
                                             if ($yapeCliente) {
                                                 $set('nombres_yape_del_dia', $idYapeCliente);
                                                 $set('nombre_yape', $yapeCliente->nombre);
-                                            } else {
-                                                // Si el YapeCliente no existe, usar el cliente
-                                                if ($clienteId) {
-                                                    $cliente = \App\Models\Clientes::find($clienteId);
-                                                    if ($cliente) {
-                                                        $set('nombres_yape_del_dia', 'cliente_' . $clienteId);
-                                                        $set('nombre_yape', $cliente->nombre_completo);
-                                                        $set('id_yape_cliente', null);
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            // No hay YapeCliente, mostrar el cliente
-                                            if ($clienteId) {
-                                                $cliente = \App\Models\Clientes::find($clienteId);
-                                                if ($cliente) {
-                                                    $set('nombres_yape_del_dia', 'cliente_' . $clienteId);
-                                                    $set('nombre_yape', $cliente->nombre_completo);
-                                                }
                                             }
                                         }
                                     }
+                                    // En CREATE no se preselecciona nada
                                 }),
 
                                 // Checkbox para filtrar nombres Yape completados/en exceso
@@ -295,13 +243,13 @@ class AbonosResource extends Resource
                                     } catch (\Exception $e) {
                                         // Si hay error al obtener settings, mostrar por defecto
                                     }
-                                    
+
                                     // Solo mostrar si hay al menos un concepto de tipo 'Yape' Y NO es devolución
                                     $esDevolucion = $get('es_devolucion') ?? false;
                                     if ($esDevolucion) {
                                         return false;
                                     }
-                                    
+
                                     $conceptos = $get('conceptosabonos') ?? [];
                                     foreach ($conceptos as $concepto) {
                                         if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
@@ -312,7 +260,7 @@ class AbonosResource extends Resource
                                 })
                                 ->reactive()
                                 ->dehydrated(false),
-                                
+
                         ]),
 
                     Forms\Components\Grid::make(3)
@@ -755,9 +703,10 @@ public static function table(Table $table): Table
                                 $yapeNombre = $abono->nombre_yape;
                             }
 
-                            // Si no hay selección específica, usar el nombre del cliente
+                            // Si no hay selección específica, no mostrar nombre
+                            // Solo mostrar nombres Yape válidos
                             if (!$yapeNombre) {
-                                $yapeNombre = $abono->cliente->nombre_completo;
+                                $yapeNombre = 'Sin nombre Yape';
                             }
 
                             return [

@@ -22,8 +22,73 @@ class CreateCreditos extends CreateRecord
     public ?int $currentRutaId = null;
     protected static string $resource = CreditosResource::class;
 
+    protected function validateCreditSum(array $data): void
+    {
+
+        // Debug adicional: mostrar estructura completa
+        file_put_contents(storage_path('logs/debug_credito.json'), json_encode($data, JSON_PRETTY_PRINT));
+        $valorCredito = (float) ($data['valor_credito'] ?? 0);
+        // Verificar diferentes posibles nombres del campo
+        $conceptos = $data['conceptosCredito'] ?? $data['conceptos_credito'] ?? $data['conceptos'] ?? [];
+
+        $sumaConceptos = 0;
+        foreach ($conceptos as $index => $concepto) {
+            $monto = (float) ($concepto['monto'] ?? 0);
+            $sumaConceptos += $monto;
+        }
+        $diferencia = abs($sumaConceptos - $valorCredito);
+        if ($diferencia > 0.01) {
+            if ($sumaConceptos < $valorCredito) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error de Validación')
+                    ->body("La suma de los montos (S/ {$sumaConceptos}) es menor al valor del crédito (S/ {$valorCredito}). Diferencia: S/ " . number_format($valorCredito - $sumaConceptos, 2))
+                    ->danger()
+                    ->duration(5000)
+                    ->send();
+                $this->halt();
+            } else {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error de Validación')
+                    ->body("La suma de los montos (S/ {$sumaConceptos}) es mayor al valor del crédito (S/ {$valorCredito}). Diferencia: S/ " . number_format($sumaConceptos - $valorCredito, 2))
+                    ->danger()
+                    ->duration(5000)
+                    ->send();
+                $this->halt();
+            }
+        }
+    }
+
+    protected function validateCreditSumBeforeCreate(array $data): void
+    {
+        // Debug adicional: mostrar estructura completa
+        file_put_contents(storage_path('logs/debug_credito_create.json'), json_encode($data, JSON_PRETTY_PRINT));
+        $valorCredito = (float) ($data['valor_credito'] ?? 0);
+
+        // Verificar diferentes posibles nombres del campo
+        $conceptos = $data['conceptosCredito'] ?? $data['conceptos_credito'] ?? $data['conceptos'] ?? [];
+        $sumaConceptos = 0;
+        foreach ($conceptos as $index => $concepto) {
+            $monto = (float) ($concepto['monto'] ?? 0);
+            $sumaConceptos += $monto;
+
+        }
+      $diferencia = abs($sumaConceptos - $valorCredito);
+        if ($diferencia > 0.01) {
+            \Filament\Notifications\Notification::make()
+                ->title('Error de Validación')
+                ->body("La suma de los conceptos no es igual al valor del crédito.")
+                ->danger()
+                ->duration(5000)
+                ->send();
+
+            $this->halt();
+        }
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Primero ejecutar la validación de suma de conceptos
+        $this->validateCreditSumBeforeCreate($data);
 
         $tipoCredito = $data['es_adicional'] ?? false;
 

@@ -69,9 +69,9 @@ class CreateAbonos extends CreateRecord
             ->where('saldo_actual', '>', 0)
             ->first();
 
-        // SIEMPRE usar el nombre completo del cliente como valor por defecto
-        // NO buscar automáticamente un YapeCliente relacionado
-        $nombreYape = $cliente->nombre_completo;
+        // NO establecer automáticamente el nombre del cliente como nombre Yape
+        // El usuario debe seleccionar manualmente un nombre Yape del día
+        $nombreYape = '';
 
         if ($credito) {
             $formData = [

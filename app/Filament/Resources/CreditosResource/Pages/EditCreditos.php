@@ -18,7 +18,89 @@ class EditCreditos extends EditRecord
         if ($this->record && $this->record->yapeCliente) {
             $data['nombre_yape'] = $this->record->yapeCliente->nombre;
         }
-        
+
+        return $data;
+    }
+
+    protected function beforeSave(): void
+    {
+        $data = $this->form->getState();
+
+        // Intentar múltiples métodos para obtener los datos del repeater
+        $conceptosCredito = null;
+
+        // Método 1: getRawState()
+        $rawData = $this->form->getRawState();
+        if (isset($rawData['conceptosCredito'])) {
+            $conceptosCredito = $rawData['conceptosCredito'];
+        }
+
+        // Método 2: getState() directo
+        if (!$conceptosCredito && isset($data['conceptosCredito'])) {
+            $conceptosCredito = $data['conceptosCredito'];
+        }
+
+        // Método 3: Acceso directo al componente
+        if (!$conceptosCredito) {
+            try {
+                $repeaterComponent = $this->form->getComponent('conceptosCredito');
+                if ($repeaterComponent) {
+                    $conceptosCredito = $repeaterComponent->getState();
+                }
+            } catch (\Exception $e) {
+            }
+        }
+
+        // Método 4: Desde livewire state
+        if (!$conceptosCredito) {
+            $conceptosCredito = $this->data['conceptosCredito'] ?? null;
+        }
+
+        if ($conceptosCredito) {
+            $data['conceptosCredito'] = $conceptosCredito;
+        }
+
+        $this->validateCreditSum($data);
+    }
+
+    protected function validateCreditSum(array $data): void
+    {
+        // Debug adicional: mostrar estructura completa
+        file_put_contents(storage_path('logs/debug_credito_edit.json'), json_encode($data, JSON_PRETTY_PRINT));
+
+        $valorCredito = (float) ($data['valor_credito'] ?? 0);
+        // Verificar diferentes posibles nombres del campo
+        $conceptos = $data['conceptosCredito'] ?? $data['conceptos_credito'] ?? $data['conceptos'] ?? [];
+        $sumaConceptos = 0;
+        foreach ($conceptos as $index => $concepto) {
+            $monto = (float) ($concepto['monto'] ?? 0);
+            $sumaConceptos += $monto;
+        }
+        $diferencia = abs($sumaConceptos - $valorCredito);
+        if ($diferencia > 0.01) {
+            if ($sumaConceptos < $valorCredito) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error de Validación')
+                    ->body("La suma de los montos (S/ {$sumaConceptos}) es menor al valor del crédito (S/ {$valorCredito}). Diferencia: S/ " . number_format($valorCredito - $sumaConceptos, 2))
+                    ->danger()
+                    ->duration(5000)
+                    ->send();
+                $this->halt();
+            } else {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error de Validación')
+                    ->body("La suma de los montos (S/ {$sumaConceptos}) es mayor al valor del crédito (S/ {$valorCredito}). Diferencia: S/ " . number_format($sumaConceptos - $valorCredito, 2))
+                    ->danger()
+                    ->duration(5000)
+                    ->send();
+                $this->halt();
+            }
+        }
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // La validación se movió al método beforeSave()
         return $data;
     }
 
@@ -27,11 +109,11 @@ class EditCreditos extends EditRecord
         // Manejar YapeCliente cuando se edita el crédito
         if (isset($this->data['nombre_yape'])) {
             $nombreYape = $this->data['nombre_yape'];
-            
+
             // Verificar si hay conceptos de tipo Yape en el crédito
             $this->record->load('conceptosCredito');
             $tieneConceptoYape = $this->record->conceptosCredito->where('tipo_concepto', 'Yape')->isNotEmpty();
-            
+
             if ($tieneConceptoYape) {
                 if ($this->record->yapeCliente) {
                     // Si ya existe un YapeCliente asociado, actualizar el nombre
@@ -41,7 +123,7 @@ class EditCreditos extends EditRecord
                 } else {
                     // Si no existe YapeCliente asociado, crear uno nuevo
                     $conceptoYape = $this->record->conceptosCredito->where('tipo_concepto', 'Yape')->first();
-                    
+
                     // Verificar si ya existe un YapeCliente con el mismo nombre y cliente sin id_credito
                     $yapeExistente = \App\Models\YapeCliente::where('id_cliente', $this->record->id_cliente)
                         ->where('nombre', $nombreYape)

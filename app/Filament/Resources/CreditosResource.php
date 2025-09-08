@@ -317,7 +317,16 @@ class CreditosResource extends Resource
                                         // Campo para nombre Yape - Select con opciones existentes y posibilidad de escribir
                                         Select::make('nombre_yape')
                                             ->label('Nombre Yape')
-                                            ->required()
+                                            ->required(function (callable $get) {
+                                                // Verificar si hay al menos un concepto de tipo 'Yape'
+                                                $conceptos = $get('conceptosCredito') ?? [];
+                                                foreach ($conceptos as $concepto) {
+                                                    if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
+                                                        return true;
+                                                    }
+                                                }
+                                                return false;
+                                            })
                                             ->options(function (callable $get, $livewire) {
                                                 $clienteId = $get('id_cliente');
                                                 $options = [];
@@ -327,12 +336,6 @@ class CreditosResource extends Resource
                                                     if (isset($livewire->record) && $livewire->record->yapeCliente) {
                                                         $nombreActual = $livewire->record->yapeCliente->nombre;
                                                         $options[$nombreActual] = $nombreActual;
-                                                    } else {
-                                                        // Solo mostrar el nombre completo del cliente si NO hay YapeCliente asociado
-                                                        $cliente = \App\Models\Clientes::find($clienteId);
-                                                        if ($cliente) {
-                                                            $options[$cliente->nombre_completo] = $cliente->nombre_completo;
-                                                        }
                                                     }
 
                                                     // Obtener SOLO nombres Yape existentes del mismo cliente SIN id_credito asignado
@@ -344,8 +347,16 @@ class CreditosResource extends Resource
                                                         ->unique()
                                                         ->sort();
 
+                                                    // Solo mostrar el nombre completo del cliente si NO hay nombres Yape registrados
+                                                    if ($yapesExistentes->isEmpty() && !isset($livewire->record)) {
+                                                        $cliente = \App\Models\Clientes::find($clienteId);
+                                                        if ($cliente) {
+                                                            $options[$cliente->nombre_completo] = $cliente->nombre_completo;
+                                                        }
+                                                    }
+
                                                     foreach ($yapesExistentes as $nombre) {
-                                                        $options[$nombre] = $nombre . ' (Yape disponible)';
+                                                        $options[$nombre] = $nombre;
                                                     }
                                                 }
 
@@ -369,7 +380,61 @@ class CreditosResource extends Resource
                                                 'style' => 'background-color:rgb(114, 237, 241) !important; color:rgb(0, 0, 0) !important;'
                                             ])
                                             ->reactive()
-                                            ->visible(fn (callable $get) => !$get('es_adicional')),
+                                            ->afterStateHydrated(function (callable $get, callable $set, $livewire) {
+                                                // Solo preseleccionar durante la creación (no en edición)
+                                                if (isset($livewire->record)) {
+                                                    return;
+                                                }
+                                                
+                                                $clienteId = $get('id_cliente');
+                                                if (!$clienteId) {
+                                                    return;
+                                                }
+                                                
+                                                // Verificar si hay conceptos de tipo Yape
+                                                $conceptos = $get('conceptosCredito') ?? [];
+                                                $tieneYape = false;
+                                                foreach ($conceptos as $concepto) {
+                                                    if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
+                                                        $tieneYape = true;
+                                                        break;
+                                                    }
+                                                }
+                                                
+                                                if ($tieneYape) {
+                                                    // Buscar YapeCliente registrado sin id_credito
+                                                    $yapeCliente = \App\Models\YapeCliente::where('id_cliente', $clienteId)
+                                                        ->whereNull('id_credito')
+                                                        ->whereNotNull('nombre')
+                                                        ->where('nombre', '!=', '')
+                                                        ->first();
+                                                    
+                                                    if ($yapeCliente) {
+                                                        // Si hay YapeCliente registrado, usar su nombre
+                                                        $set('nombre_yape', $yapeCliente->nombre);
+                                                    } else {
+                                                        // Si no hay YapeCliente, usar nombre del cliente
+                                                        $cliente = \App\Models\Clientes::find($clienteId);
+                                                        if ($cliente) {
+                                                            $set('nombre_yape', $cliente->nombre_completo);
+                                                        }
+                                                    }
+                                                }
+                                            })
+                                            ->visible(function (callable $get) {
+                                                // Solo mostrar si NO es adicional Y hay al menos un concepto de tipo 'Yape'
+                                                if ($get('es_adicional')) {
+                                                    return false;
+                                                }
+                                                
+                                                $conceptos = $get('conceptosCredito') ?? [];
+                                                foreach ($conceptos as $concepto) {
+                                                    if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
+                                                        return true;
+                                                    }
+                                                }
+                                                return false;
+                                            }),
 
                                         TextInput::make('numero_cuotas')
                                             ->label('No. de Cuotas')
@@ -412,7 +477,32 @@ class CreditosResource extends Resource
                                                       //  'Abono para completar préstamo' => 'Abono para completar préstamo',
                                                     ])
                                                     ->required()
-                                                    ->reactive(), // Para mostrar/ocultar foto_comprobante según valor
+                                                    ->reactive() // Para mostrar/ocultar foto_comprobante según valor
+                                                    ->afterStateUpdated(function ($state, callable $get, callable $set, $livewire) {
+                                                         if ($state === 'Yape') {
+                                                             $clienteId = $get('../../id_cliente');
+                                                             if ($clienteId) {
+                                                                 // Buscar YapeCliente registrado sin id_credito
+                                                                 $yapeCliente = \App\Models\YapeCliente::where('id_cliente', $clienteId)
+                                                                     ->whereNull('id_credito')
+                                                                     ->whereNotNull('nombre')
+                                                                     ->where('nombre', '!=', '')
+                                                                     ->first();
+                                                                 
+                                                                 if ($yapeCliente) {
+                                                                     // Si hay YapeCliente registrado, usar su nombre y monto
+                                                                     $set('../../nombre_yape', $yapeCliente->nombre);
+                                                                     $set('monto', $yapeCliente->monto);
+                                                                 } else {
+                                                                     // Si no hay YapeCliente, usar nombre del cliente
+                                                                     $cliente = \App\Models\Clientes::find($clienteId);
+                                                                     if ($cliente) {
+                                                                         $set('../../nombre_yape', $cliente->nombre_completo);
+                                                                     }
+                                                                 }
+                                                             }
+                                                         }
+                                                     }),
 
                                                 TextInput::make('monto')
                                                     ->label('Monto')
