@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CreditosResource\Pages;
 
 use App\Filament\Resources\CreditosResource;
+use App\Models\ConceptoCredito;
 use App\Models\LogActividad;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -17,6 +18,23 @@ class EditCreditos extends EditRecord
         // Cargar el nombre_yape desde el YapeCliente asociado si existe
         if ($this->record && $this->record->yapeCliente) {
             $data['nombre_yape'] = $this->record->yapeCliente->nombre;
+        }
+
+        // Cargar los conceptos del crédito para el repeater
+        if ($this->record) {
+            $this->record->load('conceptosCredito');
+            $conceptos = [];
+
+            foreach ($this->record->conceptosCredito as $concepto) {
+                $conceptos[] = [
+                    'tipo_concepto' => $concepto->tipo_concepto,
+                    'monto' => $concepto->monto,
+                    'referencia' => $concepto->referencia,
+                    'foto_comprobante' => $concepto->foto_comprobante,
+                ];
+            }
+
+            $data['conceptosCredito'] = $conceptos;
         }
 
         return $data;
@@ -106,6 +124,25 @@ class EditCreditos extends EditRecord
 
     protected function afterSave(): void
     {
+        // Actualizar los conceptos del crédito
+        if (isset($this->data['conceptosCredito'])) {
+            // Eliminar conceptos existentes
+            $this->record->conceptosCredito()->delete();
+
+            // Crear nuevos conceptos
+            foreach ($this->data['conceptosCredito'] as $conceptoData) {
+                \App\Models\ConceptoCredito::create([
+                    'id_credito' => $this->record->id_credito,
+                    'tipo_concepto' => $conceptoData['tipo_concepto'] ?? null,
+                    'monto' => $conceptoData['monto'] ?? 0,
+                    'foto_comprobante' => $this->procesarFotoComprobante($conceptoData['foto_comprobante'] ?? null),
+                ]);
+            }
+
+            // Recargar la relación
+            $this->record->load('conceptosCredito');
+        }
+
         // Manejar YapeCliente cuando se edita el crédito
         if (isset($this->data['nombre_yape'])) {
             $nombreYape = $this->data['nombre_yape'];
@@ -116,9 +153,12 @@ class EditCreditos extends EditRecord
 
             if ($tieneConceptoYape) {
                 if ($this->record->yapeCliente) {
-                    // Si ya existe un YapeCliente asociado, actualizar el nombre
+                    // Si ya existe un YapeCliente asociado, actualizar el nombre y monto
+                    $conceptoYape = $this->record->conceptosCredito->where('tipo_concepto', 'Yape')->first();
                     $this->record->yapeCliente->update([
-                        'nombre' => $nombreYape
+                        'nombre' => $nombreYape,
+                        'monto' => $conceptoYape->monto,
+                        'valor' => $this->record->valor_credito
                     ]);
                 } else {
                     // Si no existe YapeCliente asociado, crear uno nuevo
@@ -228,5 +268,36 @@ class EditCreditos extends EditRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    private function procesarFotoComprobante($fotoComprobante)
+    {
+        // Si está vacío, retornar null
+        if (empty($fotoComprobante)) {
+            return null;
+        }
+
+        // Si es un string, ya es la ruta del archivo
+        if (is_string($fotoComprobante)) {
+            return $fotoComprobante;
+        }
+
+        // Si es un array, tomar el primer elemento válido
+        if (is_array($fotoComprobante)) {
+            // Si el array está vacío, retornar null
+            if (empty($fotoComprobante)) {
+                return null;
+            }
+
+            // Buscar el primer elemento que sea string
+            foreach ($fotoComprobante as $elemento) {
+                if (is_string($elemento) && !empty($elemento)) {
+                    return $elemento;
+                }
+            }
+        }
+
+        // Si no es string ni array válido, retornar null
+        return null;
     }
 }

@@ -385,12 +385,12 @@ class CreditosResource extends Resource
                                                 if (isset($livewire->record)) {
                                                     return;
                                                 }
-                                                
+
                                                 $clienteId = $get('id_cliente');
                                                 if (!$clienteId) {
                                                     return;
                                                 }
-                                                
+
                                                 // Verificar si hay conceptos de tipo Yape
                                                 $conceptos = $get('conceptosCredito') ?? [];
                                                 $tieneYape = false;
@@ -400,7 +400,7 @@ class CreditosResource extends Resource
                                                         break;
                                                     }
                                                 }
-                                                
+
                                                 if ($tieneYape) {
                                                     // Buscar YapeCliente registrado sin id_credito
                                                     $yapeCliente = \App\Models\YapeCliente::where('id_cliente', $clienteId)
@@ -408,7 +408,7 @@ class CreditosResource extends Resource
                                                         ->whereNotNull('nombre')
                                                         ->where('nombre', '!=', '')
                                                         ->first();
-                                                    
+
                                                     if ($yapeCliente) {
                                                         // Si hay YapeCliente registrado, usar su nombre
                                                         $set('nombre_yape', $yapeCliente->nombre);
@@ -426,7 +426,7 @@ class CreditosResource extends Resource
                                                 if ($get('es_adicional')) {
                                                     return false;
                                                 }
-                                                
+
                                                 $conceptos = $get('conceptosCredito') ?? [];
                                                 foreach ($conceptos as $concepto) {
                                                     if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
@@ -465,16 +465,16 @@ class CreditosResource extends Resource
 
                                         Forms\Components\Repeater::make('conceptosCredito')
                                             ->label('Desglose del Crédito')
-                                            ->relationship() // esto asume que tu modelo tiene ->conceptosCredito()
+                                           // ->relationship() // esto asume que tu modelo tiene ->conceptosCredito()
                                             ->schema([
                                                 Select::make('tipo_concepto')
                                                     ->label('Tipo de Concepto')
                                                     ->options([
                                                         'Efectivo' => 'Efectivo',
                                                         'Yape' => 'Yape',
-                                                     //   'Caja' => 'Caja',
-                                                      //  'Saldo renovación' => 'Saldo renovación',
-                                                      //  'Abono para completar préstamo' => 'Abono para completar préstamo',
+                                                        'Caja' => 'Caja',
+                                                        'Saldo renovación' => 'Saldo renovación',
+                                                        'Abono para completar préstamo' => 'Abono para completar préstamo',
                                                     ])
                                                     ->required()
                                                     ->reactive() // Para mostrar/ocultar foto_comprobante según valor
@@ -488,7 +488,7 @@ class CreditosResource extends Resource
                                                                      ->whereNotNull('nombre')
                                                                      ->where('nombre', '!=', '')
                                                                      ->first();
-                                                                 
+
                                                                  if ($yapeCliente) {
                                                                      // Si hay YapeCliente registrado, usar su nombre y monto
                                                                      $set('../../nombre_yape', $yapeCliente->nombre);
@@ -586,24 +586,24 @@ class CreditosResource extends Resource
                                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
                                                     //->maxSize(2048) // 2MB máximo
                                                     ->columnSpanFull()
-                                                    ->afterStateUpdated(function (TemporaryUploadedFile $state, $get) {
-                                                        $directory = match ($get('tipo_concepto')) {
-                                                            'Yape' => 'comprobantes/yape',
-                                                            'Efectivo' => 'comprobantes/efectivo',
-                                                            default => 'comprobantes/generales'
-                                                        };
+                                                    // ->afterStateUpdated(function (TemporaryUploadedFile $state, $get) {
+                                                    //     $directory = match ($get('tipo_concepto')) {
+                                                    //         'Yape' => 'comprobantes/yape',
+                                                    //         'Efectivo' => 'comprobantes/efectivo',
+                                                    //         default => 'comprobantes/generales'
+                                                    //     };
 
-                                                        $image = Image::make($state->getRealPath())
-                                                            ->resize(800, null, function ($constraint) {
-                                                                $constraint->aspectRatio();
-                                                            })
-                                                            ->encode('jpg', 70); // 70% de calidad
+                                                    //     $image = Image::make($state->getRealPath())
+                                                    //         ->resize(800, null, function ($constraint) {
+                                                    //             $constraint->aspectRatio();
+                                                    //         })
+                                                    //         ->encode('jpg', 70); // 70% de calidad
 
-                                                        Storage::disk('public')->put(
-                                                            $directory . '/' . $state->getFilename(),
-                                                            $image->stream()
-                                                        );
-                                                    }),
+                                                    //     Storage::disk('public')->put(
+                                                    //         $directory . '/' . $state->getFilename(),
+                                                    //         $image->stream()
+                                                    //     );
+                                                    // }),
                                             ])
                                             ->defaultItems(1)
                                             ->minItems(1)
@@ -783,6 +783,41 @@ class CreditosResource extends Resource
                     ->size('sm')
                     ->button()
                     ->tooltip('Eliminar Crédito')
+                    ->before(function ($record) {
+                        // Verificar que el crédito no tenga abonos
+                        if ($record->abonos()->exists()) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No se puede eliminar el crédito')
+                                ->body('Este crédito tiene abonos realizados y no puede ser eliminado.')
+                                ->danger()
+                                ->send();
+                            throw new \Exception('El crédito tiene abonos realizados.');
+                        }
+
+                        // Eliminar el YapeCliente asociado si existe
+                        if ($record->yapeCliente) {
+                            $record->yapeCliente->forceDelete();
+                        }
+
+                        $clienteNombre = $record->cliente?->nombre . ' ' . $record->cliente?->apellido;
+                        $rutaNombre = $record->cliente?->ruta?->nombre ?? 'Ruta desconocida';
+
+                        \App\Models\LogActividad::registrar(
+                            'Créditos',
+                            "Eliminó el crédito de {$clienteNombre} de la ruta {$rutaNombre}",
+                            [
+                                'credito_id' => $record->id_credito,
+                                'cliente_id' => $record->id_cliente,
+                                'datos_eliminados' => $record->toArray(),
+                            ]
+                        );
+                    })
+                    ->after(function () {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Crédito eliminado exitosamente')
+                            ->success()
+                            ->send();
+                    })
                     ->extraAttributes([
                         'title' => 'Eliminar',
                         'class' => 'hover:bg-danger-50 rounded-full'

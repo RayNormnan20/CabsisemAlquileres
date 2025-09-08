@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CreditosResource\Pages;
 use App\Filament\Resources\CreditosResource;
 use App\Helpers\FechaHelper;
 use App\Models\Concepto;
+use App\Models\ConceptoCredito;
 use App\Models\Creditos;
 use App\Models\LogActividad;
 use App\Models\TipoPago;
@@ -72,16 +73,20 @@ class CreateCreditos extends CreateRecord
             $sumaConceptos += $monto;
 
         }
-      $diferencia = abs($sumaConceptos - $valorCredito);
-        if ($diferencia > 0.01) {
-            \Filament\Notifications\Notification::make()
-                ->title('Error de Validación')
-                ->body("La suma de los conceptos no es igual al valor del crédito.")
-                ->danger()
-                ->duration(5000)
-                ->send();
-
-            $this->halt();
+      $diferencia = abs($sumaConceptos - $valorCredito); if ($diferencia > 0.01) {
+         if ($sumaConceptos < $valorCredito) {
+             \Filament\Notifications\Notification::make()
+             ->title('Error de Validación')
+             ->body("La suma de los montos es menor al valor del crédito (S/ {$valorCredito}). Diferencia: S/ " . number_format($valorCredito - $sumaConceptos, 2))
+             ->danger() ->duration(5000) ->send(); $this->halt();
+            } else {
+                 \Filament\Notifications\Notification::make()
+                 ->title('Error de Validación') ->body("La suma de los montos (S/ {$sumaConceptos}) es mayor al valor del crédito (S/ {$valorCredito}). Diferencia: S/ " . number_format($sumaConceptos - $valorCredito, 2))
+                 ->danger()
+                 ->duration(5000)
+                 ->send();
+                 $this->halt();
+            }
         }
     }
 
@@ -234,9 +239,53 @@ class CreateCreditos extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
+    private function procesarFotoComprobante($fotoComprobante)
+    {
+        // Si está vacío, retornar null
+        if (empty($fotoComprobante)) {
+            return null;
+        }
+
+        // Si es un string, ya es la ruta del archivo
+        if (is_string($fotoComprobante)) {
+            return $fotoComprobante;
+        }
+
+        // Si es un array, tomar el primer elemento válido
+        if (is_array($fotoComprobante)) {
+            // Si el array está vacío, retornar null
+            if (empty($fotoComprobante)) {
+                return null;
+            }
+
+            // Buscar el primer elemento que sea string
+            foreach ($fotoComprobante as $elemento) {
+                if (is_string($elemento) && !empty($elemento)) {
+                    return $elemento;
+                }
+            }
+        }
+
+        // Si no es string ni array válido, retornar null
+        return null;
+    }
+
     protected function afterCreate(): void
     {
-        // Verificar si hay conceptos de tipo Yape para registrar en yape_clientes
+        // Guardar los conceptos del repeater manualmente ya que no usamos relationship()
+        $conceptosData = $this->data['conceptosCredito'] ?? [];
+
+        foreach ($conceptosData as $conceptoData) {
+            \App\Models\ConceptoCredito::create([
+                'id_credito' => $this->record->id_credito,
+                'tipo_concepto' => $conceptoData['tipo_concepto'] ?? null,
+                'monto' => $conceptoData['monto'] ?? 0,
+                'foto_comprobante' => $this->procesarFotoComprobante($conceptoData['foto_comprobante'] ?? null),
+               /// 'user_id' => auth()->id(),
+            ]);
+        }
+
+        // Recargar la relación después de crear los conceptos
         $this->record->load('conceptosCredito');
 
         foreach ($this->record->conceptosCredito as $concepto) {
