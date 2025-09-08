@@ -32,9 +32,12 @@ class EditAbonos extends EditRecord
         $credito = Creditos::find($data['id_credito'] ?? null);
 
         if ($credito) {
+            // Para créditos adicionales, la cuota es el porcentaje_interes (cuota diaria)
+            $cuotaAMostrar = $credito->es_adicional ? $credito->porcentaje_interes : $credito->valor_cuota;
+            
             $data['fecha_credito'] = $credito->fecha_credito->format('d/m/Y');
             $data['fecha_vencimiento'] = $credito->fecha_vencimiento->format('d/m/Y');
-            $data['valor_cuota'] = $credito->valor_cuota;
+            $data['valor_cuota'] = $cuotaAMostrar;
             
             // Establecer el checkbox activar_segundo_recorrido basado en el estado del crédito
             $data['activar_segundo_recorrido'] = $credito->segundo_recorrido ?? false;
@@ -67,12 +70,21 @@ class EditAbonos extends EditRecord
         $credito = Creditos::find($abono->id_credito);
 
         if ($credito) {
-            // Recalcular correctamente usando los conceptos (si usas conceptosAbonos)
             $totalAbonado = Abonos::where('id_credito', $credito->id_credito)
-                ->sum('monto_abono'); // Puedes ajustar esto si sumas conceptos
+                ->sum('monto_abono');
 
-            // Actualizar el saldo actual
-            $credito->saldo_actual = $credito->monto_total - $totalAbonado;
+            if ($credito->es_adicional) {
+                // Para créditos adicionales, el saldo actual ya incluye las cuotas diarias
+                // Solo necesitamos recalcular basándonos en el valor original + cuotas diarias - abonos
+                // Obtener el saldo base (valor_credito + cuotas diarias acumuladas hasta hoy)
+                $diasTranscurridos = now()->diffInDays($credito->fecha_credito);
+                $cuotasDiariasAcumuladas = $diasTranscurridos * $credito->porcentaje_interes;
+                $credito->saldo_actual = $credito->valor_credito + $cuotasDiariasAcumuladas - $totalAbonado;
+            } else {
+                // Para créditos normales, calcular como siempre
+                $credito->saldo_actual = $credito->monto_total - $totalAbonado;
+            }
+            
             $credito->save();
 
             // Actualizar el saldo_posterior del abono también

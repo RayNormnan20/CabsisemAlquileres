@@ -74,6 +74,9 @@ class CreateAbonos extends CreateRecord
         $nombreYape = '';
 
         if ($credito) {
+            // Para créditos adicionales, la cuota es el porcentaje_interes (cuota diaria)
+            $cuotaAMostrar = $credito->es_adicional ? $credito->porcentaje_interes : $credito->valor_cuota;
+            
             $formData = [
                 'id_cliente' => $clienteId,
                 'id_credito' => $credito->id_credito,
@@ -81,8 +84,8 @@ class CreateAbonos extends CreateRecord
                 'fecha_credito' => $credito->fecha_credito->format('d/m/Y'),
                 'fecha_vencimiento' => $credito->fecha_vencimiento->format('d/m/Y'),
                 'saldo_anterior' => $credito->saldo_actual,
-                'monto_abono' => $credito->valor_cuota,
-                'valor_cuota' => $credito->valor_cuota,
+                'monto_abono' => $cuotaAMostrar,
+                'valor_cuota' => $cuotaAMostrar,
                 'cuota' => $credito->cuota_diaria,
                 'nombre_yape' => $nombreYape,
                 'id_yape_cliente' => null, // Asegurar que no hay YapeCliente seleccionado por defecto
@@ -93,7 +96,7 @@ class CreateAbonos extends CreateRecord
                 $formData['conceptosabonos'] = [
                     [
                         'tipo_concepto' => $this->metodo_pago,
-                        'monto' => $credito->valor_cuota,
+                        'monto' => $cuotaAMostrar,
                         'referencia' => '',
                         'foto_comprobante' => null
                     ]

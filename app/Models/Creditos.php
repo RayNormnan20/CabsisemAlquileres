@@ -131,8 +131,18 @@ class Creditos extends Model
 
     public function actualizarSaldo()
     {
-        $this->saldo_actual = $this->valor_credito - $this->abonos()->sum('monto_abono');
-        $this->save();
+        if ($this->es_adicional) {
+            // Para créditos adicionales, solo restar los abonos del saldo actual
+            // No recalcular desde valor_credito porque el saldo aumenta diariamente
+            $totalAbonos = $this->abonos()->sum('monto_abono');
+            // El saldo actual ya incluye las cuotas diarias aplicadas
+            // Solo necesitamos asegurar que los abonos se resten correctamente
+            // No modificamos el saldo aquí para créditos adicionales
+        } else {
+            // Para créditos normales, calcular como siempre
+            $this->saldo_actual = $this->valor_credito - $this->abonos()->sum('monto_abono');
+            $this->save();
+        }
     }
 
     /**

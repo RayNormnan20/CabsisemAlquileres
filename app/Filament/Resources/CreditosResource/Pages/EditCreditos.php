@@ -12,12 +12,18 @@ use Filament\Notifications\Notification;
 class EditCreditos extends EditRecord
 {
     protected static string $resource = CreditosResource::class;
+    
+    protected $valorCreditoOriginal;
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
         // Cargar el nombre_yape desde el YapeCliente asociado si existe
         if ($this->record && $this->record->yapeCliente) {
-            $data['nombre_yape'] = $this->record->yapeCliente->nombre;
+            if ($this->record->es_adicional) {
+                $data['nombre_yape_adicional'] = $this->record->yapeCliente->nombre;
+            } else {
+                $data['nombre_yape'] = $this->record->yapeCliente->nombre;
+            }
         }
 
         // Cargar los conceptos del crédito para el repeater
@@ -43,6 +49,11 @@ class EditCreditos extends EditRecord
     protected function beforeSave(): void
     {
         $data = $this->form->getState();
+
+        // Guardar el valor original del crédito para créditos adicionales
+        if ($this->record->es_adicional) {
+            $this->valorCreditoOriginal = $this->record->valor_credito;
+        }
 
         // Intentar múltiples métodos para obtener los datos del repeater
         $conceptosCredito = null;
@@ -144,8 +155,14 @@ class EditCreditos extends EditRecord
         }
 
         // Manejar YapeCliente cuando se edita el crédito
-        if (isset($this->data['nombre_yape'])) {
+        $nombreYape = null;
+        if ($this->record->es_adicional && isset($this->data['nombre_yape_adicional'])) {
+            $nombreYape = $this->data['nombre_yape_adicional'];
+        } elseif (!$this->record->es_adicional && isset($this->data['nombre_yape'])) {
             $nombreYape = $this->data['nombre_yape'];
+        }
+        
+        if ($nombreYape) {
 
             // Verificar si hay conceptos de tipo Yape en el crédito
             $this->record->load('conceptosCredito');
@@ -209,6 +226,25 @@ class EditCreditos extends EditRecord
                 } else {
                     $relevantChanges[$field] = $changes[$field];
                 }
+            }
+        }
+
+        // Actualizar saldo para créditos adicionales si cambió el valor del crédito
+        if ($this->record->es_adicional && isset($this->valorCreditoOriginal)) {
+            $valorAnterior = $this->valorCreditoOriginal;
+            $valorNuevo = $this->record->valor_credito;
+            
+            if ($valorAnterior != $valorNuevo) {
+                // Para créditos adicionales, calcular cuánto se ha abonado hasta ahora
+                $totalAbonos = $this->record->abonos()->sum('monto_abono');
+                
+                // Calcular las cuotas diarias ya aplicadas (saldo actual - valor original + abonos)
+                $cuotasDiariasAplicadas = $this->record->saldo_actual - $valorAnterior + $totalAbonos;
+                
+                // El nuevo saldo debe ser: nuevo valor + cuotas diarias aplicadas - abonos realizados
+                // Esto preserva las cuotas diarias ya aplicadas al crédito
+                $this->record->saldo_actual = $valorNuevo + $cuotasDiariasAplicadas - $totalAbonos;
+                $this->record->save();
             }
         }
 

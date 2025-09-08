@@ -130,26 +130,50 @@ class HistorialAbonosWidget extends BaseWidget
 
     private function calcularSaldoHasta($recordActual)
     {
-        // Obtener el monto total del crédito con intereses
-        $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
+        if ($this->record->es_adicional) {
+            // Para créditos adicionales, usar el saldo actual del crédito como base
+            // porque incluye las cuotas diarias acumuladas
+            $saldoBase = $this->record->saldo_actual;
+            
+            // Si es el registro del crédito (desembolso), devolver el valor original
+            if ($recordActual->tipo_registro === 'credito') {
+                return $this->record->valor_credito;
+            }
+            
+            // Para abonos, calcular cuánto se había abonado después de este registro
+            $abonosDespues = Abonos::where('id_credito', $this->record->id_credito)
+                ->where(function($query) use ($recordActual) {
+                    $query->where('fecha_pago', '>', $recordActual->fecha_pago)
+                          ->orWhere(function($subQuery) use ($recordActual) {
+                              $subQuery->where('fecha_pago', '=', $recordActual->fecha_pago)
+                                       ->where('id_abono', '>', $recordActual->id_abono);
+                          });
+                })
+                ->sum('monto_abono');
+            
+            return $saldoBase + $abonosDespues;
+        } else {
+            // Para créditos normales, usar el cálculo tradicional
+            $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
 
-        // Si es el registro del crédito (desembolso), devolver el monto total
-        if ($recordActual->tipo_registro === 'credito') {
-            return $montoTotalConIntereses;
+            // Si es el registro del crédito (desembolso), devolver el monto total
+            if ($recordActual->tipo_registro === 'credito') {
+                return $montoTotalConIntereses;
+            }
+
+            // Obtener todos los abonos hasta la fecha del registro actual (inclusive)
+            $abonosHasta = Abonos::where('id_credito', $this->record->id_credito)
+                ->where(function($query) use ($recordActual) {
+                    $query->where('fecha_pago', '<', $recordActual->fecha_pago)
+                          ->orWhere(function($subQuery) use ($recordActual) {
+                              $subQuery->where('fecha_pago', '=', $recordActual->fecha_pago)
+                                       ->where('id_abono', '<=', $recordActual->id_abono);
+                          });
+                })
+                ->sum('monto_abono');
+
+            return $montoTotalConIntereses - $abonosHasta;
         }
-
-        // Obtener todos los abonos hasta la fecha del registro actual (inclusive)
-        $abonosHasta = Abonos::where('id_credito', $this->record->id_credito)
-            ->where(function($query) use ($recordActual) {
-                $query->where('fecha_pago', '<', $recordActual->fecha_pago)
-                      ->orWhere(function($subQuery) use ($recordActual) {
-                          $subQuery->where('fecha_pago', '=', $recordActual->fecha_pago)
-                                   ->where('id_abono', '<=', $recordActual->id_abono);
-                      });
-            })
-            ->sum('monto_abono');
-
-        return $montoTotalConIntereses - $abonosHasta;
     }
 
     protected function getTableFilters(): array
@@ -170,9 +194,16 @@ class HistorialAbonosWidget extends BaseWidget
         $totalAbonos = Abonos::where('id_credito', $this->record->id_credito)
             ->sum('monto_abono');
 
-        // Calcular el saldo actual correctamente
-        $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
-        $saldoActual = $montoTotalConIntereses - $totalAbonos;
+        // Calcular el saldo actual correctamente según el tipo de crédito
+        if ($this->record->es_adicional) {
+            // Para créditos adicionales, usar directamente el saldo_actual del crédito
+            // que ya incluye las cuotas diarias acumuladas
+            $saldoActual = $this->record->saldo_actual;
+        } else {
+            // Para créditos normales, calcular como siempre
+            $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
+            $saldoActual = $montoTotalConIntereses - $totalAbonos;
+        }
 
         return view('filament.resources.creditos-resource.widgets.historial-abonos', [
             'totalCantidad' => $totalAbonos,
@@ -224,7 +255,23 @@ class HistorialAbonosWidget extends BaseWidget
                         if (! $credito) {
                             throw new \Exception('Crédito asociado no encontrado.');
                         }
-                        $credito->saldo_actual += $abono->monto_abono;
+                        
+                        if ($credito->es_adicional) {
+                            // Para créditos adicionales, recalcular el saldo correctamente
+                            $diasTranscurridos = now()->diffInDays($credito->fecha_credito);
+                            $cuotasDiariasAcumuladas = $diasTranscurridos * $credito->porcentaje_interes;
+                            
+                            // Calcular total de abonos restantes (excluyendo el que se va a eliminar)
+                            $totalAbonosRestantes = Abonos::where('id_credito', $credito->id_credito)
+                                ->where('id_abono', '!=', $abono->id_abono)
+                                ->sum('monto_abono');
+                            
+                            $credito->saldo_actual = $credito->valor_credito + $cuotasDiariasAcumuladas - $totalAbonosRestantes;
+                        } else {
+                            // Para créditos normales, simplemente sumar el monto del abono
+                            $credito->saldo_actual += $abono->monto_abono;
+                        }
+                        
                         $credito->save();
 
                         // Registrar log de actividad antes de eliminar

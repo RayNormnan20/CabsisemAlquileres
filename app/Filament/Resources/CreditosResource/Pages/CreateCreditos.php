@@ -121,6 +121,9 @@ class CreateCreditos extends CreateRecord
             $data['numero_cuotas'] = 0; // no aplica
             $data['valor_cuota'] = 0; // no aplica
             $data['es_adicional'] = true;
+            
+            // Para créditos adicionales, el saldo inicial es igual al valor del crédito (sin interés)
+            $data['saldo_actual'] = (float)$data['valor_credito'];
 
             // Proximo día laborable desde mañana
             $data['fecha_proximo_pago'] = FechaHelper::siguienteDiaLaborable(
@@ -290,10 +293,19 @@ class CreateCreditos extends CreateRecord
 
         foreach ($this->record->conceptosCredito as $concepto) {
             if ($concepto->tipo_concepto === 'Yape') {
-                // Determinar el nombre a usar: nombre_yape o nombre del cliente
-                $nombreYape = !empty($this->data['nombre_yape'])
-                    ? $this->data['nombre_yape']
-                    : $this->record->cliente->nombre_completo;
+                // Determinar el nombre a usar según si es crédito adicional o normal
+                $nombreYape = '';
+                if ($this->record->es_adicional) {
+                    // Para créditos adicionales, usar nombre_yape_adicional
+                    $nombreYape = !empty($this->data['nombre_yape_adicional'])
+                        ? $this->data['nombre_yape_adicional']
+                        : $this->record->cliente->nombre_completo;
+                } else {
+                    // Para créditos normales, usar nombre_yape
+                    $nombreYape = !empty($this->data['nombre_yape'])
+                        ? $this->data['nombre_yape']
+                        : $this->record->cliente->nombre_completo;
+                }
 
                 // Verificar si ya existe un YapeCliente con el mismo nombre y cliente sin id_credito
                 $yapeExistente = YapeCliente::where('id_cliente', $this->record->id_cliente)
