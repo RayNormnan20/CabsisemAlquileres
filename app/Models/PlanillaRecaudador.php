@@ -16,6 +16,7 @@ protected $casts = [
 'saldo_actual' => 'decimal:2',
 'valor_cuota' => 'decimal:2',
 'ultimo_monto_pagado' => 'decimal:2',
+'porcentaje_interes' => 'decimal:2',
 'fecha_credito' => 'date',
 'fecha_proximo_pago' => 'date',
 'ultima_fecha_pago' => 'datetime'

@@ -1,3 +1,73 @@
+<style>
+    /* Ocultar completamente la tabla principal de Filament */
+    .fi-ta-table,
+    .fi-ta-content,
+    .fi-ta-header,
+    .fi-ta-empty-state,
+    .fi-ta-pagination,
+    .fi-ta-filters,
+    .fi-ta-actions,
+    .fi-ta-bulk-actions,
+    .fi-ta-search,
+    .fi-ta-toolbar,
+    .fi-table,
+    .fi-table-container,
+    .fi-table-header,
+    .fi-table-body,
+    .fi-table-footer,
+    .fi-table-empty-state,
+    .fi-table-pagination,
+    .fi-table-filters,
+    .fi-table-actions,
+    .fi-table-bulk-actions,
+    .fi-table-search,
+    .fi-table-toolbar,
+    [data-table],
+    [data-table-container],
+    [data-table-header],
+    [data-table-body],
+    [data-table-footer],
+    [data-table-empty-state],
+    [data-table-pagination],
+    [data-table-filters],
+    [data-table-actions],
+    [data-table-bulk-actions],
+    [data-table-search],
+    [data-table-toolbar],
+    .filament-tables-container,
+    .filament-tables-table,
+    .filament-tables-header,
+    .filament-tables-body,
+    .filament-tables-footer,
+    .filament-tables-empty-state,
+    .filament-tables-pagination,
+    .filament-tables-filters,
+    .filament-tables-actions,
+    .filament-tables-bulk-actions,
+    .filament-tables-search,
+    .filament-tables-toolbar {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+    }
+
+    /* Ocultar cualquier div que contenga "No se encontraron registros" */
+    div:contains("No se encontraron registros") {
+        display: none !important;
+    }
+
+    /* Ocultar elementos con texto específico */
+    [data-testid="table-empty-state"],
+    [data-testid="table-container"],
+    [data-testid="table-header"],
+    [data-testid="table-body"],
+    [data-testid="table-footer"] {
+        display: none !important;
+    }
+</style>
+
 <div class="flex flex-col space-y-4 mb-6">
     <!-- Título y botón de exportar -->
     <div class="flex justify-between items-center">

@@ -1,6 +1,6 @@
 CREATE OR REPLACE VIEW vista_planillas_recaudador AS
 SELECT 
-    CONCAT(c.id_cliente, '-', cr.id_credito, '-', IFNULL(u.id, 0)) AS id_unico,
+    CONCAT(c.id_cliente, '-', cr.id_credito) AS id_unico,
     c.id_cliente,
     CONCAT(c.nombre, ' ', c.apellido) AS cliente_completo,
     c.celular AS telefono,
@@ -14,6 +14,7 @@ SELECT
     cr.fecha_vencimiento,
     cr.id_ruta,
     cr.es_adicional,
+    cr.porcentaje_interes,
     (
         SELECT a.fecha_pago 
         FROM abonos a 
@@ -34,8 +35,8 @@ SELECT
         WHERE a.id_credito = cr.id_credito
     ) AS total_abonos,
     r.nombre AS ruta,
-    u.name AS recaudador,
-    u.id AS id_recaudador,
+    GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS recaudador,
+    MIN(u.id) AS id_recaudador,
     CASE 
         WHEN cr.saldo_actual <= 0 THEN 'PAGADO'
         WHEN cr.saldo_actual > 0 AND DATEDIFF(CURRENT_DATE, cr.fecha_vencimiento) > 0 THEN 'MOROSO'
@@ -61,5 +62,10 @@ JOIN
     usuario_ruta ur ON ur.id_ruta = r.id_ruta
 JOIN 
     users u ON u.id = ur.user_id
+GROUP BY 
+    c.id_cliente, cr.id_credito, c.nombre, c.apellido, c.celular, 
+    cr.valor_credito, cr.saldo_actual, cr.numero_cuotas, cr.valor_cuota,
+    cr.fecha_credito, cr.fecha_proximo_pago, cr.fecha_vencimiento,
+    cr.id_ruta, cr.es_adicional, cr.porcentaje_interes, r.nombre
 ORDER BY 
-    r.nombre, u.name, c.nombre;
+    r.nombre, c.nombre;
