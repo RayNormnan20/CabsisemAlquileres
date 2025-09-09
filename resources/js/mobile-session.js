@@ -328,30 +328,25 @@ class MobileSessionManager {
     }
     
     /**
-     * Maneja cuando la página se oculta
+     * Maneja cuando la página se oculta (cambio de aplicación)
      */
     handlePageHidden() {
         this.isPageVisible = false;
-        console.log('📱 Página oculta detectada');
+        console.log('📱 Página oculta detectada - CAMBIO DE APLICACIÓN');
         
-        // Solo hacer logout si no hay actividad de cámara, archivos, login o protección post-login
-        if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive && !this.isPostLoginProtection) {
-            // En páginas de login, ser menos agresivo
-            if (this.isOnLoginPage()) {
-                console.log('🔐 Página oculta en login - logout retrasado');
-                setTimeout(() => {
-                    if (!this.isLoginActive && !this.isCameraActive && !this.isFileSelectionActive && !this.isPostLoginProtection) {
-                        console.log('🚪 Logout retrasado por página oculta en login');
-                        this.performMobileLogout();
-                    }
-                }, this.isAndroid ? 20000 : 15000); // Android necesita más tiempo
+        // SIEMPRE hacer logout cuando se cambia de aplicación
+        // Sin importar protecciones activas (cámara, archivos, login, etc.)
+        console.log('🚪 Forzando logout por cambio de aplicación en 10 segundos - SIN EXCEPCIONES');
+        
+        // Esperar 10 segundos antes de hacer logout forzado
+        setTimeout(() => {
+            if (!this.isPageVisible) { // Solo si la página sigue oculta
+                console.log('⏰ 10 segundos transcurridos - ejecutando logout forzado');
+                this.forceLogout(true); // true = ignorar protecciones
             } else {
-                console.log('🚪 Cerrando sesión por página oculta');
-                this.performMobileLogout();
+                console.log('📱 Página visible nuevamente - cancelando logout forzado');
             }
-        } else {
-            console.log('📷 Logout pausado - hay actividad de cámara/archivos/login');
-        }
+        }, 10000); // 10 segundos
     }
     
     /**
@@ -365,14 +360,17 @@ class MobileSessionManager {
             const timeDiff = now - lastVisibilityChange;
             
             if (document.hidden) {
-                console.log('App oculta - verificando logout');
-                // No hacer logout si hay actividad de cámara o archivos
-                if (!this.isCameraActive && !this.isFileSelectionActive) {
-                    console.log('Logout por app oculta');
-                    this.performMobileLogout();
-                } else {
-                    console.log('Logout pausado - actividad de cámara/archivos detectada');
-                }
+                console.log('📱 App oculta (cambio de aplicación) - programando logout forzado en 10 segundos');
+                
+                // Esperar 10 segundos antes de hacer logout forzado
+                setTimeout(() => {
+                    if (document.hidden) { // Solo si la página sigue oculta
+                        console.log('⏰ 10 segundos transcurridos - ejecutando logout forzado por visibilitychange');
+                        this.forceLogout(true); // true = ignorar protecciones
+                    } else {
+                        console.log('📱 Página visible nuevamente - cancelando logout forzado por visibilitychange');
+                    }
+                }, 10000); // 10 segundos
             }
             
             lastVisibilityChange = now;
@@ -382,12 +380,12 @@ class MobileSessionManager {
         window.addEventListener('blur', () => {
             console.log('Ventana perdió foco - verificando logout');
             if (this.isMobile) {
-                // No hacer logout si hay actividad de cámara o archivos
-                if (!this.isCameraActive && !this.isFileSelectionActive) {
+                // No hacer logout si hay actividad de cámara, archivos, login o protección post-login
+                if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive && !this.isPostLoginProtection) {
                     console.log('Logout por pérdida de foco');
                     this.performMobileLogout();
                 } else {
-                    console.log('Logout pausado - actividad de cámara/archivos detectada');
+                    console.log('Logout pausado - actividad de cámara/archivos/login/post-login detectada');
                 }
             }
         });
@@ -395,12 +393,12 @@ class MobileSessionManager {
         // Detectar cuando se minimiza o cambia de app
         window.addEventListener('pagehide', () => {
             console.log('Página oculta - verificando logout');
-            // Solo hacer logout si no hay actividad de cámara, archivos o protección post-login
-            if (!this.isCameraActive && !this.isFileSelectionActive && !this.isPostLoginProtection) {
+            // Solo hacer logout si no hay actividad de cámara, archivos, login o protección post-login
+            if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive && !this.isPostLoginProtection) {
                 console.log('Logout por página oculta');
                 this.performMobileLogout();
             } else {
-                console.log('Logout pausado - actividad de cámara/archivos detectada');
+                console.log('Logout pausado - actividad de cámara/archivos/login/post-login detectada');
             }
         });
     }
@@ -469,9 +467,30 @@ class MobileSessionManager {
     /**
      * Realiza el logout automático para dispositivos móviles
      */
-    async performMobileLogout() {
+    async performMobileLogout(ignoreProtections = false) {
+        // Verificación adicional antes de hacer logout (solo si no se ignoran las protecciones)
+        if (!ignoreProtections && (this.isCameraActive || this.isFileSelectionActive || this.isLoginActive || this.isPostLoginProtection)) {
+            console.log('🚫 Logout cancelado - protecciones activas:', {
+                camera: this.isCameraActive,
+                files: this.isFileSelectionActive,
+                login: this.isLoginActive,
+                postLogin: this.isPostLoginProtection
+            });
+            return;
+        }
+        
+        if (ignoreProtections) {
+            console.log('⚠️ LOGOUT FORZADO - Ignorando todas las protecciones por cambio de aplicación');
+        }
+        
         try {
-            console.log('Realizando logout automático en dispositivo móvil');
+            console.log('🔴 Realizando logout automático en dispositivo móvil');
+            console.log('📊 Estado de protecciones:', {
+                camera: this.isCameraActive,
+                files: this.isFileSelectionActive,
+                login: this.isLoginActive,
+                postLogin: this.isPostLoginProtection
+            });
             
             // Enviar petición de logout al servidor
             const response = await fetch('/mobile-logout', {
@@ -657,25 +676,27 @@ class MobileSessionManager {
      */
     activatePostLoginProtection() {
         this.isPostLoginProtection = true;
+        console.log('🛡️ Protección post-login ACTIVADA por 5 minutos');
         
         // Limpiar timeout anterior si existe
         if (this.postLoginTimeout) {
             clearTimeout(this.postLoginTimeout);
+            console.log('🔄 Timeout anterior de protección post-login limpiado');
         }
         
-        // Desactivar protección después de 3 minutos
+        // Desactivar protección después de 5 minutos
         this.postLoginTimeout = setTimeout(() => {
-            console.log('⏰ Protección post-login finalizada');
+            console.log('⏰ Protección post-login finalizada después de 5 minutos');
             this.isPostLoginProtection = false;
-        }, 180000); // 3 minutos
+        }, 300000); // 5 minutos
     }
     
     /**
      * Método público para forzar logout
      */
-    forceLogout() {
+    forceLogout(ignoreProtections = false) {
         if (this.isMobile) {
-            this.performMobileLogout();
+            this.performMobileLogout(ignoreProtections);
         }
     }
 }
