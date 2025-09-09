@@ -115,14 +115,40 @@ class MobileSessionManager {
         // Detectar cuando se hace click en inputs de archivo
         document.addEventListener('click', (event) => {
             if (event.target && event.target.type === 'file') {
-                console.log('Input de archivo activado - protegiendo sesión por 2 minutos');
+                console.log('Input de archivo activado - protegiendo sesión por 5 minutos');
                 this.isFileSelectionActive = true;
                 
                 // Extender tiempo para acceso a galería de fotos (iOS)
                 setTimeout(() => {
                     this.isFileSelectionActive = false;
                     console.log('Timeout de selección de archivos');
-                }, 120000); // 2 minutos para dar tiempo a navegar en Fototeca
+                }, 300000); // 5 minutos para dar tiempo a navegar en Fototeca
+            }
+        });
+        
+        // Detectar mousedown en inputs de archivo (se activa antes que click)
+        document.addEventListener('mousedown', (event) => {
+            if (event.target && event.target.type === 'file') {
+                console.log('Mousedown en input de archivo - activando protección inmediata');
+                this.isFileSelectionActive = true;
+                
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Timeout mousedown de selección de archivos');
+                }, 300000); // 5 minutos
+            }
+        });
+        
+        // Detectar touchstart en inputs de archivo (específico para móviles)
+        document.addEventListener('touchstart', (event) => {
+            if (event.target && event.target.type === 'file') {
+                console.log('Touchstart en input de archivo - protección móvil activada');
+                this.isFileSelectionActive = true;
+                
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Timeout touchstart de selección de archivos');
+                }, 300000); // 5 minutos
             }
         });
         
@@ -130,15 +156,67 @@ class MobileSessionManager {
         document.addEventListener('focus', (event) => {
             if (event.target && event.target.type === 'file' && 
                 event.target.accept && event.target.accept.includes('image')) {
-                console.log('Input de imagen detectado - protegiendo sesión extendida');
+                console.log('Input de imagen detectado - protegiendo sesión extendida por 5 minutos');
                 this.isFileSelectionActive = true;
                 
                 // Tiempo extendido para galería de fotos
                 setTimeout(() => {
                     this.isFileSelectionActive = false;
                     console.log('Timeout extendido de selección de imágenes');
-                }, 180000); // 3 minutos
+                }, 300000); // 5 minutos
             }
+        });
+        
+        // Detectar cualquier input de archivo que reciba focus (general)
+        document.addEventListener('focusin', (event) => {
+            if (event.target && event.target.type === 'file') {
+                console.log('Input de archivo enfocado - activando protección preventiva');
+                this.isFileSelectionActive = true;
+                
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Timeout de focus en input de archivo');
+                }, 300000); // 5 minutos
+            }
+        });
+        
+        // Observer para detectar inputs de archivo creados dinámicamente
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) { // Element node
+                        // Buscar inputs de archivo en el nodo agregado
+                        const fileInputs = node.querySelectorAll ? node.querySelectorAll('input[type="file"]') : [];
+                        if (node.type === 'file') {
+                            console.log('Input de archivo dinámico detectado');
+                            this.isFileSelectionActive = true;
+                            setTimeout(() => {
+                                this.isFileSelectionActive = false;
+                            }, 300000);
+                        }
+                        fileInputs.forEach(() => {
+                            console.log('Input de archivo dinámico encontrado en DOM');
+                            this.isFileSelectionActive = true;
+                            setTimeout(() => {
+                                this.isFileSelectionActive = false;
+                            }, 300000);
+                        });
+                    
+                    // Resetear después de un tiempo si la cámara sigue activa
+                    setTimeout(() => {
+                        if (this.isCameraActive) {
+                            console.log('Timeout de cámara - reseteando estado');
+                            this.isCameraActive = false;
+                        }
+                    }, 300000); // 5 minutos
+                    }
+                });
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
         });
         
         // Detectar acceso a la cámara mediante getUserMedia
@@ -182,24 +260,23 @@ class MobileSessionManager {
             }
         });
         
-        // Detectar cuando se va a abrir la galería de fotos en iOS
-        document.addEventListener('touchstart', (event) => {
+        // Detectar cuando el input de archivo está a punto de activarse (iOS específico)
+        document.addEventListener('pointerdown', (event) => {
             if (event.target && event.target.type === 'file') {
-                console.log('Preparando acceso a galería iOS - protegiendo sesión');
+                console.log('Pointer down en input de archivo - protección inmediata iOS');
                 this.isFileSelectionActive = true;
                 
-                // Protección extendida para iOS que abre apps nativas
                 setTimeout(() => {
                     this.isFileSelectionActive = false;
-                    console.log('Timeout de protección iOS');
-                }, 240000); // 4 minutos para iOS
+                    console.log('Timeout de protección pointer down');
+                }, 300000); // 5 minutos
             }
         });
         
-        // Detectar antes de que se abra el selector de archivos
-        document.addEventListener('mousedown', (event) => {
+        // Detectar cuando se va a mostrar el selector de archivos nativo
+        document.addEventListener('input', (event) => {
             if (event.target && event.target.type === 'file') {
-                console.log('Iniciando selección de archivo - activando protección');
+                console.log('Input event en archivo - selector nativo activado');
                 this.isFileSelectionActive = true;
                 
                 // Protección preventiva
@@ -284,6 +361,19 @@ class MobileSessionManager {
     handlePageVisible() {
         this.isPageVisible = true;
         console.log('Página visible en dispositivo móvil');
+        
+        // Si había actividad de archivos, extender la protección al regresar
+        if (this.isFileSelectionActive) {
+            console.log('Regresando de galería de fotos - extendiendo protección');
+            
+            // Extender protección por 2 minutos más al regresar
+            setTimeout(() => {
+                if (this.isFileSelectionActive) {
+                    this.isFileSelectionActive = false;
+                    console.log('Protección extendida finalizada tras regresar de galería');
+                }
+            }, 120000); // 2 minutos adicionales
+        }
     }
     
     /**
