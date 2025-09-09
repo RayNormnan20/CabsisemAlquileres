@@ -9,7 +9,7 @@ class MobileSessionManager {
         this.isMobile = this.detectMobile();
         this.isPageVisible = true;
         this.logoutTimer = null;
-        this.logoutDelay = 5000; // 5 segundos de delay antes del logout
+        this.logoutDelay = 1000; // 1 segundo de delay antes del logout
         
         if (this.isMobile) {
             this.initMobileSessionHandlers();
