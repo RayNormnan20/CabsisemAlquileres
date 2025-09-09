@@ -7,6 +7,8 @@ use App\Models\ConceptoCredito;
 use App\Models\Creditos;
 use App\Models\Abonos;
 use App\Models\Concepto;
+use App\Models\YapeCliente;
+
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -90,30 +92,11 @@ class CreditoController extends Controller
             }
 
             $credito->save();
-
-            // Registrar en el log de actividad según el tipo de operación
-            $tipoActividad = ($request->tipo_operacion === 'bajo_cuenta') ? 'Bajo Cuenta' : 'Actualización de Crédito';
-            $mensajeActividad = ($request->tipo_operacion === 'bajo_cuenta') 
-                ? "Bajo cuenta realizado para cliente: {$credito->cliente->nombre_completo}"
-                : "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}";
             
-            \App\Models\LogActividad::registrar(
-                $tipoActividad,
-                $mensajeActividad .
-                ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
-                [
-                    'tabla_afectada' => 'creditos',
-                    'registro_id' => $credito->id_credito,
-                    'descuento_aplicado' => $request->descuento ?? 0,
-                    'cliente_id' => $credito->id_cliente,
-                ]
-            );
-
             DB::commit();
-
+            
             return response()->json([
-                'message' => 'Datos del crédito actualizados correctamente' .
-                           ($request->descuento ? ' con descuento aplicado' : ''),
+                'message' => 'Datos del crédito actualizados correctamente',
                 'credito' => $credito
             ], 200);
         } catch (\Throwable $e) {
@@ -212,35 +195,170 @@ class CreditoController extends Controller
         try {
             DB::beginTransaction();
 
-            $credito = Creditos::findOrFail($request->id);
+            $credito = Creditos::findOrFail($request->credito_id ?? $request->id);
+            $saldoAnterior = $credito->saldo_actual;
 
-            // Aplicar descuento si se proporciona (solo actualizar el saldo, sin crear abono)
-            if ($request->descuento && $request->descuento > 0) {
-                // Validar que el descuento no sea mayor al saldo actual
-                if ($request->descuento > $credito->saldo_actual) {
-                    return response()->json([
-                        'error' => 'El descuento no puede ser mayor al saldo actual'
-                    ], 400);
+            // Si es operación de bajo cuenta, crear abono del saldo actual y nuevo crédito
+            if ($request->tipo_operacion === 'bajo_cuenta' && $saldoAnterior > 0) {
+                // Buscar o crear el concepto "Abono de Bajo Cuenta"
+                $conceptoBajoCuenta = Concepto::firstOrCreate(
+                    ['nombre' => 'Abono de Bajo Cuenta'],
+                    ['tipo' => 'Ingresos']
+                );
+
+                // Crear el abono del saldo actual
+                $abono = Abonos::create([
+                    'id_credito' => $credito->id_credito,
+                    'id_cliente' => $credito->id_cliente,
+                    'id_ruta' => $credito->id_ruta,
+                    'id_usuario' => auth()->id(),
+                    'fecha_pago' => now(),
+                    'monto_abono' => $saldoAnterior,
+                    'saldo_anterior' => $saldoAnterior,
+                    'saldo_posterior' => 0,
+                    'observaciones' => 'Abono automático por bajo cuenta',
+                    'id_concepto' => $conceptoBajoCuenta->id,
+                    'estado' => true,
+                    'activar_segundo_recorrido' => false,
+                ]);
+
+                // Crear el concepto de abono en conceptos_abono
+                $abono->conceptosabonos()->create([
+                    'id_usuario' => auth()->id(),
+                    'tipo_concepto' => 'Abono de Bajo Cuenta',
+                    'monto' => $saldoAnterior,
+                    'referencia' => 'Abono automático por bajo cuenta',
+                    'id_caja' => 1
+                ]);
+
+                // Marcar el crédito original como pagado
+                $credito->saldo_actual = 0;
+                $credito->save();
+
+                // Calcular interés para el nuevo crédito
+                $diasPago = $request->forma_pago;
+                $porcentajeInteres = $request->nuevo_interes / 100;
+                $interesCalculado = $request->nueva_cuenta * $porcentajeInteres;
+                $cuotaDiaria = ($request->nueva_cuenta + $interesCalculado) / $diasPago;
+                $fechaCredito = now();
+
+                // Crear nuevo crédito con los nuevos valores
+                $nuevoCredito = Creditos::create([
+                    'id_cliente' => $credito->id_cliente,
+                    'id_ruta' => $credito->id_ruta,
+                    'id_usuario' => auth()->id(),
+                    'id_concepto' => $credito->id_concepto,
+                    'forma_pago' => $credito->forma_pago, // Usar la misma forma de pago del crédito original
+                    'orden_cobro' => $credito->orden_cobro,
+                    'fecha_credito' => $fechaCredito,
+                    'fecha_vencimiento' => $request->fecha_vencimiento,
+                    'fecha_proximo_pago' => $fechaCredito->copy()->addDays($diasPago),
+                    'valor_credito' => $request->nueva_cuenta,
+                    'porcentaje_interes' => $request->nuevo_interes,
+                    'valor_cuota' => $cuotaDiaria, // Cuota diaria calculada con interés incluido
+                    'numero_cuotas' => $diasPago, // Número de cuotas basado en días
+                    'dias_plazo' => $diasPago, // Días de plazo
+                    'saldo_actual' => $request->nueva_cuenta + $interesCalculado, // Saldo actual con interés incluido
+                    'observaciones' => 'Nuevo crédito por bajo cuenta del crédito #' . $credito->id_credito,
+                    'por_renovar' => false,
+                    'descuento_aplicado' => 0,
+                    'es_adicional' => false
+                ]);
+
+                // Aplicar descuento al nuevo crédito si se proporciona
+                if ($request->descuento && $request->descuento > 0) {
+                    // Validar que el descuento no sea mayor al nuevo saldo
+                    if ($request->descuento > $nuevoCredito->saldo_actual) {
+                        return response()->json([
+                            'error' => 'El descuento no puede ser mayor al nuevo saldo'
+                        ], 400);
+                    }
+                    $nuevoCredito->saldo_actual = $nuevoCredito->saldo_actual - $request->descuento;
+                    $nuevoCredito->descuento_aplicado = $request->descuento;
+                    $nuevoCredito->save();
                 }
 
-                // Aplicar el descuento directamente al saldo sin crear abono
-                $credito->saldo_actual = $credito->saldo_actual - $request->descuento;
+                // Procesar métodos de pago si se proporcionan
+                if ($request->has('medios_pago') && is_array($request->medios_pago)) {
+                    foreach ($request->medios_pago as $medioPago) {
+                        if ($medioPago['monto'] > 0) {
+                            // Crear registro en conceptos_credito
+                            $nuevoCredito->conceptosCredito()->create([
+                                'tipo_concepto' => $medioPago['tipo'],
+                                'monto' => $medioPago['monto'],
+                            ]);
+                            
+                            // Si es un pago por Yape y se proporciona nombre del cliente, actualizar o crear en YapeCliente
+                            if ($medioPago['tipo'] === 'Yape' && isset($medioPago['nombre_cliente']) && !empty($medioPago['nombre_cliente'])) {
+                                // Extraer el nombre limpio (sin "(Nuevo)" si existe)
+                                $nombreLimpio = str_replace(' (Nuevo)', '', $medioPago['nombre_cliente']);
+                                
+                                // Buscar si ya existe un YapeCliente para este cliente con el nombre específico
+                                $yapeClienteExistente = YapeCliente::where('id_cliente', $nuevoCredito->id_cliente)
+                                    ->where('nombre', $nombreLimpio)
+                                    ->first();
+                                
+                                if ($yapeClienteExistente) {
+                                    // Actualizar el registro existente
+                                    $yapeClienteExistente->update([
+                                        'id_credito' => $nuevoCredito->id_credito,
+                                        'user_id' => auth()->id(),
+                                        'monto' => $medioPago['monto'],
+                                        'entregar' => $medioPago['monto'],
+                                        'valor' => $request->nueva_cuenta
+                                    ]);
+                                } else {
+                                    // Crear nuevo registro si no existe
+                                    YapeCliente::create([
+                                        'id_cliente' => $nuevoCredito->id_cliente,
+                                        'id_credito' => $nuevoCredito->id_credito,
+                                        'nombre' => $nombreLimpio,
+                                        'user_id' => auth()->id(),
+                                        'monto' => $medioPago['monto'],
+                                        'entregar' => $medioPago['monto'],
+                                        'valor' => $request->nueva_cuenta
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $creditoResultado = $nuevoCredito;
+            } else {
+                // Si no es bajo cuenta, actualizar el crédito existente
+                
+                // Aplicar descuento si se proporciona (solo actualizar el saldo, sin crear abono)
+                if ($request->descuento && $request->descuento > 0) {
+                    // Validar que el descuento no sea mayor al saldo actual
+                    if ($request->descuento > $credito->saldo_actual) {
+                        return response()->json([
+                            'error' => 'El descuento no puede ser mayor al saldo actual'
+                        ], 400);
+                    }
+                    // Aplicar el descuento directamente al saldo sin crear abono
+                    $credito->saldo_actual = $credito->saldo_actual - $request->descuento;
+                }
+
+                // Actualizar los demás campos
+                $credito->porcentaje_interes = $request->nuevo_interes;
+                $credito->dias_plazo = $request->forma_pago;
+                $credito->valor_cuota = $request->valor_cuota;
+                // Solo actualizar saldo_actual si no se aplicó descuento (para evitar sobrescribir)
+                if (!($request->descuento && $request->descuento > 0)) {
+                    $credito->saldo_actual = $request->nueva_cuenta;
+                }
+                $credito->fecha_vencimiento = $request->fecha_vencimiento;
+                $credito->save();
+                
+                $creditoResultado = $credito;
             }
-
-            // Actualizar los demás campos
-            $credito->porcentaje_interes = $request->nuevo_interes;
-            $credito->dias_plazo = $request->forma_pago;
-            $credito->valor_cuota = $request->valor_cuota;
-            $credito->saldo_actual = $request->nueva_cuenta;
-            $credito->fecha_vencimiento = $request->fecha_vencimiento;
-
-            $credito->save();
 
             // Registrar en el log de actividad según el tipo de operación
             $tipoActividad = ($request->tipo_operacion === 'bajo_cuenta') ? 'Bajo Cuenta' : 'Actualización de Crédito';
             $mensajeActividad = ($request->tipo_operacion === 'bajo_cuenta') 
-                ? "Bajo cuenta realizado para cliente: {$credito->cliente->nombre_completo}"
-                : "Crédito actualizado para cliente: {$credito->cliente->nombre_completo}";
+                ? "Bajo cuenta realizado para cliente: {$creditoResultado->cliente->nombre_completo}. Nuevo crédito creado: #{$creditoResultado->id_credito}"
+                : "Crédito actualizado para cliente: {$creditoResultado->cliente->nombre_completo}";
             
             \App\Models\LogActividad::registrar(
                 $tipoActividad,
@@ -248,18 +366,23 @@ class CreditoController extends Controller
                 ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
                 [
                     'tabla_afectada' => 'creditos',
-                    'registro_id' => $credito->id_credito,
+                    'registro_id' => $creditoResultado->id_credito,
                     'descuento_aplicado' => $request->descuento ?? 0,
-                    'cliente_id' => $credito->id_cliente,
+                    'cliente_id' => $creditoResultado->id_cliente,
                 ]
             );
 
             DB::commit();
 
+            $mensaje = ($request->tipo_operacion === 'bajo_cuenta') 
+                ? 'Bajo cuenta procesado correctamente. Nuevo crédito creado'
+                : 'Datos del crédito actualizados correctamente';
+
             return response()->json([
-                'message' => 'Datos del crédito actualizados correctamente' .
+                'message' => $mensaje .
                            ($request->descuento ? ' con descuento aplicado' : ''),
-                'credito' => $credito
+                'credito' => $creditoResultado,
+                'credito_original_pagado' => ($request->tipo_operacion === 'bajo_cuenta') ? $credito->id_credito : null
             ], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -277,78 +400,143 @@ class CreditoController extends Controller
             DB::beginTransaction();
 
             // Buscar el crédito original
-            $credito = Creditos::findOrFail($request->id);
+            $credito = Creditos::findOrFail($request->credito_id ?? $request->id);
+            $saldoAnterior = $credito->saldo_actual;
 
-            if ($request->descuento && $request->descuento > 0) {
-                // Validar que el descuento no sea mayor al saldo actual
-                if ($request->descuento > $credito->saldo_actual) {
-                    return response()->json([
-                        'error' => 'El descuento no puede ser mayor al saldo actual'
-                    ], 400);
-                }
+            // Crear abono del saldo actual antes de renovar y crear nuevo crédito
+            if ($saldoAnterior > 0) {
+                // Buscar o crear el concepto "Abono de Renovación"
+                $conceptoRenovacion = Concepto::firstOrCreate(
+                    ['nombre' => 'Abono de Renovación'],
+                    ['tipo' => 'Ingresos']
+                );
 
-                // Aplicar el descuento directamente al saldo sin crear abono
-                $credito->saldo_actual = $credito->saldo_actual - $request->descuento;
+                // Crear el abono del saldo actual
+                $abono = Abonos::create([
+                    'id_credito' => $credito->id_credito,
+                    'id_cliente' => $credito->id_cliente,
+                    'id_ruta' => $credito->id_ruta,
+                    'id_usuario' => auth()->id(),
+                    'fecha_pago' => now(),
+                    'monto_abono' => $saldoAnterior,
+                    'saldo_anterior' => $saldoAnterior,
+                    'saldo_posterior' => 0,
+                    'observaciones' => 'Abono automático por renovación',
+                    'id_concepto' => $conceptoRenovacion->id,
+                    'estado' => true,
+                    'activar_segundo_recorrido' => false,
+                ]);
+
+                // Crear el concepto de abono en conceptos_abono
+                $abono->conceptosabonos()->create([
+                    'id_usuario' => auth()->id(),
+                    'tipo_concepto' => 'Abono de Renovación',
+                    'monto' => $saldoAnterior,
+                    'referencia' => 'Abono automático por renovación',
+                    'id_caja' => 1
+                ]);
+
+                // Marcar el crédito original como pagado
+                $credito->saldo_actual = 0;
+                $credito->por_renovar = false;
+                $credito->save();
             }
 
-            // Actualizar solo los campos permitidos (excluyendo forma_pago)
-            $credito->valor_credito = $request->valor_credito;
-            $credito->saldo_actual = $request->valor_credito;
-            $credito->numero_cuotas = $request->numero_cuotas;
-            $credito->dias_plazo = $request->dias_plazo;
-            $credito->porcentaje_interes = $request->porcentaje_interes;
-            $credito->fecha_vencimiento = $request->fecha_vencimiento;
+            // Usar los días de pago del formulario (Forma de Pago - Días)
+            $diasPago = $request->dias_plazo; // Días de pago del nuevo crédito
             
-            // Usar la fecha editada si se proporciona, sino usar la fecha actual
-            if ($request->fecha_credito) {
-                $credito->fecha_credito = $request->fecha_credito;
-            } else {
-                $credito->fecha_credito = now();
-            }
-            
-            // Cambiar por_renovar a false ya que se está procesando la renovación
-            $credito->por_renovar = false;
-
-            // Calcular días restantes
-            $fechaHoy        = Carbon::now();
-            $fechaVencimiento = Carbon::parse($request->fecha_vencimiento);
-            $diasRestantes    = $fechaHoy->diffInDays($fechaVencimiento);
-
-            // Validar para evitar división por cero
-            if ($diasRestantes <= 0) {
+            // Validar días de pago
+            if (!$diasPago || $diasPago <= 0) {
                 return response()->json([
-                    'message' => 'La fecha de vencimiento debe ser posterior a hoy.',
+                    'message' => 'Los días de pago deben ser mayor a cero.',
                 ], 400);
             }
 
-            $credito->numero_cuotas = $diasRestantes;
+            // Usar el porcentaje de interés del request
+            $porcentajeInteres = $request->porcentaje_interes;
+            $interesCalculado = ($request->valor_credito * $porcentajeInteres) / 100;
+            
+            // Calcular cuota diaria basada en los días de pago (valor + interés)
+            $cuotaDiaria = round(($request->valor_credito + $interesCalculado) / $diasPago, 2);
 
-            // Calcular cuota diaria
-            $cuotaDiaria = round($request->valor_credito / $diasRestantes, 2);
-            $credito->valor_cuota = $cuotaDiaria;
+            // Usar la fecha editada si se proporciona, sino usar la fecha actual
+            $fechaCredito = $request->fecha_credito ? $request->fecha_credito : now();
 
-            // Guardar los cambios
-            $credito->save();
+            // Crear nuevo crédito con los valores de renovación
+            $nuevoCredito = Creditos::create([
+                'id_cliente' => $credito->id_cliente,
+                'id_ruta' => $credito->id_ruta,
+                'id_usuario' => auth()->id(),
+                'id_concepto' => $credito->id_concepto,
+                'forma_pago' => $credito->forma_pago, // Mantener la misma forma de pago del crédito original
+                'orden_cobro' => $credito->orden_cobro,
+                'fecha_credito' => $fechaCredito,
+                'fecha_vencimiento' => $request->fecha_vencimiento,
+                'fecha_proximo_pago' => now()->addDays($diasPago),
+                'valor_credito' => $request->valor_credito,
+                'porcentaje_interes' => $porcentajeInteres, // Usar el nuevo interés
+                'valor_cuota' => $cuotaDiaria,
+                'numero_cuotas' => $diasPago, // Número de cuotas basado en días de pago
+                'dias_plazo' => $diasPago, // Días de plazo basado en días de pago
+                'saldo_actual' => $request->valor_credito + $interesCalculado,
+                'observaciones' => 'Nuevo crédito por renovación del crédito #' . $credito->id_credito,
+                'por_renovar' => false,
+                'descuento_aplicado' => 0,
+                'es_adicional' => false
+            ]);
 
-            // Guardar los medios de pago nuevos
+            // Aplicar descuento al nuevo crédito si se proporciona
+            if ($request->descuento && $request->descuento > 0) {
+                // Validar que el descuento no sea mayor al nuevo saldo
+                if ($request->descuento > $nuevoCredito->saldo_actual) {
+                    return response()->json([
+                        'error' => 'El descuento no puede ser mayor al nuevo saldo'
+                    ], 400);
+                }
+                $nuevoCredito->saldo_actual = $nuevoCredito->saldo_actual - $request->descuento;
+                $nuevoCredito->descuento_aplicado = $request->descuento;
+                $nuevoCredito->save();
+            }
+
+            // Guardar los medios de pago nuevos en el nuevo crédito
             if ($request->has('medios_pago') && is_array($request->medios_pago)) {
                 foreach ($request->medios_pago as $mp) {
-                    $credito->conceptosCredito()->create([
+                    $nuevoCredito->conceptosCredito()->create([
                         'tipo_concepto' => $mp['tipo'],
                         'monto'         => $mp['monto'],
                     ]);
                     
-                    // Si es un pago por Yape y se proporciona nombre del cliente, registrar en YapeCliente
+                    // Si es un pago por Yape y se proporciona nombre del cliente, actualizar o crear en YapeCliente
                     if ($mp['tipo'] === 'Yape' && isset($mp['nombre_cliente']) && !empty($mp['nombre_cliente'])) {
-                        \App\Models\YapeCliente::create([
-                            'id_cliente' => $credito->id_cliente,
-                            'id_credito' => $credito->id_credito,
-                            'nombre' => $mp['nombre_cliente'],
-                            'user_id' => auth()->id(),
-                            'monto' => $mp['monto'],
-                            'entregar' => $mp['monto'],
-                            'valor' => $request->valor_credito, // Usar el valor del crédito renovado
-                        ]);
+                        // Extraer el nombre limpio (sin "(Nuevo)" si existe)
+                        $nombreLimpio = str_replace(' (Nuevo)', '', $mp['nombre_cliente']);
+                        
+                        // Buscar si ya existe un YapeCliente para este cliente con el nombre específico
+                        $yapeClienteExistente = \App\Models\YapeCliente::where('id_cliente', $nuevoCredito->id_cliente)
+                            ->where('nombre', $nombreLimpio)
+                            ->first();
+                        
+                        if ($yapeClienteExistente) {
+                            // Actualizar el registro existente
+                            $yapeClienteExistente->update([
+                                'id_credito' => $nuevoCredito->id_credito,
+                                'user_id' => auth()->id(),
+                                'monto' => $mp['monto'],
+                                'entregar' => $mp['monto'],
+                                'valor' => $request->valor_credito,
+                            ]);
+                        } else {
+                            // Crear nuevo registro si no existe
+                            \App\Models\YapeCliente::create([
+                                'id_cliente' => $nuevoCredito->id_cliente,
+                                'id_credito' => $nuevoCredito->id_credito,
+                                'nombre' => $nombreLimpio,
+                                'user_id' => auth()->id(),
+                                'monto' => $mp['monto'],
+                                'entregar' => $mp['monto'],
+                                'valor' => $request->valor_credito,
+                            ]);
+                        }
                     }
                 }
             }
@@ -356,23 +544,27 @@ class CreditoController extends Controller
             // Registrar en el log de actividad
             \App\Models\LogActividad::registrar(
                 'Renovación de Crédito',
-                "Crédito renovado para cliente: {$credito->cliente->nombre_completo}" .
+                "Crédito renovado para cliente: {$nuevoCredito->cliente->nombre_completo}. Nuevo crédito creado: #{$nuevoCredito->id_credito}" .
                 ($request->descuento ? ", Descuento aplicado: S/ " . number_format($request->descuento, 2) : ""),
                 [
                     'tabla_afectada' => 'creditos',
-                    'registro_id' => $credito->id_credito,
+                    'registro_id' => $nuevoCredito->id_credito,
                     'descuento_aplicado' => $request->descuento ?? 0,
-                    'cliente_id' => $credito->id_cliente,
+                    'cliente_id' => $nuevoCredito->id_cliente,
                 ]
             );
 
             DB::commit();
 
             return response()->json([
-                'message' => 'Crédito renovado correctamente' .
+                'message' => 'Crédito renovado correctamente. Nuevo crédito creado' .
                            ($request->descuento ? ' con descuento aplicado' : '') . '.',
-                'cuota_diaria_calculada' => $cuotaDiaria,
-                'dias_restantes' => $diasRestantes
+                'credito' => $nuevoCredito,
+                'credito_original_pagado' => $credito->id_credito,
+                'cuota_diaria_calculada' => $nuevoCredito->valor_cuota,
+                'dias_pago' => $diasPago,
+                'interes_calculado' => $interesCalculado,
+                'porcentaje_interes' => $porcentajeInteres
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -595,6 +787,127 @@ class CreditoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener YapeCliente'
+            ], 500);
+        }
+    }
+
+    public function getYapeClienteCompleto($clienteId)
+    {
+        try {
+            // Buscar YapeClientes del mismo cliente que tengan saldo pendiente por yapear
+            // Ordenar por fecha de creación descendente para priorizar los más recientes
+            $yapeClientes = \App\Models\YapeCliente::where('id_cliente', $clienteId)
+                ->whereNotNull('nombre')
+                ->where('nombre', '!=', '')
+                ->with('abonos')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            foreach ($yapeClientes as $yapeCliente) {
+                // Calcular el yapeado real (abonos - devoluciones)
+                $yapeadoReal = 0;
+                foreach ($yapeCliente->abonos as $abono) {
+                    if ($abono->es_devolucion) {
+                        $yapeadoReal -= $abono->monto_abono;
+                    } else {
+                        $yapeadoReal += $abono->monto_abono;
+                    }
+                }
+                
+                // Si el yapeado es menor al monto (aún hay saldo pendiente), retornar este nombre
+                if ($yapeadoReal < $yapeCliente->monto) {
+                    return response()->json([
+                        'success' => true,
+                        'nombre_yape' => $yapeCliente->nombre
+                    ]);
+                }
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay YapeCliente con saldo pendiente para este cliente'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al obtener YapeCliente con saldo pendiente: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener YapeCliente con saldo pendiente'
+            ], 500);
+        }
+    }
+
+    public function getYapeClientes($clienteId)
+    {
+        try {
+            // Obtener todos los YapeClientes del cliente con información de saldo pendiente
+            $yapeClientes = \App\Models\YapeCliente::where('id_cliente', $clienteId)
+                ->whereNotNull('nombre')
+                ->where('nombre', '!=', '')
+                ->with('abonos')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $opcionesYapeCliente = [];
+            $clienteConSaldoPendiente = null;
+            
+            foreach ($yapeClientes as $yapeCliente) {
+                // Calcular el yapeado real (abonos - devoluciones)
+                $yapeadoReal = 0;
+                foreach ($yapeCliente->abonos as $abono) {
+                    if ($abono->es_devolucion) {
+                        $yapeadoReal -= $abono->monto_abono;
+                    } else {
+                        $yapeadoReal += $abono->monto_abono;
+                    }
+                }
+                
+                $saldoPendiente = $yapeCliente->monto - $yapeadoReal;
+                
+                // Si tiene saldo pendiente, es el cliente que debe aparecer en verde
+                if ($saldoPendiente > 0) {
+                    $clienteConSaldoPendiente = [
+                        'id' => $yapeCliente->id,
+                        'nombre_yape' => $yapeCliente->nombre,
+                        'monto_total' => $yapeCliente->monto,
+                        'yapeado' => $yapeadoReal,
+                        'saldo_pendiente' => $saldoPendiente,
+                        'tiene_saldo_pendiente' => true
+                    ];
+                    break; // Solo necesitamos el primero con saldo pendiente
+                }
+            }
+            
+            // Si hay un cliente con saldo pendiente, solo mostrar ese
+            if ($clienteConSaldoPendiente) {
+                $opcionesYapeCliente[] = $clienteConSaldoPendiente;
+            } else {
+                // Si no hay cliente con saldo pendiente, agregar opción con nombre del cliente
+                $cliente = \App\Models\Clientes::find($clienteId);
+                $nombreCliente = $cliente ? $cliente->nombre_completo : 'Cliente';
+                
+                $opcionesYapeCliente[] = [
+                    'id' => 'nuevo',
+                    'nombre_yape' => $nombreCliente . ' (Nuevo)',
+                    'monto_total' => 0,
+                    'yapeado' => 0,
+                    'saldo_pendiente' => 0,
+                    'tiene_saldo_pendiente' => false
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'yape_clientes' => $opcionesYapeCliente
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al obtener opciones YapeCliente: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener opciones YapeCliente'
             ], 500);
         }
     }

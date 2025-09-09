@@ -121,6 +121,7 @@ $cliente->loadMissing('creditos');
                     isRenewal: false,
                     mostrarRenovacionCompleta: false,
                     isShowingRenovacionSteps: false, // New variable to control steps
+                    isShowingBajoCuentaSteps: false, // New variable to control bajo cuenta steps
 
                     // Missing variables that need to be added:
                     fechaActualEditable: '',
@@ -156,6 +157,7 @@ $cliente->loadMissing('creditos');
                     efectivo: 0,
                     yape: 0,
                     nombreYapeCliente: '',
+                    opcionesYapeCliente: [],
                     caja: 0,
                     descuentoPago: 0,
                     abonoCompletarPrestamo: 0,
@@ -257,6 +259,16 @@ $cliente->loadMissing('creditos');
                         this.$watch('fechaActualEditable', () => {
                             this.calcularFechaVencimiento();
                             this.fechaInicio = this.fechaActualEditable;
+                        });
+
+                        // Watcher para yape - cargar opciones y seleccionar nombre automáticamente
+                        this.$watch('yape', (value) => {
+                            if (value > 0) {
+                                this.cargarOpcionesYapeCliente();
+                            } else {
+                                this.nombreYapeCliente = '';
+                                this.opcionesYapeCliente = [];
+                            }
                         });
 
                         this.$watch(() => [this.newInteres, this.newFormaPago], ([interes, forma]) => {
@@ -461,6 +473,12 @@ $cliente->loadMissing('creditos');
 
                     confirmDeactivation() {
                         if (this.isRenewal) {
+                            // Validar que si hay Yape, el nombre del cliente sea requerido
+                            if (parseFloat(this.yape || 0) > 0 && !this.nombreYapeCliente) {
+                                alert('El nombre del cliente Yape es requerido cuando se ingresa un monto en Yape.');
+                                return;
+                            }
+                            
                             // Validar que la suma de medios de pago sea igual al monto a entregar
                             const totalMediosPago = parseFloat(this.efectivo || 0) + 
                                                   parseFloat(this.yape || 0) + 
@@ -523,23 +541,59 @@ $cliente->loadMissing('creditos');
                             });
                         } else {
                             // Lógica para baja de cuenta
+                            let payload = {
+                                credito_id: this.deactivatingCreditId,
+                                nuevo_interes: parseFloat(this.newInteres),
+                                forma_pago: parseInt(this.newFormaPago),
+                                nueva_cuenta: parseFloat(this.newCuenta),
+                                valor_cuota: parseFloat(this.newValorCuota),
+                                fecha_vencimiento: this.newVencimientoDate,
+                                fecha_credito: this.fechaActualEditable, // Agregar fecha editada
+                                descuento: parseFloat(this.descuento) || 0, // Agregar descuento
+                                tipo_operacion: 'bajo_cuenta' // Identificar como bajo cuenta
+                            };
+
+                            // Si estamos en el paso de métodos de pago, incluir los medios de pago
+                            if (this.isShowingBajoCuentaSteps) {
+                                // Validar que si hay Yape, el nombre del cliente sea requerido
+                                if (parseFloat(this.yape || 0) > 0 && !this.nombreYapeCliente) {
+                                    alert('El nombre del cliente Yape es requerido cuando se ingresa un monto en Yape.');
+                                    return;
+                                }
+                                
+                                // Validar que la suma de medios de pago sea igual al monto de nueva cuenta
+                                const totalMediosPago = parseFloat(this.efectivo || 0) + 
+                                                      parseFloat(this.yape || 0) + 
+                                                      parseFloat(this.caja || 0) + 
+                                                      parseFloat(this.descuentoPago || 0) + 
+                                                      parseFloat(this.abonoCompletarPrestamo || 0) + 
+                                                      parseFloat(this.otro || 0);
+                                
+                                const montoNuevaCuenta = parseFloat(this.newCuenta || 0);
+                                
+                                if (totalMediosPago !== montoNuevaCuenta) {
+                                    alert(`La suma de los medios de pago (S/ ${totalMediosPago.toFixed(2)}) debe ser igual al monto de nueva cuenta (S/ ${montoNuevaCuenta.toFixed(2)}). Por favor, complete los medios de pago correctamente.`);
+                                    return;
+                                }
+
+                                // Agregar medios de pago al payload
+                                payload.medios_pago = [
+                                    ...(this.efectivo > 0 ? [{ tipo: 'Efectivo', monto: parseFloat(this.efectivo) }] : []),
+                                    ...(this.yape > 0 ? [{ tipo: 'Yape', monto: parseFloat(this.yape), nombre_cliente: this.nombreYapeCliente }] : []),
+                                    ...(this.caja > 0 ? [{ tipo: 'Caja', monto: parseFloat(this.caja) }] : []),
+                                    ...(this.descuentoPago > 0 ? [{ tipo: 'Descuento', monto: parseFloat(this.descuentoPago) }] : []),
+                                    ...(this.abonoCompletarPrestamo > 0 ? [{ tipo: 'Abono para completar préstamo', monto: parseFloat(this.abonoCompletarPrestamo) }] : []),
+                                    ...(this.otro > 0 ? [{ tipo: 'Otro', monto: parseFloat(this.otro) }] : [])
+                                ];
+                            }
+
                             fetch('/creditos/actualizar', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
                                 },
-                                body: JSON.stringify({
-                                    credito_id: this.deactivatingCreditId,
-                                    nuevo_interes: parseFloat(this.newInteres),
-                                    forma_pago: parseInt(this.newFormaPago),
-                                    nueva_cuenta: parseFloat(this.newCuenta),
-                                    valor_cuota: parseFloat(this.newValorCuota),
-                                    fecha_vencimiento: this.newVencimientoDate,
-                                    fecha_credito: this.fechaActualEditable, // Agregar fecha editada
-                                    descuento: parseFloat(this.descuento) || 0, // Agregar descuento
-                                    tipo_operacion: 'bajo_cuenta' // Identificar como bajo cuenta
-                                })
+                                body: JSON.stringify(payload)
                             })
                             .then(r => r.json())
                             .then(data => {
@@ -572,10 +626,72 @@ $cliente->loadMissing('creditos');
                         .then(data => {
                             if (data.success && data.nombre_yape) {
                                 this.nombreYapeCliente = data.nombre_yape;
+                            } else {
+                                // Si no hay nombre Yape registrado, usar el nombre del cliente por defecto
+                                this.nombreYapeCliente = '{{ $cliente->nombre_completo }}';
                             }
                         })
                         .catch(error => {
                             console.log('No hay YapeCliente asociado o error:', error);
+                            // Si hay error, usar el nombre del cliente por defecto
+                            this.nombreYapeCliente = '{{ $cliente->nombre_completo }}';
+                        });
+                    },
+
+                    cargarNombreYapeCompleto() {
+                        // Hacer consulta al backend para obtener YapeCliente con saldo pendiente del mismo cliente
+                        const clienteId = {{ $cliente->id_cliente }};
+                        fetch(`/clientes/${clienteId}/yape-cliente-completo`, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.nombre_yape) {
+                                this.nombreYapeCliente = data.nombre_yape;
+                            } else {
+                                // Si no hay nombre Yape con saldo pendiente, usar el nombre del cliente por defecto
+                                this.nombreYapeCliente = '{{ $cliente->nombre_completo }}';
+                            }
+                        })
+                        .catch(error => {
+                            console.log('No hay YapeCliente con saldo pendiente o error:', error);
+                            // Si hay error, usar el nombre del cliente por defecto
+                            this.nombreYapeCliente = '{{ $cliente->nombre_completo }}';
+                        });
+                    },
+
+                    cargarOpcionesYapeCliente() {
+                        // Cargar todas las opciones de YapeCliente para el cliente actual
+                        const clienteId = {{ $cliente->id_cliente }};
+                        fetch(`/clientes/${clienteId}/yape-clientes`, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.yape_clientes) {
+                                this.opcionesYapeCliente = data.yape_clientes;
+                                // Si hay opciones y no hay nombre seleccionado, seleccionar el primero con saldo pendiente
+                                if (this.opcionesYapeCliente.length > 0 && !this.nombreYapeCliente) {
+                                    const pendiente = this.opcionesYapeCliente.find(yc => yc.saldo_pendiente > 0);
+                                    this.nombreYapeCliente = pendiente ? pendiente.nombre_yape : this.opcionesYapeCliente[0].nombre_yape;
+                                }
+                            } else {
+                                this.opcionesYapeCliente = [];
+                                this.nombreYapeCliente = '{{ $cliente->nombre_completo }}';
+                            }
+                        })
+                        .catch(error => {
+                            console.log('Error al cargar opciones YapeCliente:', error);
+                            this.opcionesYapeCliente = [];
+                            this.nombreYapeCliente = '{{ $cliente->nombre_completo }}';
                         });
                     },
 
@@ -634,6 +750,7 @@ $cliente->loadMissing('creditos');
                     // Funciones para el modal de renovación
                     showRenovacionSteps() {
                         this.isShowingRenovacionSteps = true;
+                        this.cargarOpcionesYapeCliente();
                     },
 
                     hideRenovacionSteps() {
@@ -822,7 +939,7 @@ $cliente->loadMissing('creditos');
                                         </div>
                                     </div>
 
-                                    <div x-show="!isRenewal || !isShowingRenovacionSteps"
+                                    <div x-show="(!isRenewal && !isShowingBajoCuentaSteps) || (isRenewal && !isShowingRenovacionSteps)"
                                         class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {{-- Columna Izquierda: Datos del Crédito (Solo lectura) --}}
                                         <div>
@@ -937,6 +1054,81 @@ $cliente->loadMissing('creditos');
                                         </div>
                                     </div>
 
+                                    <!-- Modal de métodos de pago para Bajo Cuenta -->
+                                    <div x-show="!isRenewal && isShowingBajoCuentaSteps" class="mt-4">
+                                        <h4 class="text-lg font-medium text-gray-900 mb-4">Métodos de Pago - Bajo Cuenta</h4>
+                                        
+                                        <!-- Mostrar el valor de Nueva Cuenta -->
+                                        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm font-medium text-blue-700">Nueva Cuenta:</span>
+                                                <span class="text-lg font-bold text-blue-900" x-text="'S/ ' + parseFloat(newCuenta || 0).toFixed(2)"></span>
+                                            </div>
+                                            <p class="text-xs text-blue-600 mt-1">La suma de los medios de pago debe ser igual a este monto</p>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-3">Medios de Pago</label>
+                                            
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Efectivo</label>
+                                                    <input type="number" x-model="efectivo" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Yape</label>
+                                                    <input type="number" x-model="yape" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Caja</label>
+                                                    <input type="number" x-model="caja" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Descuento</label>
+                                                    <input type="number" x-model="descuentoPago" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Abono para completar préstamo</label>
+                                                    <input type="number" x-model="abonoCompletarPrestamo" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-medium text-blue-700">Otro</label>
+                                                    <input type="number" x-model="otro" min="0" step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-4">
+                                                <label class="block text-sm font-medium text-gray-700">Total Medios de Pago</label>
+                                                <input type="number" :value="totalMediosPagoDirectos.toFixed(2)" readonly
+                                                    class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
+                                            </div>
+                                            
+                                            <div x-show="yape > 0" x-transition class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700">Nombre Cliente Yape <span class="text-red-500">*</span></label>
+                                <select x-model="nombreYapeCliente" 
+                                    :class="!nombreYapeCliente && yape > 0 ? 'mt-1 block w-full border-red-400 bg-red-50 rounded-md focus:border-red-500 focus:ring focus:ring-red-300 focus:ring-opacity-50' : 'mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50'">
+                                    <option value="">Seleccione un nombre Yape</option>
+                                    <template x-for="opcion in opcionesYapeCliente" :key="opcion.id">
+                                        <option :value="opcion.nombre_yape" 
+                                                :class="opcion.tiene_saldo_pendiente ? 'text-green-600 font-semibold' : 'text-gray-600'"
+                                                x-text="opcion.nombre_yape"></option>
+                                    </template>
+                                </select>
+                            </div>
+                                        </div>
+                                    </div>
+
                                     <div x-show="isRenewal && isShowingRenovacionSteps" class="mt-4">
                                         <h4 class="text-lg font-medium text-gray-900 mb-4">Datos de Renovación</h4>
                                         <!-- Organizar en 2 columnas -->
@@ -963,9 +1155,16 @@ $cliente->loadMissing('creditos');
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
                                             <div x-show="yape > 0" x-transition>
-                                                    <label class="block text-sm font-medium text-gray-700">Nombre Cliente Yape</label>
-                                                    <input type="text" x-model="nombreYapeCliente" 
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="Ingrese el nombre del cliente" />
+                                                    <label class="block text-sm font-medium text-gray-700">Nombre Cliente Yape <span class="text-red-500">*</span></label>
+                                                    <select x-model="nombreYapeCliente" 
+                                                        :class="!nombreYapeCliente && yape > 0 ? 'mt-1 block w-full border-red-400 bg-red-50 rounded-md focus:border-red-500 focus:ring focus:ring-red-300 focus:ring-opacity-50' : 'mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50'">
+                                                        <option value="">Seleccione un nombre Yape</option>
+                                                        <template x-for="opcion in opcionesYapeCliente" :key="opcion.id">
+                                                            <option :value="opcion.nombre_yape" 
+                                                                    :class="opcion.tiene_saldo_pendiente ? 'text-green-600 font-semibold' : 'text-gray-600'"
+                                                                    x-text="opcion.nombre_yape"></option>
+                                                        </template>
+                                                    </select>
                                             </div>
 
                                             {{-- <div>
@@ -1032,7 +1231,7 @@ $cliente->loadMissing('creditos');
                         </div>
                         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                             <button type="button" @click="confirmDeactivation()"
-                                x-show="!isRenewal || isShowingRenovacionSteps"
+                                x-show="(isRenewal && isShowingRenovacionSteps) || (!isRenewal && isShowingBajoCuentaSteps)"
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
                                 x-text="isRenewal ? 'Confirmar Renovación' : 'Confirmar Baja de Cuenta'">
                             </button>
@@ -1043,14 +1242,26 @@ $cliente->loadMissing('creditos');
                                 Siguiente
                             </button>
 
+                            <button type="button" @click="isShowingBajoCuentaSteps = true; cargarOpcionesYapeCliente(); cargarNombreYapeCompleto()"
+                                x-show="!isRenewal && !isShowingBajoCuentaSteps"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Siguiente
+                            </button>
+
                             <button type="button" @click="hideRenovacionSteps()"
                                 x-show="isRenewal && isShowingRenovacionSteps"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                 Volver
                             </button>
 
+                            <button type="button" @click="isShowingBajoCuentaSteps = false"
+                                x-show="!isRenewal && isShowingBajoCuentaSteps"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Volver
+                            </button>
+
                             <button type="button" @click="showDeactivationModal = false"
-                                x-show="!isShowingRenovacionSteps"
+                                x-show="!isShowingRenovacionSteps && !isShowingBajoCuentaSteps"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                 Cancelar
                             </button>

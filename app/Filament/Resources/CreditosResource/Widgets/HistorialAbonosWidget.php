@@ -155,6 +155,10 @@ class HistorialAbonosWidget extends BaseWidget
         } else {
             // Para créditos normales, usar el cálculo tradicional
             $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
+            
+            // Restar el descuento aplicado si existe
+            $descuentoAplicado = $this->record->descuento_aplicado ?? 0;
+            $montoTotalConIntereses -= $descuentoAplicado;
 
             // Si es el registro del crédito (desembolso), devolver el monto total
             if ($recordActual->tipo_registro === 'credito') {
@@ -230,7 +234,7 @@ class HistorialAbonosWidget extends BaseWidget
                     }
                     return null;
                 })
-                ->visible(fn ($record) => $record->tipo_registro === 'abono'),
+                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0),
 
             Tables\Actions\Action::make('delete')
                 ->label('')
@@ -300,7 +304,7 @@ class HistorialAbonosWidget extends BaseWidget
                     'title' => 'Eliminar',
                     'class' => 'hover:bg-danger-50 rounded-full'
                 ])
-                ->visible(fn ($record) => $record->tipo_registro === 'abono'),
+                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0),
         ];
     }
 
