@@ -326,8 +326,37 @@ class ListPlanillaRecaudadors extends ListRecords
         );
 
     } catch (\Exception $e) {
-        Log::error('Error al generar PDF: ' . $e->getMessage());
-        $this->notify('danger', 'Error al generar el PDF: ' . $e->getMessage());
+            Log::error('Error al generar PDF: ' . $e->getMessage());
+            $this->notify('danger', 'Error al generar el PDF: ' . $e->getMessage());
+        }
     }
-}
+
+    public static function handleRenovacionAction()
+    {
+        $request = request();
+        
+        if ($request->isMethod('POST') && $request->has('action') && $request->has('credito_id')) {
+            $action = $request->input('action');
+            $creditoId = $request->input('credito_id');
+            
+            $credito = \App\Models\Creditos::find($creditoId);
+            
+            if ($credito) {
+                if ($action === 'habilitar_renovacion') {
+                    $credito->por_renovar = true;
+                    $credito->save();
+                    
+                    session()->flash('success', 'Crédito habilitado para renovación');
+                } elseif ($action === 'deshabilitar_renovacion') {
+                    $credito->por_renovar = false;
+                    $credito->save();
+                    
+                    session()->flash('success', 'Crédito deshabilitado para renovación');
+                }
+            }
+        }
+        
+        return redirect()->back();
+    }
+
 }

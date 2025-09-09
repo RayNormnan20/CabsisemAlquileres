@@ -63,6 +63,7 @@ Route::middleware(['auth'])->group(function () {
 Route::post('/creditos/actualizar', [CreditoController::class, 'actualizarDatosCredito'])->name('creditos.actualizar');
 Route::post('/creditos/renovar', [CreditoController::class, 'renovar'])->name('creditos.renovar');
 Route::post('/creditos/cancelar', [CreditoController::class, 'cancelar'])->name('creditos.cancelar');
+Route::post('/planilla-recaudador/renovacion', [\App\Filament\Resources\PlanillaRecaudadorResource\Pages\ListPlanillaRecaudadors::class, 'handleRenovacionAction'])->middleware(['auth'])->name('planilla-recaudador.renovacion');
 Route::get('/creditos/{credito}/yape-cliente', [CreditoController::class, 'getYapeCliente'])->name('creditos.yape-cliente');
 
 // NUEVAS RUTAS CON CACHÉ (SOLO AGREGAR)
