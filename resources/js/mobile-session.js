@@ -13,11 +13,14 @@ class MobileSessionManager {
         this.isCameraActive = false;
         this.isFileSelectionActive = false;
         this.isLoginActive = false;
+        this.isPostLoginProtection = false;
+        this.postLoginTimeout = null;
         
         if (this.isMobile) {
             this.initMobileSessionHandlers();
             this.detectAppSwitch();
             this.setupCameraAndFileDetection();
+            this.setupPostLoginDetection();
         }
     }
     
@@ -54,8 +57,8 @@ class MobileSessionManager {
         
         // Evento blur - cuando la ventana pierde el foco (más sensible)
         window.addEventListener('blur', () => {
-            // No hacer logout inmediato si hay actividad de login, cámara o archivos
-            if (this.isLoginActive || this.isCameraActive || this.isFileSelectionActive) {
+            // No hacer logout inmediato si hay actividad de login, cámara, archivos o protección post-login
+            if (this.isLoginActive || this.isCameraActive || this.isFileSelectionActive || this.isPostLoginProtection) {
                 console.log('🔄 Ventana perdió el foco - logout pausado por actividad activa');
                 return;
             }
@@ -64,7 +67,7 @@ class MobileSessionManager {
             if (this.isOnLoginPage()) {
                 console.log('🔄 Ventana perdió el foco en página de login - logout retrasado');
                 setTimeout(() => {
-                    if (!this.isLoginActive && !this.isCameraActive && !this.isFileSelectionActive) {
+                    if (!this.isLoginActive && !this.isCameraActive && !this.isFileSelectionActive && !this.isPostLoginProtection) {
                         console.log('🔄 Logout retrasado ejecutado');
                         this.performMobileLogout();
                     }
@@ -94,8 +97,8 @@ class MobileSessionManager {
         const resetTimer = () => {
             clearTimeout(inactivityTimer);
             
-            // Solo activar el timer si no hay actividad de cámara, selección de archivos o login
-            if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive) {
+            // Solo activar el timer si no hay actividad de cámara, selección de archivos, login o protección post-login
+            if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive && !this.isPostLoginProtection) {
                 // Timeout más largo durante el login y ajustado por dispositivo
                 let timeoutDuration = INACTIVITY_TIMEOUT; // Default
                 
@@ -110,7 +113,7 @@ class MobileSessionManager {
                     this.performMobileLogout();
                 }, timeoutDuration);
             } else {
-                console.log('Logout pausado - actividad de cámara/archivos/login detectada');
+                console.log('Logout pausado - actividad de cámara/archivos/login/post-login detectada');
                 if (this.isCameraActive || this.isFileSelectionActive) {
                     resetTimer(); // Reiniciar el timer
                 }
@@ -331,13 +334,13 @@ class MobileSessionManager {
         this.isPageVisible = false;
         console.log('📱 Página oculta detectada');
         
-        // Solo hacer logout si no hay actividad de cámara, archivos o login
-        if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive) {
+        // Solo hacer logout si no hay actividad de cámara, archivos, login o protección post-login
+        if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive && !this.isPostLoginProtection) {
             // En páginas de login, ser menos agresivo
             if (this.isOnLoginPage()) {
                 console.log('🔐 Página oculta en login - logout retrasado');
                 setTimeout(() => {
-                    if (!this.isLoginActive && !this.isCameraActive && !this.isFileSelectionActive) {
+                    if (!this.isLoginActive && !this.isCameraActive && !this.isFileSelectionActive && !this.isPostLoginProtection) {
                         console.log('🚪 Logout retrasado por página oculta en login');
                         this.performMobileLogout();
                     }
@@ -392,8 +395,8 @@ class MobileSessionManager {
         // Detectar cuando se minimiza o cambia de app
         window.addEventListener('pagehide', () => {
             console.log('Página oculta - verificando logout');
-            // No hacer logout si hay actividad de cámara o archivos
-            if (!this.isCameraActive && !this.isFileSelectionActive) {
+            // Solo hacer logout si no hay actividad de cámara, archivos o protección post-login
+            if (!this.isCameraActive && !this.isFileSelectionActive && !this.isPostLoginProtection) {
                 console.log('Logout por página oculta');
                 this.performMobileLogout();
             } else {
@@ -420,6 +423,15 @@ class MobileSessionManager {
                     console.log('Protección extendida finalizada tras regresar de galería');
                 }
             }, 120000); // 2 minutos adicionales
+        }
+        
+        // Si regresamos después de un login exitoso, extender protección
+        if (!this.isOnLoginPage() && !this.isPostLoginProtection) {
+            // Verificar si acabamos de hacer login (hay token CSRF y no estamos en login)
+            if (document.querySelector('meta[name="csrf-token"]')) {
+                console.log('🔐 Regreso detectado después de posible login - activando protección');
+                this.activatePostLoginProtection();
+            }
         }
     }
     
@@ -576,6 +588,86 @@ class MobileSessionManager {
             childList: true,
             subtree: true
         });
+    }
+    
+    /**
+     * Configura la detección de login exitoso
+     */
+    setupPostLoginDetection() {
+        // Detectar redirecciones después del login
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        const checkForSuccessfulLogin = () => {
+            // Si estamos saliendo de una página de login y no vamos a otra página de login
+            const wasOnLogin = this.isOnLoginPage();
+            
+            setTimeout(() => {
+                const isNowOnLogin = this.isOnLoginPage();
+                
+                if (wasOnLogin && !isNowOnLogin) {
+                    console.log('🎉 Login exitoso detectado - activando protección post-login por 3 minutos');
+                    this.activatePostLoginProtection();
+                }
+            }, 100);
+        };
+        
+        // Interceptar cambios de historial
+        history.pushState = function(...args) {
+            checkForSuccessfulLogin();
+            return originalPushState.apply(this, args);
+        };
+        
+        history.replaceState = function(...args) {
+            checkForSuccessfulLogin();
+            return originalReplaceState.apply(this, args);
+        };
+        
+        // Detectar cambios de URL
+        window.addEventListener('popstate', checkForSuccessfulLogin);
+        
+        // Detectar formularios de login enviados exitosamente
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (form.matches('form[action*="login"], form[action*="auth"]') || 
+                form.querySelector('input[type="email"], input[type="password"]')) {
+                
+                console.log('📝 Formulario de login enviado - preparando detección de éxito');
+                
+                // Esperar un poco para ver si hay redirección exitosa
+                setTimeout(() => {
+                    if (!this.isOnLoginPage()) {
+                        console.log('🎉 Login exitoso por formulario - activando protección');
+                        this.activatePostLoginProtection();
+                    }
+                }, 2000);
+            }
+        });
+        
+        // Detectar si ya estamos autenticados al cargar la página
+        if (!this.isOnLoginPage() && document.querySelector('meta[name="csrf-token"]')) {
+            // Si no estamos en login y hay token CSRF, probablemente estamos autenticados
+            console.log('🔐 Usuario ya autenticado al cargar - activando protección inicial');
+            this.activatePostLoginProtection();
+        }
+    }
+    
+    /**
+     * Activa la protección post-login
+     */
+    activatePostLoginProtection() {
+        this.isPostLoginProtection = true;
+        
+        // Limpiar timeout anterior si existe
+        if (this.postLoginTimeout) {
+            clearTimeout(this.postLoginTimeout);
+        }
+        
+        // Desactivar protección después de 3 minutos
+        this.postLoginTimeout = setTimeout(() => {
+            console.log('⏰ Protección post-login finalizada');
+            this.isPostLoginProtection = false;
+        }, 180000); // 3 minutos
     }
     
     /**
