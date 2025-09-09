@@ -7,9 +7,12 @@
 class MobileSessionManager {
     constructor() {
         this.isMobile = this.detectMobile();
+        this.isAndroid = /Android/i.test(navigator.userAgent);
+        this.isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         this.isPageVisible = true;
         this.isCameraActive = false;
         this.isFileSelectionActive = false;
+        this.isLoginActive = false;
         
         if (this.isMobile) {
             this.initMobileSessionHandlers();
@@ -51,8 +54,25 @@ class MobileSessionManager {
         
         // Evento blur - cuando la ventana pierde el foco (más sensible)
         window.addEventListener('blur', () => {
-            console.log('Ventana perdió foco - logout móvil');
-            this.performMobileLogout();
+            // No hacer logout inmediato si hay actividad de login, cámara o archivos
+            if (this.isLoginActive || this.isCameraActive || this.isFileSelectionActive) {
+                console.log('🔄 Ventana perdió el foco - logout pausado por actividad activa');
+                return;
+            }
+            
+            // En páginas de login, dar más tiempo antes del logout
+            if (this.isOnLoginPage()) {
+                console.log('🔄 Ventana perdió el foco en página de login - logout retrasado');
+                setTimeout(() => {
+                    if (!this.isLoginActive && !this.isCameraActive && !this.isFileSelectionActive) {
+                        console.log('🔄 Logout retrasado ejecutado');
+                        this.performMobileLogout();
+                    }
+                }, this.isAndroid ? 15000 : 10000); // Android necesita más tiempo
+            } else {
+                console.log('🔄 Ventana perdió el foco - logout móvil');
+                this.performMobileLogout();
+            }
         });
         
         // Evento focus - cuando la ventana recupera el foco
@@ -73,16 +93,28 @@ class MobileSessionManager {
         
         const resetTimer = () => {
             clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                console.log('Inactividad detectada - logout móvil');
-                // No hacer logout si hay actividad de cámara o archivos
-                if (!this.isCameraActive && !this.isFileSelectionActive) {
+            
+            // Solo activar el timer si no hay actividad de cámara, selección de archivos o login
+            if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive) {
+                // Timeout más largo durante el login y ajustado por dispositivo
+                let timeoutDuration = INACTIVITY_TIMEOUT; // Default
+                
+                if (this.isOnLoginPage()) {
+                    // Android necesita más tiempo debido al teclado virtual
+                    timeoutDuration = this.isAndroid ? 45000 : 30000; // 45s Android, 30s otros
+                } else if (this.isAndroid) {
+                    timeoutDuration = 8000; // Android general más tiempo
+                }
+                inactivityTimer = setTimeout(() => {
+                    console.log('Inactividad detectada - logout móvil');
                     this.performMobileLogout();
-                } else {
-                    console.log('Logout pausado - actividad de cámara/archivos detectada');
+                }, timeoutDuration);
+            } else {
+                console.log('Logout pausado - actividad de cámara/archivos/login detectada');
+                if (this.isCameraActive || this.isFileSelectionActive) {
                     resetTimer(); // Reiniciar el timer
                 }
-            }, INACTIVITY_TIMEOUT);
+            }
         };
         
         // Eventos que resetean el timer
@@ -98,6 +130,10 @@ class MobileSessionManager {
      * Configura la detección de actividad de cámara y archivos
      */
     setupCameraAndFileDetection() {
+        console.log('📷 Configurando detección de cámara, archivos y login...');
+        
+        // Configurar detección de actividad de login
+        this.setupLoginDetection();
         // Detectar cuando se abre la cámara o se seleccionan archivos
         document.addEventListener('change', (event) => {
             if (event.target && event.target.type === 'file') {
@@ -293,14 +329,25 @@ class MobileSessionManager {
      */
     handlePageHidden() {
         this.isPageVisible = false;
-        console.log('Página oculta en dispositivo móvil');
+        console.log('📱 Página oculta detectada');
         
-        // No hacer logout si hay actividad de cámara o archivos
-        if (!this.isCameraActive && !this.isFileSelectionActive) {
-            console.log('Logout inmediato');
-            this.performMobileLogout();
+        // Solo hacer logout si no hay actividad de cámara, archivos o login
+        if (!this.isCameraActive && !this.isFileSelectionActive && !this.isLoginActive) {
+            // En páginas de login, ser menos agresivo
+            if (this.isOnLoginPage()) {
+                console.log('🔐 Página oculta en login - logout retrasado');
+                setTimeout(() => {
+                    if (!this.isLoginActive && !this.isCameraActive && !this.isFileSelectionActive) {
+                        console.log('🚪 Logout retrasado por página oculta en login');
+                        this.performMobileLogout();
+                    }
+                }, this.isAndroid ? 20000 : 15000); // Android necesita más tiempo
+            } else {
+                console.log('🚪 Cerrando sesión por página oculta');
+                this.performMobileLogout();
+            }
         } else {
-            console.log('Logout pausado - actividad de cámara/archivos detectada');
+            console.log('📷 Logout pausado - hay actividad de cámara/archivos/login');
         }
     }
     
@@ -439,6 +486,96 @@ class MobileSessionManager {
             // En caso de error, intentar redirigir a login de todas formas
             window.location.href = '/login';
         }
+    }
+    
+    /**
+     * Detecta si el usuario está en una página de login
+     */
+    isOnLoginPage() {
+        return window.location.pathname.includes('/login') || 
+               window.location.pathname.includes('/register') ||
+               window.location.pathname.includes('/password') ||
+               document.querySelector('form[action*="login"]') !== null;
+    }
+    
+    /**
+     * Configura la detección de actividad de login
+     */
+    setupLoginDetection() {
+        // Detectar campos de login (email, password, celular, etc.)
+         const loginFields = document.querySelectorAll('input[type="email"], input[type="password"], input[type="tel"], input[name*="email"], input[name*="password"], input[name*="login"], input[name*="celular"], input[name*="telefono"], input[name*="phone"]');
+        
+        loginFields.forEach(field => {
+            // Eventos de interacción con campos de login
+            ['focus', 'input', 'keydown', 'click'].forEach(eventType => {
+                field.addEventListener(eventType, () => {
+                    console.log('🔐 Actividad de login detectada - pausando logout automático por 2 minutos');
+                    this.isLoginActive = true;
+                    
+                    // Limpiar timeout anterior
+                    if (this.loginTimeout) {
+                        clearTimeout(this.loginTimeout);
+                    }
+                    
+                    // Resetear después de 2 minutos
+                    this.loginTimeout = setTimeout(() => {
+                        console.log('🔐 Timeout de actividad de login - reanudando detección normal');
+                        this.isLoginActive = false;
+                    }, 120000); // 2 minutos
+                });
+            });
+        });
+        
+        // Detectar cuando se envía un formulario de login
+        const loginForms = document.querySelectorAll('form[action*="login"], form[wire\\:submit*="login"], form[wire\\:submit*="authenticate"]');
+        loginForms.forEach(form => {
+            form.addEventListener('submit', () => {
+                console.log('🔐 Formulario de login enviado - extendiendo protección por 3 minutos');
+                this.isLoginActive = true;
+                
+                if (this.loginTimeout) {
+                    clearTimeout(this.loginTimeout);
+                }
+                
+                this.loginTimeout = setTimeout(() => {
+                    this.isLoginActive = false;
+                }, 180000); // 3 minutos después del envío
+            });
+        });
+        
+        // Observador para detectar campos de login dinámicos
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) { // Element node
+                        const newLoginFields = node.querySelectorAll ? 
+                             node.querySelectorAll('input[type="email"], input[type="password"], input[type="tel"], input[name*="email"], input[name*="password"], input[name*="celular"], input[name*="telefono"], input[name*="phone"]') : [];
+                        
+                        newLoginFields.forEach(field => {
+                            ['focus', 'input', 'keydown', 'click'].forEach(eventType => {
+                                field.addEventListener(eventType, () => {
+                                    console.log('🔐 Actividad de login detectada en campo dinámico');
+                                    this.isLoginActive = true;
+                                    
+                                    if (this.loginTimeout) {
+                                        clearTimeout(this.loginTimeout);
+                                    }
+                                    
+                                    this.loginTimeout = setTimeout(() => {
+                                        this.isLoginActive = false;
+                                    }, 120000);
+                                });
+                            });
+                        });
+                    }
+                });
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     }
     
     /**
