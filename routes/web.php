@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use App\Http\Controllers\RoadMap\DataController;
 use App\Http\Controllers\Auth\OidcAuthController;
@@ -23,6 +24,18 @@ Route::get('/validate-account/{user:creation_token}', function (User $user) {
 
 // Login default redirection
 Route::redirect('/login-redirect', '/login')->name('login');
+
+// Mobile logout route
+Route::post('/mobile-logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Sesión cerrada exitosamente desde dispositivo móvil'
+    ]);
+})->middleware(['web'])->name('mobile.logout');
 
 // Road map JSON data
 Route::get('road-map/data/{project}', [DataController::class, 'data'])

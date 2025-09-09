@@ -185,8 +185,10 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         ),
         'J' => 
         array (
+            'Jenssegers\\Agent\\' => 17,
             'JeffGreco13\\FilamentBreezy\\Database\\Factories\\' => 46,
             'JeffGreco13\\FilamentBreezy\\' => 27,
+            'Jaybizzle\\CrawlerDetect\\' => 24,
         ),
         'I' => 
         array (
@@ -640,6 +642,10 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         array (
             0 => __DIR__ . '/..' . '/kkomelin/laravel-translatable-string-exporter/src',
         ),
+        'Jenssegers\\Agent\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/jenssegers/agent/src',
+        ),
         'JeffGreco13\\FilamentBreezy\\Database\\Factories\\' => 
         array (
             0 => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/database/factories',
@@ -647,6 +653,10 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'JeffGreco13\\FilamentBreezy\\' => 
         array (
             0 => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/src',
+        ),
+        'Jaybizzle\\CrawlerDetect\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/jaybizzle/crawler-detect/src',
         ),
         'Intervention\\Image\\' => 
         array (
@@ -864,6 +874,13 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
                 0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
             ),
         ),
+        'D' => 
+        array (
+            'Detection' => 
+            array (
+                0 => __DIR__ . '/..' . '/mobiledetect/mobiledetectlib/namespaced',
+            ),
+        ),
     );
 
     public static $classMap = array (
@@ -1046,6 +1063,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'App\\Http\\Middleware\\EnsureSelectedRoute' => __DIR__ . '/../..' . '/app/Http/Middleware/EnsureSelectedRoute.php',
         'App\\Http\\Middleware\\LocaleMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/LocaleMiddleware.php',
         'App\\Http\\Middleware\\LogLivewireRequests' => __DIR__ . '/../..' . '/app/Http/Middleware/LogLivewireRequests.php',
+        'App\\Http\\Middleware\\MobileSessionManager' => __DIR__ . '/../..' . '/app/Http/Middleware/MobileSessionManager.php',
         'App\\Http\\Middleware\\PreventRequestsDuringMaintenance' => __DIR__ . '/../..' . '/app/Http/Middleware/PreventRequestsDuringMaintenance.php',
         'App\\Http\\Middleware\\RedirectIfAuthenticated' => __DIR__ . '/../..' . '/app/Http/Middleware/RedirectIfAuthenticated.php',
         'App\\Http\\Middleware\\TrimStrings' => __DIR__ . '/../..' . '/app/Http/Middleware/TrimStrings.php',
@@ -1361,6 +1379,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'DeepCopy\\TypeFilter\\Spl\\SplDoublyLinkedListFilter' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/TypeFilter/Spl/SplDoublyLinkedListFilter.php',
         'DeepCopy\\TypeFilter\\TypeFilter' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/TypeFilter/TypeFilter.php',
         'DeepCopy\\TypeMatcher\\TypeMatcher' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/TypeMatcher/TypeMatcher.php',
+        'Detection\\MobileDetect' => __DIR__ . '/..' . '/mobiledetect/mobiledetectlib/namespaced/Detection/MobileDetect.php',
         'Devaslanphp\\FilamentAvatar\\Core\\FilamentUserAvatarProvider' => __DIR__ . '/..' . '/devaslanphp/filament-avatar/src/Core/FilamentUserAvatarProvider.php',
         'Devaslanphp\\FilamentAvatar\\Core\\GravatarProvider' => __DIR__ . '/..' . '/devaslanphp/filament-avatar/src/Core/GravatarProvider.php',
         'Devaslanphp\\FilamentAvatar\\Core\\HasAvatarUrl' => __DIR__ . '/..' . '/devaslanphp/filament-avatar/src/Core/HasAvatarUrl.php',
@@ -4806,6 +4825,11 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'Intervention\\Image\\Point' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Point.php',
         'Intervention\\Image\\Response' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Response.php',
         'Intervention\\Image\\Size' => __DIR__ . '/..' . '/intervention/image/src/Intervention/Image/Size.php',
+        'Jaybizzle\\CrawlerDetect\\CrawlerDetect' => __DIR__ . '/..' . '/jaybizzle/crawler-detect/src/CrawlerDetect.php',
+        'Jaybizzle\\CrawlerDetect\\Fixtures\\AbstractProvider' => __DIR__ . '/..' . '/jaybizzle/crawler-detect/src/Fixtures/AbstractProvider.php',
+        'Jaybizzle\\CrawlerDetect\\Fixtures\\Crawlers' => __DIR__ . '/..' . '/jaybizzle/crawler-detect/src/Fixtures/Crawlers.php',
+        'Jaybizzle\\CrawlerDetect\\Fixtures\\Exclusions' => __DIR__ . '/..' . '/jaybizzle/crawler-detect/src/Fixtures/Exclusions.php',
+        'Jaybizzle\\CrawlerDetect\\Fixtures\\Headers' => __DIR__ . '/..' . '/jaybizzle/crawler-detect/src/Fixtures/Headers.php',
         'JeffGreco13\\FilamentBreezy\\Actions\\PasswordButtonAction' => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/src/Actions/PasswordButtonAction.php',
         'JeffGreco13\\FilamentBreezy\\Facades\\FilamentBreezy' => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/src/Facades/FilamentBreezy.php',
         'JeffGreco13\\FilamentBreezy\\FilamentBreezy' => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/src/FilamentBreezy.php',
@@ -4819,6 +4843,9 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'JeffGreco13\\FilamentBreezy\\Pages\\MyProfile' => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/src/Pages/MyProfile.php',
         'JeffGreco13\\FilamentBreezy\\Traits\\HasBreezyTwoFactor' => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/src/Traits/HasBreezyTwoFactor.php',
         'JeffGreco13\\FilamentBreezy\\Traits\\TwoFactorAuthenticatable' => __DIR__ . '/..' . '/jeffgreco13/filament-breezy/src/Traits/TwoFactorAuthenticatable.php',
+        'Jenssegers\\Agent\\Agent' => __DIR__ . '/..' . '/jenssegers/agent/src/Agent.php',
+        'Jenssegers\\Agent\\AgentServiceProvider' => __DIR__ . '/..' . '/jenssegers/agent/src/AgentServiceProvider.php',
+        'Jenssegers\\Agent\\Facades\\Agent' => __DIR__ . '/..' . '/jenssegers/agent/src/Facades/Agent.php',
         'KKomelin\\TranslatableStringExporter\\Console\\ExportCommand' => __DIR__ . '/..' . '/kkomelin/laravel-translatable-string-exporter/src/Console/ExportCommand.php',
         'KKomelin\\TranslatableStringExporter\\Console\\InspectTranslationsCommand' => __DIR__ . '/..' . '/kkomelin/laravel-translatable-string-exporter/src/Console/InspectTranslationsCommand.php',
         'KKomelin\\TranslatableStringExporter\\Core\\CodeParser' => __DIR__ . '/..' . '/kkomelin/laravel-translatable-string-exporter/src/Core/CodeParser.php',
@@ -5627,6 +5654,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'Matrix\\Operators\\Multiplication' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operators/Multiplication.php',
         'Matrix\\Operators\\Operator' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operators/Operator.php',
         'Matrix\\Operators\\Subtraction' => __DIR__ . '/..' . '/markbaker/matrix/classes/src/Operators/Subtraction.php',
+        'Mobile_Detect' => __DIR__ . '/..' . '/mobiledetect/mobiledetectlib/Mobile_Detect.php',
         'Mockery' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegration' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegration.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegrationAssertPostConditions' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegrationAssertPostConditions.php',
