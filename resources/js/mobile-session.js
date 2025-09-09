@@ -8,10 +8,13 @@ class MobileSessionManager {
     constructor() {
         this.isMobile = this.detectMobile();
         this.isPageVisible = true;
+        this.isCameraActive = false;
+        this.isFileSelectionActive = false;
         
         if (this.isMobile) {
             this.initMobileSessionHandlers();
             this.detectAppSwitch();
+            this.setupCameraAndFileDetection();
         }
     }
     
@@ -66,13 +69,19 @@ class MobileSessionManager {
      */
     setupInactivityTimer() {
         let inactivityTimer;
-        const INACTIVITY_TIMEOUT = 30000; // 30 segundos
+        const INACTIVITY_TIMEOUT = 5000; // 5 segundos
         
         const resetTimer = () => {
             clearTimeout(inactivityTimer);
             inactivityTimer = setTimeout(() => {
                 console.log('Inactividad detectada - logout móvil');
-                this.performMobileLogout();
+                // No hacer logout si hay actividad de cámara o archivos
+                if (!this.isCameraActive && !this.isFileSelectionActive) {
+                    this.performMobileLogout();
+                } else {
+                    console.log('Logout pausado - actividad de cámara/archivos detectada');
+                    resetTimer(); // Reiniciar el timer
+                }
             }, INACTIVITY_TIMEOUT);
         };
         
@@ -86,14 +95,93 @@ class MobileSessionManager {
     }
     
     /**
+     * Configura la detección de actividad de cámara y archivos
+     */
+    setupCameraAndFileDetection() {
+        // Detectar cuando se abre la cámara o se seleccionan archivos
+        document.addEventListener('change', (event) => {
+            if (event.target && event.target.type === 'file') {
+                console.log('Selección de archivos detectada');
+                this.isFileSelectionActive = true;
+                
+                // Resetear después de 30 segundos
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Selección de archivos finalizada');
+                }, 30000);
+            }
+        });
+        
+        // Detectar cuando se hace click en inputs de archivo
+        document.addEventListener('click', (event) => {
+            if (event.target && event.target.type === 'file') {
+                console.log('Input de archivo activado');
+                this.isFileSelectionActive = true;
+                
+                // Resetear después de 30 segundos si no hay cambio
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Timeout de selección de archivos');
+                }, 30000);
+            }
+        });
+        
+        // Detectar acceso a la cámara mediante getUserMedia
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+            
+            navigator.mediaDevices.getUserMedia = (constraints) => {
+                if (constraints && constraints.video) {
+                    console.log('Acceso a cámara detectado');
+                    this.isCameraActive = true;
+                }
+                
+                return originalGetUserMedia(constraints).then(stream => {
+                    // Detectar cuando se cierra la cámara
+                    stream.getTracks().forEach(track => {
+                        track.addEventListener('ended', () => {
+                            console.log('Cámara cerrada');
+                            this.isCameraActive = false;
+                        });
+                    });
+                    
+                    return stream;
+                }).catch(error => {
+                    this.isCameraActive = false;
+                    throw error;
+                });
+            };
+        }
+        
+        // Detectar elementos de captura de imagen (input[capture])
+        document.addEventListener('focus', (event) => {
+            if (event.target && event.target.hasAttribute && event.target.hasAttribute('capture')) {
+                console.log('Elemento de captura activado');
+                this.isCameraActive = true;
+                
+                // Resetear después de 60 segundos
+                setTimeout(() => {
+                    this.isCameraActive = false;
+                    console.log('Timeout de captura de imagen');
+                }, 60000);
+            }
+        });
+    }
+    
+    /**
      * Maneja cuando la página se oculta
      */
     handlePageHidden() {
         this.isPageVisible = false;
-        console.log('Página oculta en dispositivo móvil - logout inmediato');
+        console.log('Página oculta en dispositivo móvil');
         
-        // Logout inmediato cuando la página se oculta
-        this.performMobileLogout();
+        // No hacer logout si hay actividad de cámara o archivos
+        if (!this.isCameraActive && !this.isFileSelectionActive) {
+            console.log('Logout inmediato');
+            this.performMobileLogout();
+        } else {
+            console.log('Logout pausado - actividad de cámara/archivos detectada');
+        }
     }
     
     /**
@@ -107,9 +195,14 @@ class MobileSessionManager {
             const timeDiff = now - lastVisibilityChange;
             
             if (document.hidden) {
-                console.log('App oculta - iniciando logout');
-                // Logout inmediato al ocultar la app
-                this.performMobileLogout();
+                console.log('App oculta - verificando logout');
+                // No hacer logout si hay actividad de cámara o archivos
+                if (!this.isCameraActive && !this.isFileSelectionActive) {
+                    console.log('Logout por app oculta');
+                    this.performMobileLogout();
+                } else {
+                    console.log('Logout pausado - actividad de cámara/archivos detectada');
+                }
             }
             
             lastVisibilityChange = now;
@@ -117,16 +210,28 @@ class MobileSessionManager {
         
         // Detectar cuando el usuario cambia de pestaña o app
         window.addEventListener('blur', () => {
-            console.log('Ventana perdió foco - logout móvil');
+            console.log('Ventana perdió foco - verificando logout');
             if (this.isMobile) {
-                this.performMobileLogout();
+                // No hacer logout si hay actividad de cámara o archivos
+                if (!this.isCameraActive && !this.isFileSelectionActive) {
+                    console.log('Logout por pérdida de foco');
+                    this.performMobileLogout();
+                } else {
+                    console.log('Logout pausado - actividad de cámara/archivos detectada');
+                }
             }
         });
         
         // Detectar cuando se minimiza o cambia de app
         window.addEventListener('pagehide', () => {
-            console.log('Página oculta - logout móvil');
-            this.performMobileLogout();
+            console.log('Página oculta - verificando logout');
+            // No hacer logout si hay actividad de cámara o archivos
+            if (!this.isCameraActive && !this.isFileSelectionActive) {
+                console.log('Logout por página oculta');
+                this.performMobileLogout();
+            } else {
+                console.log('Logout pausado - actividad de cámara/archivos detectada');
+            }
         });
     }
     
