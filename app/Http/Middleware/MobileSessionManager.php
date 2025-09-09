@@ -30,11 +30,23 @@ class MobileSessionManager
             // Marcar la sesión como móvil
             session(['is_mobile_device' => true]);
             
+            \Log::info('Mobile session detected', [
+                'user_agent' => $request->userAgent(),
+                'ip' => $request->ip(),
+                'route' => $request->path()
+            ]);
+            
             // Si es una petición AJAX para logout móvil
             if ($request->is('mobile-logout') && $request->isMethod('post')) {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+                
+                \Log::info('Mobile logout executed', [
+                    'user_agent' => $request->userAgent(),
+                    'ip' => $request->ip(),
+                    'timestamp' => now()
+                ]);
                 
                 return response()->json([
                     'success' => true,
