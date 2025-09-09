@@ -8,8 +8,6 @@ class MobileSessionManager {
     constructor() {
         this.isMobile = this.detectMobile();
         this.isPageVisible = true;
-        this.logoutTimer = null;
-        this.logoutDelay = 1000; // 1 segundo de delay antes del logout
         
         if (this.isMobile) {
             this.initMobileSessionHandlers();
@@ -63,12 +61,10 @@ class MobileSessionManager {
      */
     handlePageHidden() {
         this.isPageVisible = false;
-        console.log('Página oculta en dispositivo móvil - iniciando timer de logout');
+        console.log('Página oculta en dispositivo móvil - logout inmediato');
         
-        // Iniciar timer para logout automático
-        this.logoutTimer = setTimeout(() => {
-            this.performMobileLogout();
-        }, this.logoutDelay);
+        // Logout inmediato cuando la página se oculta
+        this.performMobileLogout();
     }
     
     /**
@@ -76,13 +72,7 @@ class MobileSessionManager {
      */
     handlePageVisible() {
         this.isPageVisible = true;
-        console.log('Página visible en dispositivo móvil - cancelando timer de logout');
-        
-        // Cancelar timer de logout si existe
-        if (this.logoutTimer) {
-            clearTimeout(this.logoutTimer);
-            this.logoutTimer = null;
-        }
+        console.log('Página visible en dispositivo móvil');
     }
     
     /**

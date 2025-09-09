@@ -18,7 +18,7 @@ Este sistema implementa el cierre automático de sesión cuando los usuarios en 
 - Detecta cuando el usuario está en un dispositivo móvil
 - Escucha eventos de salida de página (`visibilitychange`, `beforeunload`, `pagehide`)
 - Envía solicitud automática de logout cuando el usuario sale de la página
-- Incluye un delay de 1 segundo para evitar cierres accidentales
+- Logout inmediato sin delay al detectar salida de la aplicación
 
 ### 3. Ruta de Logout Móvil
 **Archivo:** `routes/web.php`
@@ -48,13 +48,12 @@ Este sistema implementa el cierre automático de sesión cuando los usuarios en 
 
 ## Configuración
 
-### Delay de Logout
-Puedes modificar el tiempo de espera antes del logout automático en el archivo `mobile-session.js`:
+### Logout Inmediato
+El sistema realiza el logout de forma inmediata cuando detecta que el usuario sale de la aplicación:
 
 ```javascript
-setTimeout(() => {
-    this.performLogout();
-}, 1000); // 1 segundo por defecto
+// Logout inmediato sin delay
+this.performLogout();
 ```
 
 ### Exclusión de Rutas
