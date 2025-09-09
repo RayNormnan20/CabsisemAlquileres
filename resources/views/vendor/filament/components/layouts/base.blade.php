@@ -137,6 +137,9 @@
         @endforeach
 
         @stack('scripts')
+        
+        {{-- Include Vite assets for mobile session management --}}
+        @vite(['resources/js/app.js'])
 
         {{ \Filament\Facades\Filament::renderHook('scripts.end') }}
 
