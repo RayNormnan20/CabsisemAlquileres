@@ -11,6 +11,7 @@ class MobileSessionManager {
         
         if (this.isMobile) {
             this.initMobileSessionHandlers();
+            this.detectAppSwitch();
         }
     }
     
@@ -45,15 +46,43 @@ class MobileSessionManager {
             this.handlePageHide();
         });
         
-        // Evento blur - cuando la ventana pierde el foco
+        // Evento blur - cuando la ventana pierde el foco (más sensible)
         window.addEventListener('blur', () => {
-            this.handleWindowBlur();
+            console.log('Ventana perdió foco - logout móvil');
+            this.performMobileLogout();
         });
         
         // Evento focus - cuando la ventana recupera el foco
         window.addEventListener('focus', () => {
             this.handleWindowFocus();
         });
+        
+        // Detectar inactividad (reducido a 30 segundos)
+        this.setupInactivityTimer();
+    }
+    
+    /**
+     * Configura el timer de inactividad
+     */
+    setupInactivityTimer() {
+        let inactivityTimer;
+        const INACTIVITY_TIMEOUT = 30000; // 30 segundos
+        
+        const resetTimer = () => {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                console.log('Inactividad detectada - logout móvil');
+                this.performMobileLogout();
+            }, INACTIVITY_TIMEOUT);
+        };
+        
+        // Eventos que resetean el timer
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, resetTimer, true);
+        });
+        
+        // Iniciar el timer
+        resetTimer();
     }
     
     /**
@@ -65,6 +94,40 @@ class MobileSessionManager {
         
         // Logout inmediato cuando la página se oculta
         this.performMobileLogout();
+    }
+    
+    /**
+     * Detecta cambio de aplicación en móviles
+     */
+    detectAppSwitch() {
+        let lastVisibilityChange = Date.now();
+        
+        document.addEventListener('visibilitychange', () => {
+            const now = Date.now();
+            const timeDiff = now - lastVisibilityChange;
+            
+            if (document.hidden) {
+                console.log('App oculta - iniciando logout');
+                // Logout inmediato al ocultar la app
+                this.performMobileLogout();
+            }
+            
+            lastVisibilityChange = now;
+        });
+        
+        // Detectar cuando el usuario cambia de pestaña o app
+        window.addEventListener('blur', () => {
+            console.log('Ventana perdió foco - logout móvil');
+            if (this.isMobile) {
+                this.performMobileLogout();
+            }
+        });
+        
+        // Detectar cuando se minimiza o cambia de app
+        window.addEventListener('pagehide', () => {
+            console.log('Página oculta - logout móvil');
+            this.performMobileLogout();
+        });
     }
     
     /**
