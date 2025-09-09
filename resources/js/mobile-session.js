@@ -115,14 +115,29 @@ class MobileSessionManager {
         // Detectar cuando se hace click en inputs de archivo
         document.addEventListener('click', (event) => {
             if (event.target && event.target.type === 'file') {
-                console.log('Input de archivo activado');
+                console.log('Input de archivo activado - protegiendo sesión por 2 minutos');
                 this.isFileSelectionActive = true;
                 
-                // Resetear después de 30 segundos si no hay cambio
+                // Extender tiempo para acceso a galería de fotos (iOS)
                 setTimeout(() => {
                     this.isFileSelectionActive = false;
                     console.log('Timeout de selección de archivos');
-                }, 30000);
+                }, 120000); // 2 minutos para dar tiempo a navegar en Fototeca
+            }
+        });
+        
+        // Detectar inputs de archivo con accept="image/*" (específico para fotos)
+        document.addEventListener('focus', (event) => {
+            if (event.target && event.target.type === 'file' && 
+                event.target.accept && event.target.accept.includes('image')) {
+                console.log('Input de imagen detectado - protegiendo sesión extendida');
+                this.isFileSelectionActive = true;
+                
+                // Tiempo extendido para galería de fotos
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Timeout extendido de selección de imágenes');
+                }, 180000); // 3 minutos
             }
         });
         
@@ -164,6 +179,34 @@ class MobileSessionManager {
                     this.isCameraActive = false;
                     console.log('Timeout de captura de imagen');
                 }, 60000);
+            }
+        });
+        
+        // Detectar cuando se va a abrir la galería de fotos en iOS
+        document.addEventListener('touchstart', (event) => {
+            if (event.target && event.target.type === 'file') {
+                console.log('Preparando acceso a galería iOS - protegiendo sesión');
+                this.isFileSelectionActive = true;
+                
+                // Protección extendida para iOS que abre apps nativas
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Timeout de protección iOS');
+                }, 240000); // 4 minutos para iOS
+            }
+        });
+        
+        // Detectar antes de que se abra el selector de archivos
+        document.addEventListener('mousedown', (event) => {
+            if (event.target && event.target.type === 'file') {
+                console.log('Iniciando selección de archivo - activando protección');
+                this.isFileSelectionActive = true;
+                
+                // Protección preventiva
+                setTimeout(() => {
+                    this.isFileSelectionActive = false;
+                    console.log('Timeout de protección preventiva');
+                }, 150000); // 2.5 minutos
             }
         });
     }
