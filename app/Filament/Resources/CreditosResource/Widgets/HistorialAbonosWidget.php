@@ -30,6 +30,7 @@ class HistorialAbonosWidget extends BaseWidget
                 'abonos.monto_abono',
                 'abonos.saldo_posterior',
                 'abonos.id_usuario',
+                'abonos.es_devolucion',
                 DB::raw("'abono' as tipo_registro")
             ])
             ->join('conceptos', 'abonos.id_concepto', '=', 'conceptos.id')
@@ -44,6 +45,7 @@ class HistorialAbonosWidget extends BaseWidget
                         'creditos.valor_credito as monto_abono',
                         DB::raw("(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior"),
                         DB::raw("NULL as id_usuario"),
+                        DB::raw("false as es_devolucion"),
                         DB::raw("'credito' as tipo_registro")
                     ])
                     ->where('creditos.id_credito', $this->record->id_credito)
@@ -73,12 +75,17 @@ class HistorialAbonosWidget extends BaseWidget
 
             Tables\Columns\TextColumn::make('monto_abono')
                 ->label('Cantidad')
-                ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
+                ->formatStateUsing(function ($state, $record) {
+                    // Mostrar devoluciones con signo negativo
+                    if ($record->tipo_registro === 'abono' && $record->es_devolucion) {
+                        return '-S/ ' . number_format($state, 2);
+                    }
+                    return 'S/ ' . number_format($state, 2);
+                })
                 ->sortable()
                 ->color(function ($record) {
-                    if ($record->tipo_registro === 'abono') {
-                        $abono = Abonos::find($record->id_abono);
-                        return $abono && $abono->es_devolucion ? 'danger' : null;
+                    if ($record->tipo_registro === 'abono' && $record->es_devolucion) {
+                        return 'danger';
                     }
                     return null;
                 }),
@@ -89,8 +96,7 @@ class HistorialAbonosWidget extends BaseWidget
                     if ($record->tipo_registro === 'credito') {
                         return 'Crédito';
                     }
-                    $abono = Abonos::find($record->id_abono);
-                    return $abono && $abono->es_devolucion ? 'Devolución' : 'Abono';
+                    return $record->es_devolucion ? 'Devolución' : 'Abono';
                 })
                 ->colors([
                     'primary' => fn ($state) => $state === 'Crédito',
@@ -141,7 +147,9 @@ class HistorialAbonosWidget extends BaseWidget
             }
             
             // Para abonos, calcular cuánto se había abonado después de este registro
+            // Excluir devoluciones del cálculo
             $abonosDespues = Abonos::where('id_credito', $this->record->id_credito)
+                ->where('es_devolucion', false) // Solo contar abonos reales, no devoluciones
                 ->where(function($query) use ($recordActual) {
                     $query->where('fecha_pago', '>', $recordActual->fecha_pago)
                           ->orWhere(function($subQuery) use ($recordActual) {
@@ -166,7 +174,9 @@ class HistorialAbonosWidget extends BaseWidget
             }
 
             // Obtener todos los abonos hasta la fecha del registro actual (inclusive)
+            // Excluir devoluciones del cálculo del saldo
             $abonosHasta = Abonos::where('id_credito', $this->record->id_credito)
+                ->where('es_devolucion', false) // Solo contar abonos reales, no devoluciones
                 ->where(function($query) use ($recordActual) {
                     $query->where('fecha_pago', '<', $recordActual->fecha_pago)
                           ->orWhere(function($subQuery) use ($recordActual) {
@@ -195,7 +205,9 @@ class HistorialAbonosWidget extends BaseWidget
 
    public function render(): \Illuminate\Contracts\View\View
     {
+        // Calcular total de abonos excluyendo devoluciones
         $totalAbonos = Abonos::where('id_credito', $this->record->id_credito)
+            ->where('es_devolucion', false) // Excluir devoluciones del total
             ->sum('monto_abono');
 
         // Calcular el saldo actual correctamente según el tipo de crédito
@@ -206,6 +218,9 @@ class HistorialAbonosWidget extends BaseWidget
         } else {
             // Para créditos normales, calcular como siempre
             $montoTotalConIntereses = $this->record->valor_credito * (1 + $this->record->porcentaje_interes / 100);
+            // Restar el descuento aplicado si existe
+            $descuentoAplicado = $this->record->descuento_aplicado ?? 0;
+            $montoTotalConIntereses -= $descuentoAplicado;
             $saldoActual = $montoTotalConIntereses - $totalAbonos;
         }
 

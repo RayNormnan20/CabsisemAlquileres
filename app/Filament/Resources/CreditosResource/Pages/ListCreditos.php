@@ -103,7 +103,8 @@ class ListCreditos extends ListRecords
             $query->where('creditos.saldo_actual', '>', 0);
         }
 
-        $query->orderBy('creditos.fecha_credito', 'desc');
+        $query->orderBy('creditos.fecha_credito', 'desc')
+              ->orderBy('creditos.created_at', 'desc');
         $query->select('creditos.*');
 
         return $query;

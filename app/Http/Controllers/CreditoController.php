@@ -288,28 +288,27 @@ class CreditoController extends Controller
                                 'monto' => $medioPago['monto'],
                             ]);
                             
-                            // Si es un pago por Yape y se proporciona nombre del cliente, actualizar o crear en YapeCliente
+                            // Si es un pago por Yape y se proporciona nombre del cliente, crear registro en YapeCliente solo si no existe
                             if ($medioPago['tipo'] === 'Yape' && isset($medioPago['nombre_cliente']) && !empty($medioPago['nombre_cliente'])) {
                                 // Extraer el nombre limpio (sin "(Nuevo)" si existe)
                                 $nombreLimpio = str_replace(' (Nuevo)', '', $medioPago['nombre_cliente']);
                                 
+                                // Obtener el nombre completo del cliente
+                                $cliente = \App\Models\Clientes::find($nuevoCredito->id_cliente);
+                                $nombreCompletoCliente = $cliente ? $cliente->nombre_completo : '';
+                                
                                 // Buscar si ya existe un YapeCliente para este cliente con el nombre específico
-                                $yapeClienteExistente = YapeCliente::where('id_cliente', $nuevoCredito->id_cliente)
+                                $yapeClienteExistente = \App\Models\YapeCliente::where('id_cliente', $nuevoCredito->id_cliente)
                                     ->where('nombre', $nombreLimpio)
                                     ->first();
                                 
-                                if ($yapeClienteExistente) {
-                                    // Actualizar el registro existente
-                                    $yapeClienteExistente->update([
-                                        'id_credito' => $nuevoCredito->id_credito,
-                                        'user_id' => auth()->id(),
-                                        'monto' => $medioPago['monto'],
-                                        'entregar' => $medioPago['monto'],
-                                        'valor' => $request->nueva_cuenta
-                                    ]);
-                                } else {
-                                    // Crear nuevo registro si no existe
-                                    YapeCliente::create([
+                                // Verificar si el nombre original contenía "(Nuevo)" para forzar creación de nuevo registro
+                                $esNuevoRegistro = strpos($medioPago['nombre_cliente'], '(Nuevo)') !== false;
+                                
+                                // Si es un nuevo registro o no existe YapeCliente previo, crear uno nuevo
+                                if ($esNuevoRegistro || !$yapeClienteExistente) {
+                                    // Crear nuevo registro independiente para este crédito
+                                    \App\Models\YapeCliente::create([
                                         'id_cliente' => $nuevoCredito->id_cliente,
                                         'id_credito' => $nuevoCredito->id_credito,
                                         'nombre' => $nombreLimpio,
@@ -318,6 +317,24 @@ class CreditoController extends Controller
                                         'entregar' => $medioPago['monto'],
                                         'valor' => $request->nueva_cuenta
                                     ]);
+                                } else {
+                                    // Solo actualizar si es el mismo crédito (caso de múltiples pagos Yape en el mismo crédito)
+                                    if ($yapeClienteExistente->id_credito == $nuevoCredito->id_credito) {
+                                        $yapeClienteExistente->monto += $medioPago['monto'];
+                                        $yapeClienteExistente->entregar += $medioPago['monto'];
+                                        $yapeClienteExistente->save();
+                                    } else {
+                                        // Crear nuevo registro para diferente crédito
+                                        \App\Models\YapeCliente::create([
+                                            'id_cliente' => $nuevoCredito->id_cliente,
+                                            'id_credito' => $nuevoCredito->id_credito,
+                                            'nombre' => $nombreLimpio,
+                                            'user_id' => auth()->id(),
+                                            'monto' => $medioPago['monto'],
+                                            'entregar' => $medioPago['monto'],
+                                            'valor' => $request->nueva_cuenta
+                                        ]);
+                                    }
                                 }
                             }
                         }
@@ -506,37 +523,39 @@ class CreditoController extends Controller
                         'monto'         => $mp['monto'],
                     ]);
                     
-                    // Si es un pago por Yape y se proporciona nombre del cliente, actualizar o crear en YapeCliente
+                    // Si es un pago por Yape y se proporciona nombre del cliente, crear registro en YapeCliente solo si no existe
                     if ($mp['tipo'] === 'Yape' && isset($mp['nombre_cliente']) && !empty($mp['nombre_cliente'])) {
                         // Extraer el nombre limpio (sin "(Nuevo)" si existe)
                         $nombreLimpio = str_replace(' (Nuevo)', '', $mp['nombre_cliente']);
                         
-                        // Buscar si ya existe un YapeCliente para este cliente con el nombre específico
-                        $yapeClienteExistente = \App\Models\YapeCliente::where('id_cliente', $nuevoCredito->id_cliente)
-                            ->where('nombre', $nombreLimpio)
-                            ->first();
+                        // Obtener el nombre completo del cliente
+                        $cliente = \App\Models\Clientes::find($nuevoCredito->id_cliente);
+                        $nombreCompletoCliente = $cliente ? $cliente->nombre_completo : '';
                         
-                        if ($yapeClienteExistente) {
-                            // Actualizar el registro existente
-                            $yapeClienteExistente->update([
-                                'id_credito' => $nuevoCredito->id_credito,
-                                'user_id' => auth()->id(),
-                                'monto' => $mp['monto'],
-                                'entregar' => $mp['monto'],
-                                'valor' => $request->valor_credito,
-                            ]);
-                        } else {
-                            // Crear nuevo registro si no existe
-                            \App\Models\YapeCliente::create([
-                                'id_cliente' => $nuevoCredito->id_cliente,
-                                'id_credito' => $nuevoCredito->id_credito,
-                                'nombre' => $nombreLimpio,
-                                'user_id' => auth()->id(),
-                                'monto' => $mp['monto'],
-                                'entregar' => $mp['monto'],
-                                'valor' => $request->valor_credito,
-                            ]);
-                        }
+                        // Buscar si ya existe un YapeCliente para este cliente con el nombre específico
+                         $yapeClienteExistente = \App\Models\YapeCliente::where('id_cliente', $nuevoCredito->id_cliente)
+                             ->where('nombre', $nombreLimpio)
+                             ->first();
+                         
+                         // Siempre crear un nuevo registro YapeCliente sin correlativo
+                          // Cuando se hace renovación, el crédito anterior queda pagado y se crea uno nuevo
+                          if ($yapeClienteExistente && $yapeClienteExistente->id_credito == $nuevoCredito->id_credito) {
+                              // Si existe un registro del mismo crédito, actualizarlo
+                              $yapeClienteExistente->monto += $mp['monto'];
+                              $yapeClienteExistente->valor = $nuevoCredito->valor_credito;
+                              $yapeClienteExistente->save();
+                          } else {
+                              // Crear nuevo registro sin correlativo
+                              \App\Models\YapeCliente::create([
+                                  'id_cliente' => $nuevoCredito->id_cliente,
+                                  'id_credito' => $nuevoCredito->id_credito,
+                                  'nombre' => $nombreLimpio,
+                                  'user_id' => auth()->id(),
+                                  'monto' => $mp['monto'],
+                                  'valor' => $nuevoCredito->valor_credito,
+                                  'entregar' => 0,
+                              ]);
+                          }
                     }
                 }
             }
@@ -841,10 +860,11 @@ class CreditoController extends Controller
     public function getYapeClientes($clienteId)
     {
         try {
-            // Obtener todos los YapeClientes del cliente con información de saldo pendiente
+            // Obtener solo los YapeClientes del cliente que NO tienen id_credito asignado (disponibles)
             $yapeClientes = \App\Models\YapeCliente::where('id_cliente', $clienteId)
                 ->whereNotNull('nombre')
                 ->where('nombre', '!=', '')
+                ->whereNull('id_credito') // Solo los que no están asignados a un crédito
                 ->with('abonos')
                 ->orderBy('created_at', 'desc')
                 ->get();

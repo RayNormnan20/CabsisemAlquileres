@@ -176,7 +176,9 @@ class Creditos extends Model
                 $query->where('id_ruta', $rutaId);
             }
 
-            return $query->orderBy('fecha_vencimiento', 'asc')->get();
+            return $query->orderBy('fecha_credito', 'desc')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
         });
     }
 
@@ -196,7 +198,9 @@ class Creditos extends Model
                 $query->where('id_ruta', $rutaId);
             }
 
-            return $query->orderBy('fecha_vencimiento', 'asc')->get();
+            return $query->orderBy('fecha_credito', 'desc')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
         });
     }
 
