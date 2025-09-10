@@ -148,8 +148,8 @@
             <!-- Botón Crear Abono -->
             <div class="relative inline-block text-left" x-data="{ open: false }">
                 <button @click="open = !open" @click.away="open = false"
-                    class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                    :class="{ 'bg-primary-700': open }" :disabled="!$clienteId">
+                    class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                :class="{ 'bg-primary-700': open }" :disabled="!{{ $clienteId ?? 'null' }}">
                     Abonos
                     <svg class="-mr-1 ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                         fill="currentColor">
@@ -170,33 +170,33 @@
                     role="menu">
                     <div class="py-1" role="none">
                         <!-- Opción Yape con parámetro en la URL -->
-                        <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Yape']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                            wire:navigate @if(!$clienteId) onclick="return false;" @endif>
+                        <a href="{{ ($clienteId ?? null) ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Yape']) : '#' }}"
+                        class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                        wire:navigate @if(!($clienteId ?? null)) onclick="return false;" @endif>
                             Yape
                         </a>
                     </div>
                     <div class="py-1" role="none">
                         <!-- Opción Efectivo -->
-                        <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Efectivo']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                            wire:navigate @if(!$clienteId) onclick="return false;" @endif>
+                        <a href="{{ ($clienteId ?? null) ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Efectivo']) : '#' }}"
+                        class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                        wire:navigate @if(!($clienteId ?? null)) onclick="return false;" @endif>
                             Efectivo
                         </a>
                     </div>
                     <div class="py-1" role="none">
                         <!-- Única opción: Crear Crédito -->
-                        <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono completar p.']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                            wire:navigate @if(!$clienteId) onclick="return false;" @endif>
+                        <a href="{{ ($clienteId ?? null) ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono completar p.']) : '#' }}"
+                        class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                        wire:navigate @if(!($clienteId ?? null)) onclick="return false;" @endif>
                             Abono completar p.
                         </a>
                     </div>
                     <div class="py-1" role="none">
                         <!-- Única opción: Crear Crédito -->
-                        <a href="{{ $clienteId ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono sin firma Chis']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !$clienteId ? 'opacity-50 cursor-not-allowed' : '' }}"
-                            wire:navigate @if(!$clienteId) onclick="return false;" @endif>
+                        <a href="{{ ($clienteId ?? null) ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono sin firma Chis']) : '#' }}"
+                        class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                        wire:navigate @if(!($clienteId ?? null)) onclick="return false;" @endif>
                             Abono sin firma Chis
                         </a>
                     </div>
@@ -263,11 +263,11 @@
 
     </div>
     <!-- Información del cliente seleccionado -->
-    @if($clienteId)
+    @if($clienteId ?? null)
     @php
     $rutaId = session('selected_ruta_id');
     $cliente = \App\Models\Clientes::withCount(['creditos', 'abonos'])
-    ->where('id_cliente', $clienteId)
+    ->where('id_cliente', $clienteId ?? null)
     ->when($rutaId, function($query) use ($rutaId) {
     return $query->where('id_ruta', $rutaId);
     })
@@ -300,3 +300,112 @@
     @endif
     @endif
 </div>
+
+<script>
+// WebSocket listeners para actualizaciones en tiempo real
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.Echo !== 'undefined') {
+        // Obtener la ruta del usuario desde la sesión
+        const rutaId = {{ session('selected_ruta_id', 'null') }};
+        const clienteId = {{ $clienteId ?? 'null' }};
+        
+        if (rutaId) {
+            // Suscribirse al canal público de la ruta
+            const channel = window.Echo.channel(`ruta.${rutaId}`);
+            
+            // Escuchar eventos de abonos creados
+            channel.listen('.abono.created', (data) => {
+                console.log('Abono creado:', data);
+                
+                // Mostrar notificación
+                if (typeof window.filament !== 'undefined' && window.filament.notify) {
+                    window.filament.notify('success', data.message || 'Nuevo abono registrado');
+                } else {
+                    // Fallback para mostrar notificación
+                    console.log('Notificación:', data.message || 'Nuevo abono registrado');
+                }
+                
+                // Actualizar datos usando Livewire en lugar de recargar la página
+                setTimeout(() => {
+                    // Intentar actualizar usando Livewire
+                    if (typeof window.Livewire !== 'undefined') {
+                        window.Livewire.emit('refreshComponent');
+                        window.Livewire.emit('$refresh');
+                        console.log('Datos actualizados via Livewire');
+                    }
+                    
+                    // Actualizar tabla si existe
+                    if (typeof window.filament !== 'undefined' && window.filament.tables) {
+                        // Buscar y actualizar tablas de Filament
+                        const tables = document.querySelectorAll('[wire\\:id]');
+                        tables.forEach(table => {
+                            const wireId = table.getAttribute('wire:id');
+                            if (wireId && typeof window.Livewire.find === 'function') {
+                                const component = window.Livewire.find(wireId);
+                                if (component) {
+                                    component.call('$refresh');
+                                }
+                            }
+                        });
+                        console.log('Tablas Filament actualizadas');
+                    }
+                    
+                    // Como último recurso, recargar solo si no hay Livewire
+                    if (typeof window.Livewire === 'undefined') {
+                        window.location.reload();
+                    }
+                }, 500);
+            });
+            
+            // Escuchar eventos de abonos actualizados
+            channel.listen('.abono.updated', (data) => {
+                console.log('Abono actualizado:', data);
+                
+                // Mostrar notificación
+                if (typeof window.filament !== 'undefined' && window.filament.notify) {
+                    window.filament.notify('info', data.message || 'Abono actualizado');
+                } else {
+                    console.log('Notificación:', data.message || 'Abono actualizado');
+                }
+                
+                // Actualizar datos usando Livewire en lugar de recargar la página
+                setTimeout(() => {
+                    // Intentar actualizar usando Livewire
+                    if (typeof window.Livewire !== 'undefined') {
+                        window.Livewire.emit('refreshComponent');
+                        window.Livewire.emit('$refresh');
+                        console.log('Datos actualizados via Livewire');
+                    }
+                    
+                    // Actualizar tabla si existe
+                    if (typeof window.filament !== 'undefined' && window.filament.tables) {
+                        // Buscar y actualizar tablas de Filament
+                        const tables = document.querySelectorAll('[wire\\:id]');
+                        tables.forEach(table => {
+                            const wireId = table.getAttribute('wire:id');
+                            if (wireId && typeof window.Livewire.find === 'function') {
+                                const component = window.Livewire.find(wireId);
+                                if (component) {
+                                    component.call('$refresh');
+                                }
+                            }
+                        });
+                        console.log('Tablas Filament actualizadas');
+                    }
+                    
+                    // Como último recurso, recargar solo si no hay Livewire
+                    if (typeof window.Livewire === 'undefined') {
+                        window.location.reload();
+                    }
+                }, 500);
+            });
+            
+            console.log('WebSocket listeners registrados para ruta:', rutaId);
+        } else {
+            console.log('No hay ruta seleccionada, no se pueden registrar listeners de WebSocket');
+        }
+    } else {
+        console.error('Echo no está disponible. Verifica la configuración de WebSockets.');
+    }
+});
+</script>

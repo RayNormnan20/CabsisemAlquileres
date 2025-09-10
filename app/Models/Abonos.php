@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Events\AbonoCreated;
+use App\Events\AbonoUpdated;
 
 class Abonos extends Model
 {
@@ -49,6 +51,9 @@ class Abonos extends Model
 
         // Cuando se crea un abono
         static::created(function ($abono) {
+            // Disparar evento de broadcasting
+            event(new AbonoCreated($abono));
+            
             if ($abono->id_credito) {
                 $abono->actualizarSegundoRecorridoCredito();
                 
@@ -62,6 +67,9 @@ class Abonos extends Model
 
         // Cuando se actualiza un abono
         static::updated(function ($abono) {
+            // Disparar evento de broadcasting
+            event(new AbonoUpdated($abono));
+            
             if ($abono->id_credito && $abono->wasChanged('activar_segundo_recorrido')) {
                 $abono->actualizarSegundoRecorridoCredito();
             }
@@ -100,9 +108,10 @@ class Abonos extends Model
     public function actualizarSegundoRecorridoCredito()
     {
         if ($this->id_credito) {
-            // Actualizar el crédito según el estado del checkbox
+            // Actualizar el crédito según el estado del checkbox, asegurar valor booleano
+            $segundoRecorrido = $this->activar_segundo_recorrido ?? false;
             Creditos::where('id_credito', $this->id_credito)
-                ->update(['segundo_recorrido' => $this->activar_segundo_recorrido]);
+                ->update(['segundo_recorrido' => $segundoRecorrido]);
         }
     }
 

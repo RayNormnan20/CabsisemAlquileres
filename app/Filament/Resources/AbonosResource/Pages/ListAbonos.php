@@ -41,7 +41,12 @@ class ListAbonos extends ListRecords
     */
 
     // 'goToActionRecord' es el evento emitido desde los botones del modal.
-    protected $listeners = ['goToActionRecord'];
+    protected $listeners = [
+        'goToActionRecord',
+        'refreshComponent' => '$refresh',
+        'refreshAbonosTable' => '$refresh',
+        '$refresh'
+    ];
 
     public function mount(): void
     {

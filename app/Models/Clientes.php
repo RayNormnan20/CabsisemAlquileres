@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\ClienteCreated;
+use App\Events\ClienteUpdated;
 
 class Clientes extends Model
 {
@@ -34,6 +36,19 @@ class Clientes extends Model
     protected $casts = [
         'activo' => 'boolean',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($cliente) {
+            event(new ClienteCreated($cliente));
+        });
+
+        static::updated(function ($cliente) {
+            event(new ClienteUpdated($cliente));
+        });
+    }
 
     // Relación con TipoDocumento
     public function tipoDocumento()

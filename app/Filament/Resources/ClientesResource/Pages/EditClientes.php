@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ClientesResource\Pages;
 
 use App\Filament\Resources\ClientesResource;
 use App\Models\LogActividad; // ¡Importa el modelo LogActividad!
+use App\Events\ClienteUpdated; // Importar el evento ClienteUpdated
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification; // Opcional: para mostrar notificaciones
@@ -28,6 +29,9 @@ class EditClientes extends EditRecord
             ]
         );
 
+        // Disparar evento ClienteUpdated manualmente para asegurar broadcasting
+        event(new ClienteUpdated($this->record));
+        
         // Opcional: Notificación de éxito
         Notification::make()
             ->title('Cliente actualizado exitosamente')

@@ -106,3 +106,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/rutas/{ruta}/reportes', [RutaController::class, 'reportes'])->name('rutas.reports');
     });
 });
+
+// Ruta para prueba de WebSockets
+Route::get('/websocket-test', function () {
+    return view('websocket-test');
+})->middleware(['auth'])->name('websocket.test');

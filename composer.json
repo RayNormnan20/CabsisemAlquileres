@@ -8,6 +8,7 @@
         "php": "^8.0.2",
         "ext-iconv": "*",
         "barryvdh/laravel-dompdf": "^3.1",
+        "beyondcode/laravel-websockets": "^1.14",
         "devaslanphp/filament-avatar": "^1.0",
         "doctrine/dbal": "^3.5",
         "dutchcodingcompany/filament-socialite": "^0.2.2",

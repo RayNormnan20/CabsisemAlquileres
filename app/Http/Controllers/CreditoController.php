@@ -8,6 +8,9 @@ use App\Models\Creditos;
 use App\Models\Abonos;
 use App\Models\Concepto;
 use App\Models\YapeCliente;
+use App\Events\CreditoCreated;
+use App\Events\CreditoUpdated;
+use App\Events\AbonoCreated;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -222,6 +225,9 @@ class CreditoController extends Controller
                     'activar_segundo_recorrido' => false,
                 ]);
 
+                // Disparar evento de abono creado
+                event(new AbonoCreated($abono));
+
                 // Crear el concepto de abono en conceptos_abono
                 $abono->conceptosabonos()->create([
                     'id_usuario' => auth()->id(),
@@ -356,6 +362,9 @@ class CreditoController extends Controller
                         }
                     }
                 }
+
+                // Disparar evento de crédito creado
+                event(new CreditoCreated($nuevoCredito));
 
                 $creditoResultado = $nuevoCredito;
             } else {
@@ -606,6 +615,9 @@ class CreditoController extends Controller
                     }
                 }
             }
+
+            // Disparar evento de crédito creado
+            event(new CreditoCreated($nuevoCredito));
 
             // Registrar en el log de actividad
             \App\Models\LogActividad::registrar(

@@ -15,7 +15,12 @@ class ListClientes extends ListRecords
     public ?int $currentRutaId = null;
     public ?string $currentRutaName = null;
 
-    protected $listeners = ['globalRouteChanged' => 'applyRouteFilter'];
+    protected $listeners = [
+        'globalRouteChanged' => 'applyRouteFilter',
+        'refreshComponent' => '$refresh',
+        'refreshClientesTable' => '$refresh',
+        '$refresh'
+    ];
 
     public function mount(): void
     {

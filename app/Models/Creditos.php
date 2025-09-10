@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache; // AGREGAR ESTA LÍNEA
+use App\Events\CreditoCreated;
+use App\Events\CreditoUpdated;
 
 class Creditos extends Model
 {
@@ -54,6 +56,29 @@ class Creditos extends Model
         'segundo_recorrido' => 'boolean',
         'es_adicional' => 'boolean'
     ];
+
+    protected $attributes = [
+        'llamada_cliente' => false,
+        'revisado' => false,
+        'analizado' => false,
+        'por_renovar' => false,
+        'segundo_recorrido' => false,
+        'es_adicional' => false
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($credito) {
+            event(new CreditoCreated($credito));
+        });
+
+        static::updated(function ($credito) {
+            event(new CreditoUpdated($credito));
+        });
+    }
+
 // En el modelo Credito
     public function concepto()
     {
