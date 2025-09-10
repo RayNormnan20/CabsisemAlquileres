@@ -531,6 +531,7 @@ $cliente->loadMissing('creditos');
                                     console.log(data);
                                     this.limpiarMediosPago();
                                     this.showDeactivationModal = false;
+                                    location.reload(); // Recargar para ver los cambios
                                 } else {
                                     alert(data.error || 'Error al renovar');
                                 }
