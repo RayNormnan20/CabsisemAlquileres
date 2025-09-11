@@ -46,6 +46,13 @@ class ListClientes extends ListRecords
     }
 
 
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\ClientesWebSocketWidget::class,
+        ];
+    }
+
     protected function getHeaderActions(): array
     {
         return [

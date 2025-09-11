@@ -35,7 +35,15 @@ class ClienteCreated implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new Channel('clientes');
+        // Broadcast tanto en el canal general de clientes como en el canal específico de la ruta
+        $channels = [new Channel('clientes')];
+        
+        // Si el cliente tiene una ruta asignada, también broadcast en el canal de esa ruta
+        if ($this->cliente->id_ruta) {
+            $channels[] = new Channel('ruta.' . $this->cliente->id_ruta);
+        }
+        
+        return $channels;
     }
 
     /**

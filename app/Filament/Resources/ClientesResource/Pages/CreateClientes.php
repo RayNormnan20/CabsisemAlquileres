@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ClientesResource\Pages;
 use App\Filament\Resources\ClientesResource;
 use App\Filament\Resources\CreditosResource;
 use App\Models\LogActividad;
+use App\Events\ClienteCreated;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Session;
 
@@ -52,6 +53,9 @@ class CreateClientes extends CreateRecord
 
     protected function afterCreate(): void
     {
+        // Disparar evento de cliente creado para WebSocket
+        event(new ClienteCreated($this->record));
+        
         // Registrar la actividad en el log
         LogActividad::registrar(
             'Clientes',
