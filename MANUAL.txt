@@ -94,3 +94,40 @@ php artisan make:seeder ConceptosSeeder
 ---- CREAR EL middleware DE Rutas ------
 
 php artisan make:middleware CheckRutaAccess
+
+
+
+
+# Ver estado
+sudo supervisorctl status laravel-websockets
+
+# Reiniciar si es necesario
+sudo supervisorctl restart laravel-websockets
+
+# Detener temporalmente
+sudo supervisorctl stop laravel-websockets
+
+# Iniciar nuevamente
+sudo supervisorctl start laravel-websockets
+
+# Ver logs
+sudo tail -f /var/log/laravel-websockets.log
+
+
+
+
+# Recargar configuración
+sudo supervisorctl reread
+sudo supervisorctl update
+
+# Iniciar el servicio
+sudo supervisorctl start laravel-websockets
+
+# Ver estado
+sudo supervisorctl status
+
+# Reiniciar si es necesario
+sudo supervisorctl restart laravel-websockets
+
+# Ver logs
+sudo tail -f /var/log/laravel-websockets.log
