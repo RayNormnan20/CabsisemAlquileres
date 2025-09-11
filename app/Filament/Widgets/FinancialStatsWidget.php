@@ -15,7 +15,12 @@ class FinancialStatsWidget extends Widget
     protected int | string | array $columnSpan = 'full';
 
 
-    protected $listeners = ['globalRouteChanged' => 'refreshWidgetData'];
+    protected $listeners = [
+        'globalRouteChanged' => 'refreshWidgetData',
+        'cliente.created' => '$refresh',
+        'cliente.updated' => '$refresh',
+        'refreshComponent' => '$refresh'
+    ];
 
     public function refreshWidgetData(): void
     {

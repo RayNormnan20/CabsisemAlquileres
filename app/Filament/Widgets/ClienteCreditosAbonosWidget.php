@@ -17,6 +17,8 @@ class ClienteCreditosAbonosWidget extends Widget
 {
     protected static string $view = 'filament.widgets.cliente-creditos-abonos-widget';
     
+    protected int | string | array $columnSpan = 'full';
+    
     public ?int $rutaId = null;
     public array $rutaData = [];
     public array $usuariosData = [];
@@ -35,7 +37,10 @@ class ClienteCreditosAbonosWidget extends Widget
     
     protected $listeners = [
         'ruta-seleccionada' => 'actualizarRuta',
-        'filtros-actualizados' => 'sincronizarFiltros'
+        'filtros-actualizados' => 'sincronizarFiltros',
+        'cliente.created' => '$refresh',
+        'cliente.updated' => '$refresh',
+        'refreshComponent' => '$refresh'
     ];
     
     public function mount(): void

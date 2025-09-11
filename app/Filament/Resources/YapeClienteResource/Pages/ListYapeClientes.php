@@ -52,4 +52,11 @@ class ListYapeClientes extends ListRecords
     {
         return [10, 25, 50, 100, 'all'];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\YapeClientesWebSocketWidget::class,
+        ];
+    }
 }

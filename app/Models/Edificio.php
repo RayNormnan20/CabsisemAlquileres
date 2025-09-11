@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\EdificioCreated;
+use App\Events\EdificioUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -58,5 +60,18 @@ class Edificio extends Model
     public function ruta()
     {
         return $this->belongsTo(Ruta::class, 'id_ruta', 'id_ruta');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($edificio) {
+            EdificioCreated::dispatch($edificio);
+        });
+
+        static::updated(function ($edificio) {
+            EdificioUpdated::dispatch($edificio);
+        });
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Events\ConceptoAbonoCreated;
+use App\Events\ConceptoAbonoUpdated;
 
 class ConceptoAbono extends Model
 {
@@ -75,11 +77,21 @@ class ConceptoAbono extends Model
             }
         });
         
+        static::created(function ($conceptoAbono) {
+            // Disparar evento WebSocket cuando se crea un concepto de abono
+            ConceptoAbonoCreated::dispatch($conceptoAbono);
+        });
+        
         static::updating(function ($conceptoAbono) {
             // Asignar id_usuario automáticamente cuando se edita
             if (!$conceptoAbono->id_usuario) {
                 $conceptoAbono->id_usuario = auth()->id();
             }
+        });
+        
+        static::updated(function ($conceptoAbono) {
+            // Disparar evento WebSocket cuando se actualiza un concepto de abono
+            ConceptoAbonoUpdated::dispatch($conceptoAbono);
         });
     }
 

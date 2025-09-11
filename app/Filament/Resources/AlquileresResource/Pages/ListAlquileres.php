@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AlquileresResource\Pages;
 
 use App\Filament\Resources\AlquileresResource;
+use App\Filament\Widgets\AlquileresWebSocketWidget;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,11 +12,23 @@ use Illuminate\Support\Facades\Session;
 class ListAlquileres extends ListRecords
 {
     protected static string $resource = AlquileresResource::class;
+    
+    protected $listeners = [
+        'globalRouteChanged' => 'applyRouteFilter',
+        'refreshComponent' => '$refresh',
+        'refreshAlquileresTable' => '$refresh',
+        '$refresh',
+    ];
+    
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            AlquileresWebSocketWidget::class,
+        ];
+    }
 
     public ?int $currentRutaId = null;
     public ?string $currentRutaName = null;
-
-    protected $listeners = ['globalRouteChanged' => 'applyRouteFilter'];
 
     public function mount(): void
     {
@@ -72,3 +85,4 @@ class ListAlquileres extends ListRecords
         return true;
     }
 }
+

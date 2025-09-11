@@ -46,3 +46,14 @@
         </div>
     </div>
 </div>
+
+<script>
+    function dateRangePicker() {
+        return {
+            init() {
+                // Inicialización del componente de rango de fechas
+                console.log('DateRangePicker inicializado');
+            }
+        }
+    }
+</script>

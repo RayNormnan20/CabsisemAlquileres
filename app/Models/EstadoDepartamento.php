@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\EstadoDepartamentoCreated;
+use App\Events\EstadoDepartamentoUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,5 +35,21 @@ class EstadoDepartamento extends Model
     public function scopeActivos($query)
     {
         return $query->where('activo', true);
+    }
+
+    // Eventos del modelo
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Cuando se crea un estado de departamento
+        static::created(function ($estadoDepartamento) {
+            event(new EstadoDepartamentoCreated($estadoDepartamento));
+        });
+
+        // Cuando se actualiza un estado de departamento
+        static::updated(function ($estadoDepartamento) {
+            event(new EstadoDepartamentoUpdated($estadoDepartamento));
+        });
     }
 }

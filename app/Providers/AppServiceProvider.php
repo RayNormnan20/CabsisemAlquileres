@@ -57,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
         try {
             Filament::registerScripts([
                 app(Vite::class)('resources/js/filament.js'),
+                'alpine-functions' => asset('js/alpine-functions.js'),
             ]);
         } catch (\Exception $e) {
             // Manifest not built yet!

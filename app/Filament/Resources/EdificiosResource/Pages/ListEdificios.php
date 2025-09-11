@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EdificiosResource\Pages;
 
 use App\Filament\Resources\EdificiosResource;
+use App\Filament\Widgets\EdificiosWebSocketWidget;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,11 +12,23 @@ use Illuminate\Support\Facades\Session;
 class ListEdificios extends ListRecords
 {
     protected static string $resource = EdificiosResource::class;
+    
+    protected $listeners = [
+        'globalRouteChanged' => 'applyRouteFilter',
+        'refreshComponent' => '$refresh',
+        'refreshEdificiosTable' => '$refresh',
+        '$refresh',
+    ];
+    
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            EdificiosWebSocketWidget::class,
+        ];
+    }
 
     public ?int $currentRutaId = null;
     public ?string $currentRutaName = null;
-
-    protected $listeners = ['globalRouteChanged' => 'applyRouteFilter'];
 
     public function mount(): void
     {
@@ -75,3 +88,4 @@ class ListEdificios extends ListRecords
         return true;
     }
 }
+

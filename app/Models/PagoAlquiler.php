@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\PagoAlquilerCreated;
+use App\Events\PagoAlquilerUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -48,5 +50,18 @@ class PagoAlquiler extends Model
     public function getReciboUrlAttribute()
     {
         return $this->recibo_path ? asset('storage/' . $this->recibo_path) : null;
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($pagoAlquiler) {
+            PagoAlquilerCreated::dispatch($pagoAlquiler);
+        });
+
+        static::updated(function ($pagoAlquiler) {
+            PagoAlquilerUpdated::dispatch($pagoAlquiler);
+        });
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Events\ConceptoCreditoCreated;
+use App\Events\ConceptoCreditoUpdated;
 
 class ConceptoCredito extends Model
 {
@@ -33,4 +35,19 @@ class ConceptoCredito extends Model
         return $this->belongsTo(Caja::class, 'id_caja');
     }
         */
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($conceptoCredito) {
+            // Disparar evento WebSocket cuando se crea un concepto de crédito
+            ConceptoCreditoCreated::dispatch($conceptoCredito);
+        });
+
+        static::updated(function ($conceptoCredito) {
+            // Disparar evento WebSocket cuando se actualiza un concepto de crédito
+            ConceptoCreditoUpdated::dispatch($conceptoCredito);
+        });
+    }
 }

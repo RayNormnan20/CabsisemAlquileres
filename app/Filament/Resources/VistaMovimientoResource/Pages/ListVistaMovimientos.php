@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\VistaMovimientoResource\Pages;
 
 use App\Filament\Resources\VistaMovimientoResource;
+use App\Filament\Widgets\IngresosGastosWebSocketWidget;
 use Carbon\Carbon;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -36,6 +37,13 @@ class ListVistaMovimientos extends ListRecords
     protected function getTableRecordsPerPageSelectOptions(): array
     {
         return [10, 25, 50, 100];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            IngresosGastosWebSocketWidget::class,
+        ];
     }
 
     protected function getDefaultTableRecordsPerPageSelectOption(): int

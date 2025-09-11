@@ -12,6 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
+use App\Filament\Widgets\PlanillaRecaudadorWebSocketWidget;
 
 class ListPlanillaRecaudadors extends ListRecords
 {
@@ -69,7 +70,9 @@ class ListPlanillaRecaudadors extends ListRecords
 
     protected function getHeaderWidgets(): array
     {
-        return [];
+        return [
+            PlanillaRecaudadorWebSocketWidget::class,
+        ];
     }
 
     public function getExtraBodyAttributes(): array

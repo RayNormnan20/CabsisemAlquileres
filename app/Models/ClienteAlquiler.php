@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\ClienteAlquilerCreated;
+use App\Events\ClienteAlquilerUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -57,6 +59,19 @@ class ClienteAlquiler extends Model
     public function getNombreCompletoAttribute()
     {
         return "{$this->nombre} {$this->apellido}";
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($clienteAlquiler) {
+            ClienteAlquilerCreated::dispatch($clienteAlquiler);
+        });
+
+        static::updated(function ($clienteAlquiler) {
+            ClienteAlquilerUpdated::dispatch($clienteAlquiler);
+        });
     }
 
     // Scope para filtrar por ruta

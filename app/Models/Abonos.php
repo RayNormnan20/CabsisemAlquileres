@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use App\Events\AbonoCreated;
 use App\Events\AbonoUpdated;
+use App\Events\MovimientoCreated;
+use App\Events\MovimientoUpdated;
+use App\Events\PlanillaRecaudadorCreated;
+use App\Events\PlanillaRecaudadorUpdated;
 
 class Abonos extends Model
 {
@@ -54,6 +58,32 @@ class Abonos extends Model
             // Disparar evento de broadcasting
             event(new AbonoCreated($abono));
             
+            // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
+            // Como vista_movimientos ya incluye automáticamente los abonos,
+            // solo necesitamos disparar el evento WebSocket
+            event(new MovimientoCreated((object) [
+                'id' => $abono->id_abono,
+                'tipo_movimiento' => 'Abono',
+                'fecha' => $abono->fecha_pago,
+                'monto' => $abono->monto_abono,
+                'concepto' => $abono->concepto->nombre ?? 'Abono',
+                'tipo_concepto' => $abono->concepto->tipo ?? 'Ingresos',
+                'cliente' => $abono->cliente->nombre ?? 'Cliente',
+                'usuario' => $abono->usuario->name ?? 'Usuario',
+                'observaciones' => $abono->observaciones
+            ]));
+            
+            // Disparar evento de planilla recaudador
+            if ($abono->id_credito) {
+                $planillaData = [
+                    'id_credito' => $abono->id_credito,
+                    'cliente_completo' => $abono->credito->cliente->nombre ?? 'Cliente',
+                    'monto_abono' => $abono->monto_abono,
+                    'fecha_pago' => $abono->fecha_pago
+                ];
+                event(new PlanillaRecaudadorCreated($planillaData));
+            }
+            
             if ($abono->id_credito) {
                 $abono->actualizarSegundoRecorridoCredito();
                 
@@ -69,6 +99,29 @@ class Abonos extends Model
         static::updated(function ($abono) {
             // Disparar evento de broadcasting
             event(new AbonoUpdated($abono));
+            
+            // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
+            $movimiento = new \App\Models\Movimiento();
+            $movimiento->fill([
+                'id' => $abono->id_abono,
+                'tipo_movimiento' => 'Abono',
+                'fecha' => $abono->fecha_pago,
+                'monto' => $abono->monto_abono,
+                'concepto' => $abono->concepto->nombre ?? 'Abono',
+                'tipo_concepto' => $abono->concepto->tipo ?? 'Ingresos'
+            ]);
+            event(new MovimientoUpdated($movimiento));
+            
+            // Disparar evento de planilla recaudador
+            if ($abono->id_credito) {
+                $planillaData = [
+                    'id_credito' => $abono->id_credito,
+                    'cliente_completo' => $abono->credito->cliente->nombre ?? 'Cliente',
+                    'monto_abono' => $abono->monto_abono,
+                    'fecha_pago' => $abono->fecha_pago
+                ];
+                event(new PlanillaRecaudadorUpdated($planillaData));
+            }
             
             if ($abono->id_credito && $abono->wasChanged('activar_segundo_recorrido')) {
                 $abono->actualizarSegundoRecorridoCredito();

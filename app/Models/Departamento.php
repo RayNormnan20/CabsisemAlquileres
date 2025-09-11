@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\DepartamentoCreated;
+use App\Events\DepartamentoUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -85,5 +87,18 @@ class Departamento extends Model
     public function scopeActivos($query)
     {
         return $query->where('activo', true);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($departamento) {
+            DepartamentoCreated::dispatch($departamento);
+        });
+
+        static::updated(function ($departamento) {
+            DepartamentoUpdated::dispatch($departamento);
+        });
     }
 }

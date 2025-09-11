@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\AlquilerCreated;
+use App\Events\AlquilerUpdated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -88,5 +90,18 @@ class Alquiler extends Model
             return Carbon::now()->diffInDays($this->fecha_proximo_pago);
         }
         return 0;
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($alquiler) {
+            AlquilerCreated::dispatch($alquiler);
+        });
+
+        static::updated(function ($alquiler) {
+            AlquilerUpdated::dispatch($alquiler);
+        });
     }
 }

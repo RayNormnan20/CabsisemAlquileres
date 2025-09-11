@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DepartamentosResource\Pages;
 
 use App\Filament\Resources\DepartamentosResource;
+use App\Filament\Widgets\DepartamentosWebSocketWidget;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,11 +12,23 @@ use Illuminate\Support\Facades\Session;
 class ListDepartamentos extends ListRecords
 {
     protected static string $resource = DepartamentosResource::class;
+    
+    protected $listeners = [
+        'globalRouteChanged' => 'applyRouteFilter',
+        'refreshComponent' => '$refresh',
+        'refreshDepartamentosTable' => '$refresh',
+        '$refresh',
+    ];
+    
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            DepartamentosWebSocketWidget::class,
+        ];
+    }
 
     public ?int $currentRutaId = null;
     public ?string $currentRutaName = null;
-
-    protected $listeners = ['globalRouteChanged' => 'applyRouteFilter'];
 
     public function mount(): void
     {
@@ -75,3 +88,4 @@ class ListDepartamentos extends ListRecords
         return true;
     }
 }
+

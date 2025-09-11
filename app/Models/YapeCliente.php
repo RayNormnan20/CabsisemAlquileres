@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Events\YapeClienteCreated;
+use App\Events\YapeClienteUpdated;
 
 class YapeCliente extends Model
 {
@@ -51,5 +53,19 @@ class YapeCliente extends Model
     public function credito()
     {
         return $this->belongsTo(Creditos::class, 'id_credito', 'id_credito');
+    }
+
+    // Eventos del modelo
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($yapeCliente) {
+            event(new YapeClienteCreated($yapeCliente));
+        });
+
+        static::updated(function ($yapeCliente) {
+            event(new YapeClienteUpdated($yapeCliente));
+        });
     }
 }

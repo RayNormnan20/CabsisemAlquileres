@@ -15,6 +15,13 @@ class InfoClienteWidget extends Widget
 
     public Creditos $record;
 
+    // Listeners para WebSocket
+    protected $listeners = [
+        'cliente.created' => '$refresh',
+        'cliente.updated' => '$refresh',
+        'refreshComponent' => '$refresh'
+    ];
+
     // <--- ELIMINA ESTE MÉTODO POR COMPLETO
     // protected function getFormSchema(): array
     // {

@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache; // AGREGAR ESTA LÍNEA
 use App\Events\CreditoCreated;
 use App\Events\CreditoUpdated;
+use App\Events\MovimientoCreated;
+use App\Events\MovimientoUpdated;
+use App\Events\PlanillaRecaudadorCreated;
+use App\Events\PlanillaRecaudadorUpdated;
 
 class Creditos extends Model
 {
@@ -72,10 +76,52 @@ class Creditos extends Model
 
         static::created(function ($credito) {
             event(new CreditoCreated($credito));
+            
+            // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
+             $movimiento = new \App\Models\Movimiento();
+             $movimiento->fill([
+                 'id' => $credito->id_credito,
+                 'tipo_movimiento' => 'Crédito',
+                 'fecha' => $credito->fecha_credito,
+                 'monto' => $credito->valor_credito,
+                 'concepto' => $credito->concepto->nombre ?? 'Crédito',
+                 'tipo_concepto' => $credito->concepto->tipo ?? 'Gastos'
+             ]);
+             event(new MovimientoCreated($movimiento));
+             
+             // Disparar evento de planilla recaudador
+             $planillaData = [
+                 'id_credito' => $credito->id_credito,
+                 'cliente_completo' => $credito->cliente->nombre ?? 'Cliente',
+                 'valor_credito' => $credito->valor_credito,
+                 'fecha_credito' => $credito->fecha_credito
+             ];
+             event(new PlanillaRecaudadorCreated($planillaData));
         });
 
         static::updated(function ($credito) {
             event(new CreditoUpdated($credito));
+            
+            // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
+             $movimiento = new \App\Models\Movimiento();
+             $movimiento->fill([
+                 'id' => $credito->id_credito,
+                 'tipo_movimiento' => 'Crédito',
+                 'fecha' => $credito->fecha_credito,
+                 'monto' => $credito->valor_credito,
+                 'concepto' => $credito->concepto->nombre ?? 'Crédito',
+                 'tipo_concepto' => $credito->concepto->tipo ?? 'Gastos'
+             ]);
+             event(new MovimientoUpdated($movimiento));
+             
+             // Disparar evento de planilla recaudador
+             $planillaData = [
+                 'id_credito' => $credito->id_credito,
+                 'cliente_completo' => $credito->cliente->nombre ?? 'Cliente',
+                 'valor_credito' => $credito->valor_credito,
+                 'fecha_credito' => $credito->fecha_credito
+             ];
+             event(new PlanillaRecaudadorUpdated($planillaData));
         });
     }
 

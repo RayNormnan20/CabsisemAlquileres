@@ -10,6 +10,19 @@ class ListEstadoDepartamentos extends ListRecords
 {
     protected static string $resource = EstadoDepartamentoResource::class;
 
+    protected $listeners = [
+        'refreshComponent' => '$refresh',
+        'refreshEstadoDepartamentoTable' => '$refresh',
+        '$refresh'
+    ];
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\EstadoDepartamentoWebSocketWidget::class,
+        ];
+    }
+
     protected function getActions(): array
     {
         return [
@@ -18,3 +31,4 @@ class ListEstadoDepartamentos extends ListRecords
     }
 
 }
+

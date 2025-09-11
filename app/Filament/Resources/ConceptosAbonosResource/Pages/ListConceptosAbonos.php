@@ -6,6 +6,7 @@ use App\Filament\Resources\ConceptosAbonosResource;
 use App\Models\ConceptoAbono;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Widgets\ConceptoAbonoWebSocketWidget;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Session;
@@ -30,6 +31,13 @@ class ListConceptosAbonos extends ListRecords
     {
         return [
             Actions\CreateAction::make()->hidden(), // Esto oculta el botón "Crear Concepto"
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            ConceptoAbonoWebSocketWidget::class,
         ];
     }
 }
