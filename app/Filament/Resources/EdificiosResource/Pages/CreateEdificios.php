@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EdificiosResource\Pages;
 
 use App\Filament\Resources\EdificiosResource;
+use App\Models\LogActividad;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Session;
@@ -29,6 +30,29 @@ class CreateEdificios extends CreateRecord
         }
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        // Registrar log de actividad
+        LogActividad::create([
+            'user_id' => auth()->id(),
+            'tipo' => 'Edificios',
+            'mensaje' => 'Edificio creado: ' . $this->record->nombre,
+            'metadata' => [
+                'accion' => 'crear',
+                'id_edificio' => $this->record->id_edificio,
+                'nombre' => $this->record->nombre,
+                'direccion' => $this->record->direccion,
+                'ciudad' => $this->record->ciudad,
+                'numero_pisos' => $this->record->numero_pisos,
+                'id_cliente_alquiler' => $this->record->id_cliente_alquiler,
+                'id_ruta' => $this->record->id_ruta,
+                'activo' => $this->record->activo,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]
+        ]);
     }
 
     protected function getCreatedNotificationTitle(): ?string

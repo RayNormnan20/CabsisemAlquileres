@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DepartamentosResource\Pages;
 
 use App\Filament\Resources\DepartamentosResource;
+use App\Models\LogActividad;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Session;
@@ -30,6 +31,26 @@ class CreateDepartamentos extends CreateRecord
         }
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        // Registrar la actividad en el log
+        LogActividad::registrar(
+            'Departamentos',
+            'Registró un nuevo departamento: ' . $this->record->numero_departamento . ' en el edificio ' . $this->record->edificio->nombre,
+            [
+                'departamento_id' => $this->record->id_departamento,
+                'numero_departamento' => $this->record->numero_departamento,
+                'piso' => $this->record->piso,
+                'edificio_id' => $this->record->id_edificio,
+                'edificio_nombre' => $this->record->edificio->nombre,
+                'estado_departamento_id' => $this->record->id_estado_departamento,
+                'precio_alquiler' => $this->record->precio_alquiler,
+                'ruta_id' => $this->record->id_ruta,
+                'activo' => $this->record->activo
+            ]
+        );
     }
 
     protected function getCreatedNotificationTitle(): ?string

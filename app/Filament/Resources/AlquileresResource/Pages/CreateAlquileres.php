@@ -5,6 +5,7 @@ namespace App\Filament\Resources\AlquileresResource\Pages;
 use App\Filament\Resources\AlquileresResource;
 use App\Models\Departamento;
 use App\Models\EstadoDepartamento;
+use App\Models\LogActividad;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Session;
@@ -27,6 +28,16 @@ class CreateAlquileres extends CreateRecord
         // Asignar el usuario creador automáticamente
         $data['id_usuario_creador'] = auth()->id();
 
+        // Si la fecha de inicio es hoy, establecer la fecha de próximo pago un mes después de la fecha de inicio
+        if (isset($data['fecha_inicio'])) {
+            $fechaInicio = \Carbon\Carbon::parse($data['fecha_inicio']);
+            $hoy = \Carbon\Carbon::today();
+            
+            if ($fechaInicio->isSameDay($hoy)) {
+                $data['fecha_proximo_pago'] = $fechaInicio->copy()->addMonth();
+            }
+        }
+
         return $data;
     }
 
@@ -41,6 +52,23 @@ class CreateAlquileres extends CreateRecord
             Departamento::where('id_departamento', $this->record->id_departamento)
                 ->update(['id_estado_departamento' => $estadoOcupado->id_estado_departamento]);
         }
+
+        // Registrar la actividad en el log
+        LogActividad::registrar(
+            'Alquileres',
+            'Registró un nuevo alquiler para el departamento ' . $this->record->departamento->numero_departamento . ' del edificio ' . $this->record->departamento->edificio->nombre,
+            [
+                'alquiler_id' => $this->record->id_alquiler,
+                'departamento_id' => $this->record->id_departamento,
+                'departamento_numero' => $this->record->departamento->numero_departamento,
+                'edificio_nombre' => $this->record->departamento->edificio->nombre,
+                'inquilino_id' => $this->record->id_cliente_alquiler,
+                'inquilino_nombre' => $this->record->inquilino->nombre_completo ?? 'Sin inquilino',
+                'precio_mensual' => $this->record->precio_mensual,
+                'fecha_inicio' => $this->record->fecha_inicio->format('Y-m-d'),
+                'estado_alquiler' => $this->record->estado_alquiler
+            ]
+        );
     }
 
     protected function getCreatedNotificationTitle(): ?string

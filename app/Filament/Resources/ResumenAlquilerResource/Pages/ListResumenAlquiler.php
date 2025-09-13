@@ -7,6 +7,7 @@ use App\Models\Alquiler;
 use App\Models\PagoAlquiler;
 use App\Models\Edificio;
 use App\Models\Departamento;
+use App\Models\LogActividad;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Grid;
@@ -223,6 +224,23 @@ class ListResumenAlquiler extends ListRecords
                      ]);
 
             $fileName = 'resumen-alquiler-' . $edificio->nombre . '-depto-' . $departamento->numero_departamento . '-' . now()->format('Y-m-d') . '.pdf';
+
+            // Registrar log de actividad para la descarga del PDF
+            LogActividad::registrar(
+                'Historial',
+                "Descargó PDF del historial de alquiler del edificio {$edificio->nombre} - Departamento {$departamento->numero_departamento}",
+                [
+                    'edificio_id' => $edificio->id_edificio,
+                    'edificio_nombre' => $edificio->nombre,
+                    'departamento_id' => $departamento->id_departamento,
+                    'departamento_numero' => $departamento->numero_departamento,
+                    'alquiler_id' => $alquiler->id_alquiler,
+                    'inquilino_nombre' => $alquiler->inquilino->nombre_completo ?? 'Sin cliente',
+                    'archivo_generado' => $fileName,
+                    'total_abonos' => $this->totalAbonos,
+                    'cantidad_pagos' => count($this->detallesPagos)
+                ]
+            );
 
             return response()->streamDownload(
                 fn () => print($pdf->stream()),

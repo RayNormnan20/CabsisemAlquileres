@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PagosAlquilerResource\Pages;
 
 use App\Filament\Resources\PagosAlquilerResource;
+use App\Models\LogActividad;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Session;
@@ -17,6 +18,26 @@ class CreatePagosAlquiler extends CreateRecord
     {
         parent::mount();
         $this->currentRutaId = Session::get('selected_ruta_id');
+    }
+
+    protected function afterCreate(): void
+    {
+        // Registrar la actividad en el log
+        LogActividad::registrar(
+            'Pagos Alquiler',
+            'Registró un nuevo pago de alquiler por S/. ' . number_format($this->record->monto_pagado, 2) . ' para el departamento ' . $this->record->alquiler->departamento->numero_departamento,
+            [
+                'pago_id' => $this->record->id_pago_alquiler,
+                'alquiler_id' => $this->record->id_alquiler,
+                'departamento_numero' => $this->record->alquiler->departamento->numero_departamento,
+                'edificio_nombre' => $this->record->alquiler->departamento->edificio->nombre,
+                'inquilino_nombre' => $this->record->alquiler->inquilino->nombre_completo ?? 'Sin inquilino',
+                'monto_pagado' => $this->record->monto_pagado,
+                'fecha_pago' => $this->record->fecha_pago->format('Y-m-d'),
+                'mes_correspondiente' => $this->record->mes_correspondiente,
+                'ano_correspondiente' => $this->record->ano_correspondiente
+            ]
+        );
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

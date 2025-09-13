@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ClienteAlquilerResource\Pages;
 
 use App\Filament\Resources\ClienteAlquilerResource;
 use App\Models\LogActividad;
+use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Session;
 
@@ -46,12 +47,15 @@ class CreateClienteAlquiler extends CreateRecord
     {
         // Registrar la actividad en el log
         LogActividad::registrar(
-            'ClienteAlquiler',
-            'Registró un nuevo cliente de alquiler',
+            'Cliente Alquiler',
+            'Registró un nuevo cliente de alquiler: ' . ($this->record->nombre_completo ?? $this->record->nombre . ' ' . $this->record->apellido),
             [
                 'cliente_id' => $this->record->id_cliente_alquiler,
-                'documento' => $this->record->numero_documento,
-                'nombre_completo' => $this->record->nombre . ' ' . $this->record->apellido,
+                'documento' => $this->record->numero_documento ?? $this->record->cedula,
+                'nombre_completo' => $this->record->nombre_completo ?? $this->record->nombre . ' ' . $this->record->apellido,
+                'telefono' => $this->record->telefono,
+                'email' => $this->record->email,
+                'direccion' => $this->record->direccion,
                 'ruta_id' => $this->record->id_ruta
             ]
         );

@@ -14,14 +14,18 @@ class EditClienteAlquiler extends EditRecord
 
     protected function afterSave(): void
     {
+        // Registrar la edición en el log
         LogActividad::registrar(
-            'ClienteAlquiler',
-            'Actualizó los datos del cliente de alquiler: ' . $this->record->nombre . ' ' . $this->record->apellido,
+            'Cliente Alquiler',
+            'Editó el cliente/inquilino: ' . $this->record->nombre_completo,
             [
-                'cliente_alquiler_id' => $this->record->id_cliente_alquiler,
-                'documento' => $this->record->numero_documento,
-                'nombre_completo' => $this->record->nombre . ' ' . $this->record->apellido,
-                'cambios_realizados' => $this->record->getChanges(),
+                'cliente_id' => $this->record->id_cliente_alquiler,
+                'nombre_completo' => $this->record->nombre_completo,
+                'cedula' => $this->record->cedula,
+                'telefono' => $this->record->telefono,
+                'email' => $this->record->email,
+                'direccion' => $this->record->direccion,
+                'estado_cliente' => $this->record->estado_cliente
             ]
         );
 
@@ -35,19 +39,22 @@ class EditClienteAlquiler extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->before(function () {
+                ->after(function () {
+                    // Registrar la eliminación en el log
                     LogActividad::registrar(
-                        'ClienteAlquiler',
-                        'Eliminó al cliente de alquiler: ' . $this->record->nombre . ' ' . $this->record->apellido,
+                        'Cliente Alquiler',
+                        'Eliminó el cliente/inquilino: ' . $this->record->nombre_completo,
                         [
-                            'cliente_alquiler_id' => $this->record->id_cliente_alquiler,
-                            'documento' => $this->record->numero_documento,
-                            'nombre_completo' => $this->record->nombre . ' ' . $this->record->apellido,
-                            'datos_eliminados' => $this->record->toArray()
+                            'cliente_id' => $this->record->id_cliente_alquiler,
+                            'nombre_completo' => $this->record->nombre_completo,
+                            'cedula' => $this->record->cedula,
+                            'telefono' => $this->record->telefono,
+                            'email' => $this->record->email,
+                            'direccion' => $this->record->direccion,
+                            'estado_cliente' => $this->record->estado_cliente
                         ]
                     );
-                })
-                ->after(function () {
+                    
                     Notification::make()
                         ->title('Cliente de alquiler eliminado exitosamente')
                         ->success()

@@ -86,11 +86,11 @@ class PagosAlquilerResource extends Resource
                             Select::make('metodo_pago')
                                 ->label('Método de Pago')
                                 ->options([
-                                    'Efectivo' => 'Efectivo',
+                                    'efectivo' => 'Efectivo',
                                     'Yape' => 'Yape',
 
                                 ])
-                                ->default('Efectivo')
+                               // ->default('Efectivo')
                                 ->required(),
                         ])->columns(2),
 
@@ -184,7 +184,7 @@ class PagosAlquilerResource extends Resource
                 TextColumn::make('metodo_pago')
                     ->label('Método')
                     ->enum([
-                        'Efectivo' => 'Efectivo',
+                        'efectivo' => 'Efectivo',
                         'Yape' => 'Yape',
 
                     ])
@@ -205,7 +205,7 @@ class PagosAlquilerResource extends Resource
                 SelectFilter::make('metodo_pago')
                     ->label('Método de Pago')
                     ->options([
-                        'Efectivo' => 'Efectivo',
+                        'efectivo' => 'Efectivo',
                         'Yape' => 'Yape',
                     ]),
 
