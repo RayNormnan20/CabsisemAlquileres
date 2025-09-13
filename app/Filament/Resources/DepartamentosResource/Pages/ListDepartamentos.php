@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Session;
 class ListDepartamentos extends ListRecords
 {
     protected static string $resource = DepartamentosResource::class;
-    
+
     protected $listeners = [
         'globalRouteChanged' => 'applyRouteFilter',
         'refreshComponent' => '$refresh',
         'refreshDepartamentosTable' => '$refresh',
         '$refresh',
     ];
-    
+
     protected function getHeaderWidgets(): array
     {
         return [
@@ -79,7 +79,7 @@ class ListDepartamentos extends ListRecords
                 ->label('Ver Disponibilidad por Pisos')
                 ->icon('heroicon-o-view-grid')
                 ->color('secondary')
-                ->url(fn () => static::getResource()::getUrl('disponibilidad')),
+                ->url(fn () => static::getResource()::getUrl('index')),
         ];
     }
 
@@ -88,4 +88,3 @@ class ListDepartamentos extends ListRecords
         return true;
     }
 }
-

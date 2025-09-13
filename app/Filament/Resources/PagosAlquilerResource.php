@@ -61,9 +61,9 @@ class PagosAlquilerResource extends Resource
                                         ->get()
                                         ->mapWithKeys(fn($a) => [
                                             $a->id_alquiler =>
-                                            $a->departamento->edificio->nombre . ' - Depto. ' .
-                                            $a->departamento->numero_departamento . ' (' .
-                                            $a->inquilino->nombre_completo . ')'
+                                            ($a->departamento?->edificio?->nombre ?? 'Sin edificio') . ' - Depto. ' .
+                                            ($a->departamento?->numero_departamento ?? 'S/N') . ' (' .
+                                            ($a->inquilino?->nombre_completo ?? 'Sin inquilino') . ')'
                                         ]);
                                 })
                                 ->required()
@@ -149,17 +149,20 @@ class PagosAlquilerResource extends Resource
                 TextColumn::make('alquiler.departamento.edificio.nombre')
                     ->label('Edificio')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->default('Sin edificio'),
 
                 TextColumn::make('alquiler.departamento.numero_departamento')
                     ->label('Departamento')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->default('S/N'),
 
                 TextColumn::make('alquiler.inquilino.nombre_completo')
                     ->label('Inquilino')
                     ->searchable(['alquiler.inquilino.nombre', 'alquiler.inquilino.apellido'])
-                    ->sortable(),
+                    ->sortable()
+                    ->default('Sin inquilino'),
 
                 TextColumn::make('fecha_pago')
                     ->label('Fecha Pago')

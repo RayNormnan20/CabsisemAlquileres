@@ -260,10 +260,10 @@ class DepartamentosResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDepartamentos::route('/'),
+            'index' => Pages\DisponibilidadPorPisos::route('/'),
             'create' => Pages\CreateDepartamentos::route('/create'),
             'edit' => Pages\EditDepartamentos::route('/{record}/edit'),
-            'disponibilidad' => Pages\DisponibilidadPorPisos::route('/disponibilidad-por-pisos'),
+            'listado' => Pages\ListDepartamentos::route('/listado'),
         ];
     }
 

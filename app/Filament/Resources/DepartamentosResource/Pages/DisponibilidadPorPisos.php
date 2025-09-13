@@ -7,6 +7,7 @@ use App\Models\Departamento;
 use App\Models\Edificio;
 use App\Models\EstadoDepartamento;
 use Filament\Resources\Pages\Page;
+use Filament\Pages\Actions;
 use Livewire\Component;
 
 class DisponibilidadPorPisos extends Page
@@ -21,6 +22,7 @@ class DisponibilidadPorPisos extends Page
     public $edificios = [];
     public $departamentosPorPiso = [];
     public $estadosColores = [];
+    public $todosDepartamentos = [];
     
     public function mount(): void
     {
@@ -39,12 +41,14 @@ class DisponibilidadPorPisos extends Page
         if (!empty($this->edificios)) {
             $this->selectedEdificio = array_key_first($this->edificios);
             $this->loadDepartamentos();
+            $this->loadTodosDepartamentos();
         }
     }
     
     public function updatedSelectedEdificio()
     {
         $this->loadDepartamentos();
+        $this->loadTodosDepartamentos();
     }
     
     protected function loadDepartamentos()
@@ -92,6 +96,21 @@ class DisponibilidadPorPisos extends Page
             ->toArray();
     }
     
+    protected function loadTodosDepartamentos()
+    {
+        if (!$this->selectedEdificio) {
+            $this->todosDepartamentos = [];
+            return;
+        }
+        
+        $this->todosDepartamentos = Departamento::with(['estado', 'edificio'])
+            ->where('id_edificio', $this->selectedEdificio)
+            ->where('activo', true)
+            ->orderBy('numero_departamento')
+            ->get()
+            ->toArray();
+    }
+    
     protected function getViewData(): array
     {
         return [
@@ -99,6 +118,7 @@ class DisponibilidadPorPisos extends Page
             'selectedEdificio' => $this->selectedEdificio,
             'departamentosPorPiso' => $this->departamentosPorPiso,
             'estadosColores' => $this->estadosColores,
+            'todosDepartamentos' => $this->todosDepartamentos,
         ];
     }
     
@@ -106,5 +126,21 @@ class DisponibilidadPorPisos extends Page
     {
         // Retornar el color hexadecimal directamente para usar como estilo inline
         return 'background-color: ' . $hexColor;
+    }
+    
+    protected function getActions(): array
+    {
+        return [
+            Actions\Action::make('crear')
+                ->label('Agregar Departamento')
+                ->icon('heroicon-s-plus')
+                ->color('primary')
+                ->url(fn () => static::getResource()::getUrl('create')),
+            Actions\Action::make('listado')
+                ->label('Ver Listado Tradicional')
+                ->icon('heroicon-o-table')
+                ->color('secondary')
+                ->url(fn () => static::getResource()::getUrl('listado')),
+        ];
     }
 }
