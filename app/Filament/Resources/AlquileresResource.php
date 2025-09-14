@@ -66,7 +66,7 @@ class AlquileresResource extends Resource
                                         ->get()
                                         ->mapWithKeys(fn($d) => [
                                             $d->id_departamento =>
-                                            $d->edificio->nombre . ' - Depto. ' . $d->numero_departamento . ' (Piso ' . $d->piso . ')'
+                                            ($d->edificio ? $d->edificio->nombre : 'Sin Edificio') . ' - Depto. ' . $d->numero_departamento . ' (Piso ' . $d->piso . ')'
                                         ]);
                                 })
                                 ->required()
@@ -151,6 +151,43 @@ class AlquileresResource extends Resource
                                 ->maxSize(10240) // 10MB
                                 ->columnSpanFull(),
                         ])->columns(1),
+
+                    Section::make('Imágenes del Alquiler (Opcionales)')
+                        ->schema([
+                            FileUpload::make('imagen_1_path')
+                                ->label('Imagen 1')
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->directory('alquileres/imagenes')
+                                ->maxSize(5120) // 5MB
+                                ->image()
+                                ->imageResizeMode('cover')
+                                ->imageCropAspectRatio('16:9')
+                                ->imageResizeTargetWidth('1920')
+                                ->imageResizeTargetHeight('1080'),
+
+                            FileUpload::make('imagen_2_path')
+                                ->label('Imagen 2')
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->directory('alquileres/imagenes')
+                                ->maxSize(5120) // 5MB
+                                ->image()
+                                ->imageResizeMode('cover')
+                                ->imageCropAspectRatio('16:9')
+                                ->imageResizeTargetWidth('1920')
+                                ->imageResizeTargetHeight('1080'),
+
+                            FileUpload::make('imagen_3_path')
+                                ->label('Imagen 3')
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->directory('alquileres/imagenes')
+                                ->maxSize(5120) // 5MB
+                                ->image()
+                                ->imageResizeMode('cover')
+                                ->imageCropAspectRatio('16:9')
+                                ->imageResizeTargetWidth('1920')
+                                ->imageResizeTargetHeight('1080'),
+                        ])->columns(3)
+                        ->description('Puede subir hasta 3 imágenes relacionadas con el alquiler (opcional)'),
                 ])
             ]);
     }
@@ -232,6 +269,55 @@ class AlquileresResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+                
+                Tables\Actions\Action::make('view_imagenes')
+                    ->label('')
+                    ->icon('heroicon-o-eye')
+                    ->color(fn($record) => ($record->imagen_1_path || $record->imagen_2_path || $record->imagen_3_path) ? 'primary' : 'secondary')
+                    ->size('sm')
+                    ->button()
+                    ->modalHeading('Imágenes del Alquiler')
+                    ->modalContent(function ($record) {
+                        $imagenes = collect([
+                            ['path' => $record->imagen_1_path, 'label' => 'Imagen 1'],
+                            ['path' => $record->imagen_2_path, 'label' => 'Imagen 2'],
+                            ['path' => $record->imagen_3_path, 'label' => 'Imagen 3']
+                        ])->filter(fn($img) => !empty($img['path']));
+
+                        if ($imagenes->isEmpty()) {
+                            return new \Illuminate\Support\HtmlString('<p class="text-center text-gray-500">No hay imágenes disponibles</p>');
+                        }
+
+                        $html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+                        
+                        foreach ($imagenes as $imagen) {
+                            $imageUrl = asset('storage/' . $imagen['path']);
+                            $label = $imagen['label'];
+                            
+                            $html .= <<<HTML
+                                <div class="space-y-2">
+                                    <p class="text-sm font-medium text-gray-700 text-center">{$label}</p>
+                                    <div class="flex justify-center">
+                                        <img src="{$imageUrl}"
+                                            class="rounded-lg max-h-64 max-w-full object-contain cursor-pointer border shadow-sm"
+                                            onclick="window.open(this.src, '_blank')"
+                                            alt="{$label}">
+                                    </div>
+                                </div>
+HTML;
+                        }
+                        
+                        $html .= '</div>';
+                        
+                        return new \Illuminate\Support\HtmlString($html);
+                    })
+                    ->modalWidth('4xl')
+                    ->modalButton('Cerrar')
+                    ->action(function () {
+                        // Acción vacía necesaria para el modal
+                    })
+                    ->visible(fn($record) => ($record->imagen_1_path || $record->imagen_2_path || $record->imagen_3_path))
+                    ->tooltip('Ver Imágenes'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

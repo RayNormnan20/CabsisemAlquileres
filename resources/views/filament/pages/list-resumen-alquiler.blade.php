@@ -197,13 +197,15 @@
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     ABONO
                                 </th>
+                                <!--
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     DETALLE
                                 </th>
+                                -->
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    FOTO
+                                    FOTO ALQUILER
                                 </th>
                             </tr>
                         </thead>
@@ -224,18 +226,36 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                     S/ {{ number_format($detalle['monto_pagado'], 2) }}
                                 </td>
+                                <!--
                                 <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
                                     {{ $detalle['observaciones'] ?? 'Sin observaciones' }}
                                 </td>
+                                -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    @if($detalle['recibo_path'])
-                                    <a href="{{ asset('storage/' . $detalle['recibo_path']) }}" target="_blank"
-                                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                        Ver Recibo
-                                    </a>
-                                    @else
-                                    <span class="text-gray-400">Sin recibo</span>
-                                    @endif
+                                    <div class="flex items-center space-x-1">
+                                        @if($detalle['imagen_1_path'])
+                                        <img src="{{ asset('storage/' . $detalle['imagen_1_path']) }}" alt="Imagen 1"
+                                            class="h-[18px] w-[18px] rounded-full object-cover border border-gray-200 cursor-pointer hover:scale-110 transition-transform"
+                                            onclick="window.open('{{ asset('storage/' . $detalle['imagen_1_path']) }}', '_blank')"
+                                            title="Click para ver Imagen 1">
+                                        @endif
+                                        @if($detalle['imagen_2_path'])
+                                        <img src="{{ asset('storage/' . $detalle['imagen_2_path']) }}" alt="Imagen 2"
+                                            class="h-[18px] w-[18px] rounded-full object-cover border border-gray-200 cursor-pointer hover:scale-110 transition-transform"
+                                            onclick="window.open('{{ asset('storage/' . $detalle['imagen_2_path']) }}', '_blank')"
+                                            title="Click para ver Imagen 2">
+                                        @endif
+                                        @if($detalle['imagen_3_path'])
+                                        <img src="{{ asset('storage/' . $detalle['imagen_3_path']) }}" alt="Imagen 3"
+                                            class="h-[18px] w-[18px] rounded-full object-cover border border-gray-200 cursor-pointer hover:scale-110 transition-transform"
+                                            onclick="window.open('{{ asset('storage/' . $detalle['imagen_3_path']) }}', '_blank')"
+                                            title="Click para ver Imagen 3">
+                                        @endif
+                                        @if(!$detalle['imagen_1_path'] && !$detalle['imagen_2_path'] &&
+                                        !$detalle['imagen_3_path'])
+                                        <span class="text-gray-400 text-xs">Sin fotos</span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @empty

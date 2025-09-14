@@ -163,7 +163,10 @@ class ListResumenAlquiler extends ListRecords
             ->select(
                 'pagos_alquiler.*',
                 DB::raw('CONCAT(clientes_alquiler.nombre, " ", clientes_alquiler.apellido) as cliente_nombre'),
-                'users.name as cobrador_nombre'
+                'users.name as cobrador_nombre',
+                'alquileres.imagen_1_path',
+                'alquileres.imagen_2_path',
+                'alquileres.imagen_3_path'
             )
             ->orderBy('pagos_alquiler.fecha_pago', 'desc')
             ->get()
@@ -194,6 +197,16 @@ class ListResumenAlquiler extends ListRecords
             $edificio = Edificio::find($this->selectedEdificio);
             $departamento = Departamento::find($this->selectedDepartamento);
 
+            if (!$edificio) {
+                $this->notify('error', 'No se encontró el edificio seleccionado');
+                return;
+            }
+
+            if (!$departamento) {
+                $this->notify('error', 'No se encontró el departamento seleccionado');
+                return;
+            }
+
             // Obtener el alquiler activo
             $alquiler = Alquiler::where('id_departamento', $this->selectedDepartamento)
                 ->where('estado_alquiler', 'activo')
@@ -221,6 +234,8 @@ class ListResumenAlquiler extends ListRecords
                          'defaultFont' => 'Arial',
                          'isHtml5ParserEnabled' => true,
                          'isRemoteEnabled' => true,
+                         'chroot' => public_path(),
+                         'enable_php' => true,
                      ]);
 
             $fileName = 'resumen-alquiler-' . $edificio->nombre . '-depto-' . $departamento->numero_departamento . '-' . now()->format('Y-m-d') . '.pdf';

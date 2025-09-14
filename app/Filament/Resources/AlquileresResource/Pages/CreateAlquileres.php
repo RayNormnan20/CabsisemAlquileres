@@ -56,12 +56,12 @@ class CreateAlquileres extends CreateRecord
         // Registrar la actividad en el log
         LogActividad::registrar(
             'Alquileres',
-            'Registró un nuevo alquiler para el departamento ' . $this->record->departamento->numero_departamento . ' del edificio ' . $this->record->departamento->edificio->nombre,
+            'Registró un nuevo alquiler para el departamento ' . $this->record->departamento->numero_departamento . ' del edificio ' . ($this->record->departamento->edificio ? $this->record->departamento->edificio->nombre : 'Sin Edificio'),
             [
                 'alquiler_id' => $this->record->id_alquiler,
                 'departamento_id' => $this->record->id_departamento,
                 'departamento_numero' => $this->record->departamento->numero_departamento,
-                'edificio_nombre' => $this->record->departamento->edificio->nombre,
+                'edificio_nombre' => $this->record->departamento->edificio ? $this->record->departamento->edificio->nombre : 'Sin Edificio',
                 'inquilino_id' => $this->record->id_cliente_alquiler,
                 'inquilino_nombre' => $this->record->inquilino->nombre_completo ?? 'Sin inquilino',
                 'precio_mensual' => $this->record->precio_mensual,

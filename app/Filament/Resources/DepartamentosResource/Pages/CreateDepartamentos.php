@@ -38,13 +38,13 @@ class CreateDepartamentos extends CreateRecord
         // Registrar la actividad en el log
         LogActividad::registrar(
             'Departamentos',
-            'Registró un nuevo departamento: ' . $this->record->numero_departamento . ' en el edificio ' . $this->record->edificio->nombre,
+            'Registró un nuevo departamento: ' . $this->record->numero_departamento . ' en el edificio ' . ($this->record->edificio ? $this->record->edificio->nombre : 'Sin Edificio'),
             [
                 'departamento_id' => $this->record->id_departamento,
                 'numero_departamento' => $this->record->numero_departamento,
                 'piso' => $this->record->piso,
                 'edificio_id' => $this->record->id_edificio,
-                'edificio_nombre' => $this->record->edificio->nombre,
+                'edificio_nombre' => $this->record->edificio ? $this->record->edificio->nombre : 'Sin Edificio',
                 'estado_departamento_id' => $this->record->id_estado_departamento,
                 'precio_alquiler' => $this->record->precio_alquiler,
                 'ruta_id' => $this->record->id_ruta,

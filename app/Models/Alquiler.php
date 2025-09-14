@@ -28,6 +28,9 @@ class Alquiler extends Model
         'estado_alquiler', // activo, finalizado, suspendido
         'observaciones',
         'contrato_path', // Ruta del archivo del contrato
+        'imagen_1_path', // Imagen opcional 1
+        'imagen_2_path', // Imagen opcional 2
+        'imagen_3_path', // Imagen opcional 3
         'id_usuario_creador'
     ];
 

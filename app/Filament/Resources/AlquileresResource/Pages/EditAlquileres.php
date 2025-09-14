@@ -19,12 +19,12 @@ class EditAlquileres extends EditRecord
                     // Registrar la eliminación en el log
                     LogActividad::registrar(
                         'Alquileres',
-                        'Eliminó el alquiler del departamento ' . $this->record->departamento->numero_departamento . ' del edificio ' . $this->record->departamento->edificio->nombre,
+                        'Eliminó el alquiler del departamento ' . $this->record->departamento->numero_departamento . ' del edificio ' . ($this->record->departamento->edificio ? $this->record->departamento->edificio->nombre : 'Sin Edificio'),
                         [
                             'alquiler_id' => $this->record->id_alquiler,
                             'departamento_id' => $this->record->id_departamento,
                             'departamento_numero' => $this->record->departamento->numero_departamento,
-                            'edificio_nombre' => $this->record->departamento->edificio->nombre,
+                            'edificio_nombre' => $this->record->departamento->edificio ? $this->record->departamento->edificio->nombre : 'Sin Edificio',
                             'inquilino_id' => $this->record->id_cliente_alquiler,
                             'inquilino_nombre' => $this->record->inquilino->nombre_completo ?? 'Sin inquilino',
                             'precio_mensual' => $this->record->precio_mensual,
@@ -43,7 +43,7 @@ class EditAlquileres extends EditRecord
         if ($this->record->estado_alquiler === 'finalizado') {
             $fechaInicio = \Carbon\Carbon::parse($this->record->fecha_inicio);
             $hoy = \Carbon\Carbon::today();
-            
+
             if ($fechaInicio->isSameDay($hoy)) {
                 $this->record->update([
                     'fecha_proximo_pago' => $fechaInicio->copy()->addMonth()
@@ -54,12 +54,12 @@ class EditAlquileres extends EditRecord
         // Registrar la edición en el log
         LogActividad::registrar(
             'Alquileres',
-            'Editó el alquiler del departamento ' . $this->record->departamento->numero_departamento . ' del edificio ' . $this->record->departamento->edificio->nombre,
+            'Editó el alquiler del departamento ' . $this->record->departamento->numero_departamento . ' del edificio ' . ($this->record->departamento->edificio ? $this->record->departamento->edificio->nombre : 'Sin Edificio'),
             [
                 'alquiler_id' => $this->record->id_alquiler,
                 'departamento_id' => $this->record->id_departamento,
                 'departamento_numero' => $this->record->departamento->numero_departamento,
-                'edificio_nombre' => $this->record->departamento->edificio->nombre,
+                'edificio_nombre' => $this->record->departamento->edificio ? $this->record->departamento->edificio->nombre : 'Sin Edificio',
                 'inquilino_id' => $this->record->id_cliente_alquiler,
                 'inquilino_nombre' => $this->record->inquilino->nombre_completo ?? 'Sin inquilino',
                 'precio_mensual' => $this->record->precio_mensual,
@@ -67,5 +67,9 @@ class EditAlquileres extends EditRecord
                 'estado_alquiler' => $this->record->estado_alquiler
             ]
         );
+    }
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 }
