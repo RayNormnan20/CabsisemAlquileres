@@ -106,5 +106,15 @@ class Alquiler extends Model
         static::updated(function ($alquiler) {
             AlquilerUpdated::dispatch($alquiler);
         });
+
+        static::deleting(function ($alquiler) {
+            // Cuando se elimina un alquiler, cambiar el estado del departamento a 'Disponible'
+            // solo si el estado actual es 'Ocupado' (id_estado_departamento = 2)
+            $departamento = $alquiler->departamento;
+            if ($departamento && $departamento->id_estado_departamento == 2) { // 2 = Ocupado
+                $departamento->id_estado_departamento = 1; // 1 = Disponible
+                $departamento->save();
+            }
+        });
     }
 }

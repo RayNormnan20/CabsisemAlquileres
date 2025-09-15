@@ -76,15 +76,15 @@ class AlquileresResource extends Resource
                             Select::make('id_cliente_alquiler')
                                 ->label('Inquilino')
                                 ->options(function () {
-                                    return ClienteAlquiler::query()
-                                        ->where('activo', true)
+                                    return ClienteAlquiler::disponibles()
                                         ->orderBy('nombre')
                                         ->get()
                                         ->mapWithKeys(fn($c) => [$c->id_cliente_alquiler => $c->nombre_completo]);
                                 })
                                 ->required()
                                 ->searchable()
-                                ->preload(),
+                                ->preload()
+                                ->helperText('Solo se muestran clientes que no tienen alquileres activos'),
 
                             Select::make('estado_alquiler')
                                 ->label('Estado del Alquiler')

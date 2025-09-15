@@ -55,10 +55,42 @@ class ClienteAlquiler extends Model
         return $this->belongsTo(User::class, 'id_usuario_creador');
     }
 
+    // Relación con alquileres
+    public function alquileres()
+    {
+        return $this->hasMany(Alquiler::class, 'id_cliente_alquiler', 'id_cliente_alquiler');
+    }
+
     // Accessor para obtener el nombre completo del cliente
     public function getNombreCompletoAttribute()
     {
         return "{$this->nombre} {$this->apellido}";
+    }
+
+    // Método para verificar si el cliente tiene alquileres activos
+    public function tieneAlquilerActivo()
+    {
+        return $this->alquileres()
+            ->where('estado_alquiler', 'activo')
+            ->exists();
+    }
+
+    // Scope para obtener solo clientes disponibles (sin alquileres activos)
+    public function scopeDisponibles($query)
+    {
+        return $query->where('activo', true)
+            ->whereDoesntHave('alquileres', function ($q) {
+                $q->where('estado_alquiler', 'activo');
+            });
+    }
+
+    // Scope para obtener clientes con alquileres activos
+    public function scopeConAlquilerActivo($query)
+    {
+        return $query->where('activo', true)
+            ->whereHas('alquileres', function ($q) {
+                $q->where('estado_alquiler', 'activo');
+            });
     }
 
     protected static function boot()
@@ -100,7 +132,7 @@ class ClienteAlquiler extends Model
             ->get()
             ->mapWithKeys(fn($c) => [$c->id_cliente_alquiler => $c->nombre_completo]);
     }
-    
+
     // Relación con Edificios (como propietario)
     public function edificiosPropios()
     {

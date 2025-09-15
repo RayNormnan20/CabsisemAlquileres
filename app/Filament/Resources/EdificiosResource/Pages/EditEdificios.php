@@ -39,6 +39,21 @@ class EditEdificios extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
+                ->before(function ($action) {
+                    // Validar que el edificio no tenga departamentos asociados
+                    $cantidadDepartamentos = $this->record->departamentos()->count();
+
+                    if ($cantidadDepartamentos > 0) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('No se puede eliminar el edificio')
+                            ->body("Este edificio tiene {$cantidadDepartamentos} departamento(s) asociado(s). Debe eliminar primero todos los departamentos antes de eliminar el edificio.")
+                            ->danger()
+                            ->send();
+
+                        // Cancelar la acción y cerrar el modal
+                        $action->cancel();
+                    }
+                })
                 ->after(function () {
                     // Registrar log de actividad para eliminación
                     LogActividad::create([

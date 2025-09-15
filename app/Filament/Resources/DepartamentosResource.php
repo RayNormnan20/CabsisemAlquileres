@@ -253,7 +253,29 @@ class DepartamentosResource extends Resource
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->before(function (\Illuminate\Database\Eloquent\Collection $records, $action) {
+                        // Validar que ningún departamento tenga alquileres activos
+                        $departamentosConAlquileres = [];
+
+                        foreach ($records as $departamento) {
+                            if ($departamento->tieneAlquilerActivo()) {
+                                $departamentosConAlquileres[] = "'{$departamento->numero_departamento}' (Edificio: {$departamento->edificio->nombre})";
+                            }
+                        }
+
+                        if (!empty($departamentosConAlquileres)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No se pueden eliminar algunos departamentos')
+                                ->body('Los siguientes departamentos tienen alquileres activos y no pueden ser eliminados: ' . implode(', ', $departamentosConAlquileres) . '. Debe finalizar primero todos los alquileres.')
+                                ->danger()
+                                ->duration(5000)
+                                ->send();
+
+                            // Cancelar la acción y cerrar el modal
+                            $action->cancel();
+                        }
+                    }),
             ]);
     }
 

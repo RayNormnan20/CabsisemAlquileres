@@ -74,9 +74,17 @@ class EdificioPolicy
      */
     public function delete(User $user, Edificio $edificio)
     {
-        return $user->can('Eliminar Edificio')
-            ? Response::allow()
-            : Response::deny('No tienes permiso para eliminar este edificio.');
+        if (!$user->can('Eliminar Edificio')) {
+            return Response::deny('No tienes permiso para eliminar este edificio.');
+        }
+
+        // Validar que el edificio no tenga departamentos asociados
+        $cantidadDepartamentos = $edificio->departamentos()->count();
+        if ($cantidadDepartamentos > 0) {
+            return Response::deny("No se puede eliminar el edificio '{$edificio->nombre}' porque tiene {$cantidadDepartamentos} departamento(s) asociado(s). Debe eliminar primero todos los departamentos.");
+        }
+
+        return Response::allow();
     }
 
     /**
@@ -102,9 +110,17 @@ class EdificioPolicy
      */
     public function forceDelete(User $user, Edificio $edificio)
     {
-        return $user->can('Eliminar Permanentemente Edificio')
-            ? Response::allow()
-            : Response::deny('No tienes permiso para eliminar permanentemente este edificio.');
+        if (!$user->can('Eliminar Permanentemente Edificio')) {
+            return Response::deny('No tienes permiso para eliminar permanentemente este edificio.');
+        }
+
+        // Validar que el edificio no tenga departamentos asociados
+        $cantidadDepartamentos = $edificio->departamentos()->count();
+        if ($cantidadDepartamentos > 0) {
+            return Response::deny("No se puede eliminar permanentemente el edificio '{$edificio->nombre}' porque tiene {$cantidadDepartamentos} departamento(s) asociado(s). Debe eliminar primero todos los departamentos.");
+        }
+
+        return Response::allow();
     }
 
     /**

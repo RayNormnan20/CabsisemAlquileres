@@ -39,6 +39,20 @@ class EditDepartamentos extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
+                ->before(function ($action) {
+                    // Validar que el departamento no tenga alquileres activos
+                    if ($this->record->tieneAlquilerActivo()) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('No se puede eliminar el departamento')
+                            ->body("El departamento '{$this->record->numero_departamento}' tiene alquileres activos. Debe finalizar primero todos los alquileres antes de eliminar el departamento.")
+                            ->danger()
+                            ->duration(5000)
+                            ->send();
+
+                        // Cancelar la acción y cerrar el modal
+                        $action->cancel();
+                    }
+                })
                 ->after(function () {
                     // Registrar log de actividad para eliminación
                     LogActividad::create([

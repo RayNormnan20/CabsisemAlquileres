@@ -63,6 +63,14 @@ class Departamento extends Model
         return $this->hasMany(Alquiler::class, 'id_departamento', 'id_departamento');
     }
 
+    // Método para verificar si el departamento tiene alquileres activos
+    public function tieneAlquilerActivo()
+    {
+        return $this->alquileres()
+            ->where('estado_alquiler', 'activo')
+            ->exists();
+    }
+
     // Relación con usuario creador
     public function creador()
     {

@@ -165,9 +165,47 @@ class EdificiosResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Edificio $record, $action) {
+                        // Validar que el edificio no tenga departamentos asociados
+                        $cantidadDepartamentos = $record->departamentos()->count();
+
+                        if ($cantidadDepartamentos > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No se puede eliminar el edificio')
+                                ->body("El edificio '{$record->nombre}' tiene {$cantidadDepartamentos} departamento(s) asociado(s). Debe eliminar primero todos los departamentos antes de eliminar el edificio.")
+                                ->danger()
+                                ->send();
+
+                            // Cancelar la acción y cerrar el modal
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->before(function (\Illuminate\Database\Eloquent\Collection $records, $action) {
+                        // Validar que ningún edificio tenga departamentos asociados
+                        $edificiosConDepartamentos = [];
+
+                        foreach ($records as $edificio) {
+                            $cantidadDepartamentos = $edificio->departamentos()->count();
+                            if ($cantidadDepartamentos > 0) {
+                                $edificiosConDepartamentos[] = "'{$edificio->nombre}' ({$cantidadDepartamentos} departamentos)";
+                            }
+                        }
+
+                        if (!empty($edificiosConDepartamentos)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No se pueden eliminar algunos edificios')
+                                ->body('Los siguientes edificios tienen departamentos asociados y no pueden ser eliminados: ' . implode(', ', $edificiosConDepartamentos) . '. Debe eliminar primero todos los departamentos.')
+                                ->danger()
+                                ->send();
+
+                            // Cancelar la acción y cerrar el modal
+                            $action->cancel();
+                        }
+                    }),
             ]);
     }
 

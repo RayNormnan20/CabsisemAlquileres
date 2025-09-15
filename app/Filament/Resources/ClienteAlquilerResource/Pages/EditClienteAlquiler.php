@@ -32,6 +32,7 @@ class EditClienteAlquiler extends EditRecord
         Notification::make()
             ->title('Cliente de alquiler actualizado exitosamente')
             ->success()
+            ->duration(5000)
             ->send();
     }
 
@@ -39,6 +40,20 @@ class EditClienteAlquiler extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
+                ->before(function ($action) {
+                    // Verificar si el cliente tiene alquileres activos
+                    if ($this->record->tieneAlquilerActivo()) {
+                        Notification::make()
+                            ->title('No se puede eliminar')
+                            ->body('Este cliente tiene alquileres activos y no puede ser eliminado.')
+                            ->danger()
+                            ->duration(5000)
+                            ->send();
+
+                        // Cancelar la acción y cerrar el modal
+                        $action->cancel();
+                    }
+                })
                 ->after(function () {
                     // Registrar la eliminación en el log
                     LogActividad::registrar(
@@ -58,6 +73,7 @@ class EditClienteAlquiler extends EditRecord
                     Notification::make()
                         ->title('Cliente de alquiler eliminado exitosamente')
                         ->success()
+                        ->duration(5000)
                         ->send();
                 }),
         ];
