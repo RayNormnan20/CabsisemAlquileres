@@ -52,6 +52,11 @@ return [
         'https://cabsisem.net.pe',
         'localhost',
         '127.0.0.1',
+        'cabsisem.test',
+        'http://cabsisem.test',
+        'http://localhost',
+        'http://127.0.0.1',
+        '*', // Permitir todos los orígenes para desarrollo local
     ],
 
     /*
