@@ -196,9 +196,11 @@ class AlquileresResource extends Resource
     {
         return $table
             ->columns([
+                /*
                 TextColumn::make('id_alquiler')
                     ->label('#')
                     ->sortable(),
+                    */
 
                 TextColumn::make('departamento.edificio.nombre')
                     ->label('Edificio')
@@ -206,7 +208,7 @@ class AlquileresResource extends Resource
                     ->sortable(),
 
                 TextColumn::make('departamento.numero_departamento')
-                    ->label('Departamento')
+                    ->label('N° Dep.')
                     ->searchable()
                     ->sortable(),
 

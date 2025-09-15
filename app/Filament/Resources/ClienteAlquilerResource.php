@@ -116,11 +116,12 @@ class ClienteAlquilerResource extends Resource
     {
         return $table
             ->columns([
+                /*
                 TextColumn::make('id_cliente_alquiler')
                     ->label('#')
                     ->sortable()
                     ->searchable(),
-
+                    */
                 TextColumn::make('nombre_completo')
                     ->label('Nombre')
                     ->searchable(['nombre', 'apellido'])
@@ -130,11 +131,11 @@ class ClienteAlquilerResource extends Resource
                 TextColumn::make('numero_documento')
                     ->label('Documento')
                     ->searchable(),
-
+                /*
                 TextColumn::make('tipoDocumento.nombre')
                     ->label('Tipo Doc.')
                     ->sortable(),
-
+                */
                 TextColumn::make('celular')
                     ->searchable(),
 

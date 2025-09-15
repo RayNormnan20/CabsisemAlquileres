@@ -93,10 +93,12 @@ class EdificiosResource extends Resource
     {
         return $table
             ->columns([
+
+                /*
                 TextColumn::make('id_edificio')
                     ->label('#')
                     ->sortable(),
-
+                */
                 TextColumn::make('nombre')
                     ->searchable()
                     ->sortable()

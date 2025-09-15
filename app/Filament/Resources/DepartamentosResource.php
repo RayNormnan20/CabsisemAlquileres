@@ -162,10 +162,11 @@ class DepartamentosResource extends Resource
     {
         return $table
             ->columns([
+                /*
                 TextColumn::make('id_departamento')
                     ->label('#')
                     ->sortable(),
-
+                */
                 ImageColumn::make('foto_path')
                     ->label('Foto')
                     ->square()
