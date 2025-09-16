@@ -18,7 +18,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://cabsisem.net.pe'],  // Asegúrate de cambiar el dominio aquí
+    'allowed_origins' => ['https://cabsisem.net.pe', 'http://cabsisem.test', 'http://127.0.0.1:8000', 'http://localhost:8000'],  // Dominios permitidos para desarrollo y producción
 
     'allowed_origins_patterns' => [],
 

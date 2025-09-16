@@ -1,3 +1,5 @@
+{{-- Comentado para ocultar la barra de búsqueda global --}}
+{{--
 <div {{ $attributes->class(['filament-global-search-input']) }}>
     <label for="globalSearchInput" class="sr-only">
         {{ __('filament::global-search.field.label') }}
@@ -26,3 +28,4 @@
         >
     </div>
 </div>
+--}}

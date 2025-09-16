@@ -114,6 +114,10 @@ class LogActividadResource extends Resource
                             );
                     })
             ])
+            ->bulkActions([
+                // Comentado para eliminar la opción de borrar selección
+                // Tables\Actions\DeleteBulkAction::make(),
+            ])
             ->defaultSort('created_at', 'desc');
     }
 
