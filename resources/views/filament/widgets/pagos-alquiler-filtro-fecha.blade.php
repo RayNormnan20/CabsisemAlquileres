@@ -42,7 +42,7 @@
                      </select>
                 </div>
 
-                <div x-show="$wire.periodoSeleccionado === 'personalizado'">
+                <div >
                     <label class="block text-sm text-gray-600 dark:text-gray-200 mb-1">Rango personalizado:</label>
                     <div class="grid grid-cols-2 gap-2">
                         <input type="date" wire:model="fechaDesde"
