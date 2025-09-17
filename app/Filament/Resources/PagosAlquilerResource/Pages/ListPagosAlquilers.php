@@ -91,12 +91,12 @@ class ListPagosAlquilers extends ListRecords
     {
         $query = parent::getTableQuery();
 
-        // Aplicar filtros de fecha si están definidos
+        // Aplicar filtros de fecha si están definidos (usando created_at)
         if ($this->fechaDesde) {
-            $query->whereDate('fecha_pago', '>=', $this->fechaDesde);
+            $query->whereDate('created_at', '>=', $this->fechaDesde);
         }
         if ($this->fechaHasta) {
-            $query->whereDate('fecha_pago', '<=', $this->fechaHasta);
+            $query->whereDate('created_at', '<=', $this->fechaHasta);
         }
 
         // Aplicar filtros de edificio y departamento
