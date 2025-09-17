@@ -165,8 +165,17 @@ class EdificiosResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\Action::make('edit')
+                    ->label('')
+                    ->icon('heroicon-o-pencil-alt')
+                    ->color('primary')
+                    ->size('lg')
+                    ->url(fn ($record): string => static::getUrl('edit', ['record' => $record]))
+                    ->extraAttributes([
+                        'title' => 'Editar',
+                        'class' => 'hover:bg-primary-50 rounded-full'
+                    ]),
+                //Tables\Actions\ViewAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->before(function (Edificio $record, $action) {
                         // Validar que el edificio no tenga departamentos asociados

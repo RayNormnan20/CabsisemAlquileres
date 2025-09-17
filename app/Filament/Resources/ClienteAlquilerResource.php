@@ -177,8 +177,17 @@ class ClienteAlquilerResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\Action::make('edit')
+                    ->label('')
+                    ->icon('heroicon-o-pencil-alt')
+                    ->color('primary')
+                    ->size('lg')
+                    ->url(fn ($record): string => static::getUrl('edit', ['record' => $record]))
+                    ->extraAttributes([
+                        'title' => 'Editar',
+                        'class' => 'hover:bg-primary-50 rounded-full'
+                    ]),
+               // Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
@@ -190,7 +199,7 @@ class ClienteAlquilerResource extends Resource
 
                         if ($clientesConAlquilerActivo->isNotEmpty()) {
                             $nombres = $clientesConAlquilerActivo->pluck('nombre_completo')->join(', ');
-                            
+
                             \Filament\Notifications\Notification::make()
                                 ->title('No se puede eliminar')
                                 ->body("Los siguientes clientes tienen alquileres activos y no pueden ser eliminados: {$nombres}")

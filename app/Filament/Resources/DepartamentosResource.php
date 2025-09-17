@@ -73,14 +73,14 @@ class DepartamentosResource extends Resource
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
                                             $edificioId = $get('id_edificio');
                                             if (!$edificioId) return;
-                                            
+
                                             $exists = \App\Models\Departamento::where('numero_departamento', $value)
                                                 ->where('id_edificio', $edificioId)
                                                 ->when($get('id_departamento'), function ($query, $id) {
                                                     return $query->where('id_departamento', '!=', $id);
                                                 })
                                                 ->exists();
-                                                
+
                                             if ($exists) {
                                                 $fail('Ya existe un departamento con este número/código en el edificio seleccionado.');
                                             }
@@ -250,8 +250,19 @@ class DepartamentosResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\Action::make('edit')
+                    ->label('')
+                    ->icon('heroicon-o-pencil-alt')
+                    ->color('primary')
+                    ->size('lg')
+                    ->url(fn ($record): string => static::getUrl('edit', ['record' => $record]))
+                    ->extraAttributes([
+                        'title' => 'Editar',
+                        'class' => 'hover:bg-primary-50 rounded-full'
+                    ]),
+
+               // Tables\Actions\ViewAction::make(),
+              // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()

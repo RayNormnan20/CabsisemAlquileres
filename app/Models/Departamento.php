@@ -71,6 +71,14 @@ class Departamento extends Model
             ->exists();
     }
 
+    // Relación para obtener el alquiler activo actual
+    public function alquilerActivo()
+    {
+        return $this->hasOne(Alquiler::class, 'id_departamento', 'id_departamento')
+            ->where('estado_alquiler', 'activo')
+            ->latest('fecha_inicio');
+    }
+
     // Relación con usuario creador
     public function creador()
     {

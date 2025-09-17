@@ -269,9 +269,19 @@ class AlquileresResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->where('estado_alquiler', 'activo')),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
-                
+                Tables\Actions\Action::make('edit')
+                    ->label('')
+                    ->icon('heroicon-o-pencil-alt')
+                    ->color('primary')
+                    ->size('lg')
+                    ->url(fn ($record): string => static::getUrl('edit', ['record' => $record]))
+                    ->extraAttributes([
+                        'title' => 'Editar',
+                        'class' => 'hover:bg-primary-50 rounded-full'
+                    ]),
+                Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\ViewAction::make(), // Comentado para ocultar el botón View
+
                 Tables\Actions\Action::make('view_imagenes')
                     ->label('')
                     ->icon('heroicon-o-eye')
@@ -291,11 +301,11 @@ class AlquileresResource extends Resource
                         }
 
                         $html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
-                        
+
                         foreach ($imagenes as $imagen) {
                             $imageUrl = asset('storage/' . $imagen['path']);
                             $label = $imagen['label'];
-                            
+
                             $html .= <<<HTML
                                 <div class="space-y-2">
                                     <p class="text-sm font-medium text-gray-700 text-center">{$label}</p>
@@ -308,9 +318,9 @@ class AlquileresResource extends Resource
                                 </div>
 HTML;
                         }
-                        
+
                         $html .= '</div>';
-                        
+
                         return new \Illuminate\Support\HtmlString($html);
                     })
                     ->modalWidth('4xl')
@@ -322,7 +332,8 @@ HTML;
                     ->tooltip('Ver Imágenes'),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                // Deshabilitado temporalmente para evitar problemas de selección
+                // Tables\Actions\DeleteBulkAction::make(),
             ])
             ->defaultSort('fecha_proximo_pago', 'asc');
     }
