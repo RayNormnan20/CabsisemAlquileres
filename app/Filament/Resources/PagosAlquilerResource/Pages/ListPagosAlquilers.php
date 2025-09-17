@@ -46,8 +46,12 @@ class ListPagosAlquilers extends ListRecords
         return [
             PagosAlquilerFiltroFechaWidget::class,
             PagosAlquilerWebSocketWidget::class,
-            \App\Filament\Widgets\PagosAlquilerFiltrosWidget::class,
         ];
+    }
+
+    protected function getHeaderWidgetsColumns(): int | array
+    {
+        return 1;
     }
 
     protected function getActions(): array

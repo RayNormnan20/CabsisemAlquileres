@@ -142,10 +142,11 @@ class PagosAlquilerResource extends Resource
     {
         return $table
             ->columns([
+                /*
                 TextColumn::make('id_pago_alquiler')
                     ->label('#')
                     ->sortable(),
-
+*/
                 TextColumn::make('alquiler.departamento.edificio.nombre')
                     ->label('Edificio')
                     ->searchable()
@@ -153,7 +154,7 @@ class PagosAlquilerResource extends Resource
                     ->default('Sin edificio'),
 
                 TextColumn::make('alquiler.departamento.numero_departamento')
-                    ->label('Departamento')
+                    ->label('N° Dep.')
                     ->searchable()
                     ->sortable()
                     ->default('S/N'),

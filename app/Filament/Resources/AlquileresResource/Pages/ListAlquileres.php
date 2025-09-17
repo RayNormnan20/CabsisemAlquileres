@@ -190,7 +190,8 @@ class ListAlquileres extends ListRecords
         return [
             Actions\CreateAction::make()
                 ->label('Agregar Alquiler')
-                ->icon('heroicon-s-plus'),
+                ->icon('heroicon-s-plus')
+                ->url(static::getResource()::getUrl('create')),
         ];
     }
 
@@ -204,6 +205,7 @@ class ListAlquileres extends ListRecords
             'edificio' => $this->edificio,
             'departamento' => $this->departamento,
             'alquileresActivos' => $this->alquileresActivos,
+            'headerActions' => $this->getHeaderActions(),
         ]);
     }
 }
