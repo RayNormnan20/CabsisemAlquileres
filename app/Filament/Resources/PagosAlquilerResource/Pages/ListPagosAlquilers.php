@@ -20,6 +20,16 @@ class ListPagosAlquilers extends ListRecords
     public $edificioSeleccionado = null;
     public $departamentoSeleccionado = null;
 
+    protected function getTableRecordsPerPageSelectOptions(): array
+    {
+        return [-1 => 'Todos', 10, 25, 50, 100];
+    }
+
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return -1; // -1 representa "todos" en Filament
+    }
+
     public function mount(): void
     {
         parent::mount();
@@ -57,7 +67,9 @@ class ListPagosAlquilers extends ListRecords
     protected function getActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+             Actions\CreateAction::make()
+                ->label('Crear Pago Alquiler')
+                ->icon('heroicon-s-plus'),
         ];
     }
 
