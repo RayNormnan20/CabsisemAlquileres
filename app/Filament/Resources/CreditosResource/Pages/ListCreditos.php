@@ -10,6 +10,8 @@ use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Session;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CreditosExcelExport;
 
 class ListCreditos extends ListRecords
 {
@@ -22,6 +24,11 @@ class ListCreditos extends ListRecords
 
     public ?int $clienteId = null;
     public bool $mostrarSoloActivos = true; // Nueva propiedad para controlar el filtro
+
+    // Propiedades para filtro de fechas
+    public $fechaDesde;
+    public $fechaHasta;
+    public $fechaPeriodo = 'hoy';
 
     public function mount(): void
     {
@@ -37,6 +44,56 @@ class ListCreditos extends ListRecords
 
         // Cambiar el comportamiento: cuando hay un cliente seleccionado, mostrar todos los créditos por defecto
         $this->mostrarSoloActivos = Session::get('creditos_mostrar_solo_activos', false); // Cambiar de true a false
+
+        // Inicializar filtros de fecha
+        $this->aplicarPeriodoFecha('hoy');
+    }
+
+    public function aplicarPeriodoFecha($periodo)
+    {
+        $this->fechaPeriodo = $periodo;
+
+        switch ($periodo) {
+            case 'hoy':
+                $this->fechaDesde = now()->format('Y-m-d');
+                $this->fechaHasta = now()->format('Y-m-d');
+                break;
+            case 'ayer':
+                $this->fechaDesde = now()->subDay()->format('Y-m-d');
+                $this->fechaHasta = now()->subDay()->format('Y-m-d');
+                break;
+            case 'semana':
+                $this->fechaDesde = now()->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = now()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'semana_anterior':
+                $this->fechaDesde = now()->subWeek()->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = now()->subWeek()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'ultimas_2_semanas':
+                $this->fechaDesde = now()->subWeeks(2)->startOfWeek()->format('Y-m-d');
+                $this->fechaHasta = now()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'mes':
+                $this->fechaDesde = now()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = now()->endOfMonth()->format('Y-m-d');
+                break;
+            case 'mes_anterior':
+                $this->fechaDesde = now()->subMonth()->startOfMonth()->format('Y-m-d');
+                $this->fechaHasta = now()->subMonth()->endOfMonth()->format('Y-m-d');
+                break;
+            case 'personalizado':
+                // No cambiar las fechas, mantener las que el usuario ha seleccionado
+                break;
+        }
+    }
+
+    public function resetearFiltros()
+    {
+        $this->fechaDesde = null;
+        $this->fechaHasta = null;
+        $this->fechaPeriodo = 'hoy';
+        $this->aplicarPeriodoFecha('hoy');
     }
 
     public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
@@ -73,14 +130,6 @@ class ListCreditos extends ListRecords
 
     protected function getTableQuery(): Builder
     {
-        // ✅ NUEVA LÓGICA: Solo mostrar créditos cuando hay cliente seleccionado
-
-        // Si NO hay cliente seleccionado, mostrar tabla vacía
-        if (!$this->clienteId) {
-            return parent::getTableQuery()->whereRaw('1 = 0'); // Tabla vacía por defecto
-        }
-
-        // ✅ SOLO cuando hay cliente seleccionado, mostrar sus créditos
         $query = parent::getTableQuery();
 
         // MANTENER EAGER LOADING para evitar N+1 queries
@@ -95,8 +144,22 @@ class ListCreditos extends ListRecords
 
         $query->where('clientes.activo', true);
 
-        // ✅ FILTRAR POR CLIENTE ESPECÍFICO (requerido)
-        $query->where('creditos.id_cliente', $this->clienteId);
+        // ✅ NUEVA LÓGICA:
+        // Si hay cliente seleccionado: mostrar solo sus créditos SIN filtro de fecha
+        // Si NO hay cliente: mostrar todos los créditos CON filtro de fecha
+        if ($this->clienteId) {
+            // Cliente seleccionado: mostrar solo sus créditos (sin filtro de fecha)
+            $query->where('creditos.id_cliente', $this->clienteId);
+        } else {
+            // Sin cliente seleccionado: aplicar filtros de fecha para todos los créditos
+            if ($this->fechaDesde) {
+                $query->whereDate('creditos.fecha_credito', '>=', $this->fechaDesde);
+            }
+
+            if ($this->fechaHasta) {
+                $query->whereDate('creditos.fecha_credito', '<=', $this->fechaHasta);
+            }
+        }
 
         // Aplicar filtro de activos si está habilitado
         if ($this->mostrarSoloActivos) {
@@ -125,8 +188,35 @@ class ListCreditos extends ListRecords
             'clienteId' => $this->clienteId,
             'cliente' => $this->clienteId ? Clientes::with('creditos')->find($this->clienteId) : null,
             'mostrarSoloActivos' => $this->mostrarSoloActivos, // Pasar el estado al header
+            'fechaPeriodo' => $this->fechaPeriodo,
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
         ]);
     }
+
+    public function exportarPDF()
+    {
+        $creditos = $this->getTableQuery()->get();
+
+        if ($creditos->isEmpty()) {
+            $this->notify('warning', 'No hay créditos para exportar con los filtros aplicados.');
+            return;
+        }
+
+        try {
+            // ✅ USAR EXACTAMENTE LOS MISMOS DATOS DE LA TABLA
+            // Crear exportación usando los datos ya filtrados de la tabla
+            $export = new \App\Exports\CreditosExport();
+            $export->setFilteredData($creditos);
+
+            // Generar y descargar PDF
+            return $export->exportToPDF();
+
+        } catch (\Exception $e) {
+            $this->notify('danger', 'Error al generar el PDF: ' . $e->getMessage());
+        }
+    }
+
 
     public function updated($property)
     {
@@ -148,6 +238,24 @@ class ListCreditos extends ListRecords
 
     public function isTableVisible(): bool
     {
-        return $this->clienteId !== null;
+        // La tabla siempre es visible:
+        // - Con cliente seleccionado: muestra sus créditos
+        // - Sin cliente: muestra créditos filtrados por fecha
+        return true;
+    }
+
+    public function exportExcel()
+    {
+        $query = $this->getTableQuery();
+
+        // Verifica que la consulta tenga resultados
+        if ($query->count() === 0) {
+            $this->notify('warning', 'No hay datos para exportar');
+            return;
+        }
+
+        $filename = 'creditos_' . now()->format('Y-m-d_H-i') . '.xlsx';
+
+        return Excel::download(new CreditosExcelExport($query), $filename);
     }
 }

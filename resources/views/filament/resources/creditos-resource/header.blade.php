@@ -101,6 +101,84 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
     </div>
 </div>
 
+{{-- FILTRO DE FECHAS Y EXPORTACIÓN --}}
+<div class="flex flex-col sm:flex-row items-center gap-4 lg:gap-5 mb-6">
+    <!-- Componente unificado de filtro de fechas -->
+    <div class="relative inline-block text-left" x-data="{ open: false }">
+        <!-- Botón desplegable -->
+        <button @click="open = !open"
+            class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <x-heroicon-o-calendar class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            {{ $fechaDesde ? \Carbon\Carbon::parse($fechaDesde)->format('d M Y') : 'Desde' }}
+            -
+            {{ $fechaHasta ? \Carbon\Carbon::parse($fechaHasta)->format('d M Y') : 'Hasta' }}
+            <svg class="w-4 h-4 ml-1 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+
+        <!-- Dropdown -->
+        <div x-show="open" @click.away="open = false"
+            class="absolute z-50 mt-2 w-90 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 dark:ring-gray-600 p-4 space-y-3">
+            <!-- Selector de período -->
+            <div>
+                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Período:</label>
+                <select wire:model="fechaPeriodo" wire:change="aplicarPeriodoFecha($event.target.value)"
+                    class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
+                    <option value="hoy">Hoy</option>
+                    <option value="ayer">Ayer</option>
+                    <option value="semana">Esta semana</option>
+                    <option value="semana_anterior">Semana pasada</option>
+                    <option value="ultimas_2_semanas">Últimas 2 semanas</option>
+                    <option value="mes">Este mes</option>
+                    <option value="mes_anterior">Mes pasado</option>
+                    <option value="personalizado">Personalizado</option>
+                </select>
+            </div>
+
+            <!-- Rango de fechas -->
+            <div>
+                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Rango personalizado:</label>
+                <div class="flex items-center gap-2">
+                    <input type="date" wire:model="fechaDesde"
+                        class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm" />
+                    <span class="text-gray-500 dark:text-gray-400">-</span>
+                    <input type="date" wire:model="fechaHasta"
+                        class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="flex gap-2">
+        @if($clienteId)
+        <button wire:click="resetearFiltros"
+            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md transition-colors">
+            Limpiar
+        </button>
+        @endif
+        <button wire:click="exportarPDF"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md transition-colors flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+            </svg>
+            {{ $clienteId ? 'PDF' : 'Exportar PDF' }}
+        </button>
+        <button wire:click="exportExcel"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+            </svg>
+            {{ $clienteId ? 'Excel' : 'Exportar Excel' }}
+        </button>
+    </div>
+</div>
 
 @if($cliente)
 @php
@@ -162,7 +240,7 @@ $cliente->loadMissing('creditos');
                     descuentoPago: 0,
                     abonoCompletarPrestamo: 0,
                     otro: 0,
-                    
+
                     // Mantener compatibilidad con el sistema existente
                     mediosDisponibles: ['Efectivo', 'Yape', 'Plin', 'Tarjeta', 'Transferencia'],
                     pagos: [],
@@ -178,11 +256,11 @@ $cliente->loadMissing('creditos');
                     },
 
                     get totalMediosPagoDirectos() {
-                        return Number(this.efectivo || 0) + 
-                               Number(this.yape || 0) + 
-                               Number(this.caja || 0) + 
-                               Number(this.descuentoPago || 0) + 
-                               Number(this.abonoCompletarPrestamo || 0) + 
+                        return Number(this.efectivo || 0) +
+                               Number(this.yape || 0) +
+                               Number(this.caja || 0) +
+                               Number(this.descuentoPago || 0) +
+                               Number(this.abonoCompletarPrestamo || 0) +
                                Number(this.otro || 0);
                     },
 
@@ -413,7 +491,7 @@ $cliente->loadMissing('creditos');
                         // Tanto para renovaciones como para bajo cuenta: usar saldo actual + interés
                         // El interés siempre se calcula sobre el capital original
                         const totalSinDescuento = saldoActual + interesCalculado;
-                        
+
                         // Aplicar descuento al total final
                         const totalPagar = totalSinDescuento - descuento;
                         const cuotaDiaria = totalPagar / diasPago;
@@ -478,17 +556,17 @@ $cliente->loadMissing('creditos');
                                 alert('El nombre del cliente Yape es requerido cuando se ingresa un monto en Yape.');
                                 return;
                             }
-                            
+
                             // Validar que la suma de medios de pago sea igual al monto a entregar
-                            const totalMediosPago = parseFloat(this.efectivo || 0) + 
-                                                  parseFloat(this.yape || 0) + 
-                                                  parseFloat(this.caja || 0) + 
-                                                  parseFloat(this.descuentoPago || 0) + 
-                                                  parseFloat(this.abonoCompletarPrestamo || 0) + 
+                            const totalMediosPago = parseFloat(this.efectivo || 0) +
+                                                  parseFloat(this.yape || 0) +
+                                                  parseFloat(this.caja || 0) +
+                                                  parseFloat(this.descuentoPago || 0) +
+                                                  parseFloat(this.abonoCompletarPrestamo || 0) +
                                                   parseFloat(this.otro || 0);
-                            
+
                             const montoAEntregar = parseFloat(this.aEntregar || 0);
-                            
+
                             if (totalMediosPago !== montoAEntregar) {
                                 alert(`La suma de los medios de pago (S/ ${totalMediosPago.toFixed(2)}) debe ser igual al monto a entregar (S/ ${montoAEntregar.toFixed(2)}). Por favor, complete los medios de pago correctamente.`);
                                 return;
@@ -561,17 +639,17 @@ $cliente->loadMissing('creditos');
                                     alert('El nombre del cliente Yape es requerido cuando se ingresa un monto en Yape.');
                                     return;
                                 }
-                                
+
                                 // Validar que la suma de medios de pago sea igual al monto de nueva cuenta
-                                const totalMediosPago = parseFloat(this.efectivo || 0) + 
-                                                      parseFloat(this.yape || 0) + 
-                                                      parseFloat(this.caja || 0) + 
-                                                      parseFloat(this.descuentoPago || 0) + 
-                                                      parseFloat(this.abonoCompletarPrestamo || 0) + 
+                                const totalMediosPago = parseFloat(this.efectivo || 0) +
+                                                      parseFloat(this.yape || 0) +
+                                                      parseFloat(this.caja || 0) +
+                                                      parseFloat(this.descuentoPago || 0) +
+                                                      parseFloat(this.abonoCompletarPrestamo || 0) +
                                                       parseFloat(this.otro || 0);
-                                
+
                                 const montoNuevaCuenta = parseFloat(this.newCuenta || 0);
-                                
+
                                 if (totalMediosPago !== montoNuevaCuenta) {
                                     alert(`La suma de los medios de pago (S/ ${totalMediosPago.toFixed(2)}) debe ser igual al monto de nueva cuenta (S/ ${montoNuevaCuenta.toFixed(2)}). Por favor, complete los medios de pago correctamente.`);
                                     return;
@@ -930,7 +1008,8 @@ $cliente->loadMissing('creditos');
                                             </div>
                                             <div>
                                                 <span class="block text-sm text-gray-600">Fecha Actual</span>
-                                                <span x-text="new Date().toISOString().split('T')[0]" class="text-lg"></span>
+                                                <span x-text="new Date().toISOString().split('T')[0]"
+                                                    class="text-lg"></span>
                                             </div>
                                             <div>
                                                 <span class="block text-sm text-gray-600">Días Transcurridos</span>
@@ -1057,76 +1136,93 @@ $cliente->loadMissing('creditos');
 
                                     <!-- Modal de métodos de pago para Bajo Cuenta -->
                                     <div x-show="!isRenewal && isShowingBajoCuentaSteps" class="mt-4">
-                                        <h4 class="text-lg font-medium text-gray-900 mb-4">Métodos de Pago - Bajo Cuenta</h4>
-                                        
+                                        <h4 class="text-lg font-medium text-gray-900 mb-4">Métodos de Pago - Bajo Cuenta
+                                        </h4>
+
                                         <!-- Mostrar el valor de Nueva Cuenta -->
                                         <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                                             <div class="flex justify-between items-center">
                                                 <span class="text-sm font-medium text-blue-700">Nueva Cuenta:</span>
-                                                <span class="text-lg font-bold text-blue-900" x-text="'S/ ' + parseFloat(newCuenta || 0).toFixed(2)"></span>
+                                                <span class="text-lg font-bold text-blue-900"
+                                                    x-text="'S/ ' + parseFloat(newCuenta || 0).toFixed(2)"></span>
                                             </div>
-                                            <p class="text-xs text-blue-600 mt-1">La suma de los medios de pago debe ser igual a este monto</p>
+                                            <p class="text-xs text-blue-600 mt-1">La suma de los medios de pago debe ser
+                                                igual a este monto</p>
                                         </div>
-                                        
+
                                         <div class="mt-4">
-                                            <label class="block text-sm font-medium text-gray-700 mb-3">Medios de Pago</label>
-                                            
+                                            <label class="block text-sm font-medium text-gray-700 mb-3">Medios de
+                                                Pago</label>
+
                                             <div class="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Efectivo</label>
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700">Efectivo</label>
                                                     <input type="number" x-model="efectivo" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">Yape</label>
                                                     <input type="number" x-model="yape" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">Caja</label>
                                                     <input type="number" x-model="caja" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Descuento</label>
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700">Descuento</label>
                                                     <input type="number" x-model="descuentoPago" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Abono para completar préstamo</label>
-                                                    <input type="number" x-model="abonoCompletarPrestamo" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                    <label class="block text-sm font-medium text-gray-700">Abono para
+                                                        completar préstamo</label>
+                                                    <input type="number" x-model="abonoCompletarPrestamo" min="0"
+                                                        step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
                                                     <label class="block text-sm font-medium text-blue-700">Otro</label>
                                                     <input type="number" x-model="otro" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
                                             </div>
 
                                             <div class="mt-4">
-                                                <label class="block text-sm font-medium text-gray-700">Total Medios de Pago</label>
-                                                <input type="number" :value="totalMediosPagoDirectos.toFixed(2)" readonly
+                                                <label class="block text-sm font-medium text-gray-700">Total Medios de
+                                                    Pago</label>
+                                                <input type="number" :value="totalMediosPagoDirectos.toFixed(2)"
+                                                    readonly
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
-                                            
+
                                             <div x-show="yape > 0" x-transition class="mt-4">
-                                <label class="block text-sm font-medium text-gray-700">Nombre Cliente Yape <span class="text-red-500">*</span></label>
-                                <select x-model="nombreYapeCliente" 
-                                    :class="!nombreYapeCliente && yape > 0 ? 'mt-1 block w-full border-red-400 bg-red-50 rounded-md focus:border-red-500 focus:ring focus:ring-red-300 focus:ring-opacity-50' : 'mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50'">
-                                    <option value="">Seleccione un nombre Yape</option>
-                                    <template x-for="opcion in opcionesYapeCliente" :key="opcion.id">
-                                        <option :value="opcion.nombre_yape" 
-                                                :class="opcion.tiene_saldo_pendiente ? 'text-green-600 font-semibold' : 'text-gray-600'"
-                                                x-text="opcion.nombre_yape"></option>
-                                    </template>
-                                </select>
-                            </div>
+                                                <label class="block text-sm font-medium text-gray-700">Nombre Cliente
+                                                    Yape <span class="text-red-500">*</span></label>
+                                                <select x-model="nombreYapeCliente"
+                                                    :class="!nombreYapeCliente && yape > 0 ? 'mt-1 block w-full border-red-400 bg-red-50 rounded-md focus:border-red-500 focus:ring focus:ring-red-300 focus:ring-opacity-50' : 'mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50'">
+                                                    <option value="">Seleccione un nombre Yape</option>
+                                                    <template x-for="opcion in opcionesYapeCliente" :key="opcion.id">
+                                                        <option :value="opcion.nombre_yape"
+                                                            :class="opcion.tiene_saldo_pendiente ? 'text-green-600 font-semibold' : 'text-gray-600'"
+                                                            x-text="opcion.nombre_yape"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1156,16 +1252,17 @@ $cliente->loadMissing('creditos');
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
                                             <div x-show="yape > 0" x-transition>
-                                                    <label class="block text-sm font-medium text-gray-700">Nombre Cliente Yape <span class="text-red-500">*</span></label>
-                                                    <select x-model="nombreYapeCliente" 
-                                                        :class="!nombreYapeCliente && yape > 0 ? 'mt-1 block w-full border-red-400 bg-red-50 rounded-md focus:border-red-500 focus:ring focus:ring-red-300 focus:ring-opacity-50' : 'mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50'">
-                                                        <option value="">Seleccione un nombre Yape</option>
-                                                        <template x-for="opcion in opcionesYapeCliente" :key="opcion.id">
-                                                            <option :value="opcion.nombre_yape" 
-                                                                    :class="opcion.tiene_saldo_pendiente ? 'text-green-600 font-semibold' : 'text-gray-600'"
-                                                                    x-text="opcion.nombre_yape"></option>
-                                                        </template>
-                                                    </select>
+                                                <label class="block text-sm font-medium text-gray-700">Nombre Cliente
+                                                    Yape <span class="text-red-500">*</span></label>
+                                                <select x-model="nombreYapeCliente"
+                                                    :class="!nombreYapeCliente && yape > 0 ? 'mt-1 block w-full border-red-400 bg-red-50 rounded-md focus:border-red-500 focus:ring focus:ring-red-300 focus:ring-opacity-50' : 'mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50'">
+                                                    <option value="">Seleccione un nombre Yape</option>
+                                                    <template x-for="opcion in opcionesYapeCliente" :key="opcion.id">
+                                                        <option :value="opcion.nombre_yape"
+                                                            :class="opcion.tiene_saldo_pendiente ? 'text-green-600 font-semibold' : 'text-gray-600'"
+                                                            x-text="opcion.nombre_yape"></option>
+                                                    </template>
+                                                </select>
                                             </div>
 
                                             {{-- <div>
@@ -1177,52 +1274,65 @@ $cliente->loadMissing('creditos');
                                         </div>
 
                                         <div class="mt-4">
-                                            <label class="block text-sm font-medium text-gray-700 mb-3">Medios de Pago</label>
-                                            
+                                            <label class="block text-sm font-medium text-gray-700 mb-3">Medios de
+                                                Pago</label>
+
                                             <div class="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Efectivo</label>
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700">Efectivo</label>
 
                                                     <input type="number" x-model="efectivo" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">Yape</label>
                                                     <input type="number" x-model="yape" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
-                                                
-                                                
+
+
+
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">Caja</label>
                                                     <input type="number" x-model="caja" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Descuento</label>
+                                                    <label
+                                                        class="block text-sm font-medium text-gray-700">Descuento</label>
                                                     <input type="number" x-model="descuentoPago" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Abono para completar préstamo</label>
-                                                    <input type="number" x-model="abonoCompletarPrestamo" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                    <label class="block text-sm font-medium text-gray-700">Abono para
+                                                        completar préstamo</label>
+                                                    <input type="number" x-model="abonoCompletarPrestamo" min="0"
+                                                        step="0.01"
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
-                                                
+
                                                 <div>
                                                     <label class="block text-sm font-medium text-blue-700">Otro</label>
                                                     <input type="number" x-model="otro" min="0" step="0.01"
-                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50" placeholder="0.00" />
+                                                        class="mt-1 block w-full border-blue-400 bg-blue-50 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                                                        placeholder="0.00" />
                                                 </div>
                                             </div>
 
                                             <div class="mt-4">
-                                                <label class="block text-sm font-medium text-gray-700">Total Medios de Pago</label>
-                                                <input type="number" :value="totalMediosPagoDirectos.toFixed(2)" readonly
+                                                <label class="block text-sm font-medium text-gray-700">Total Medios de
+                                                    Pago</label>
+                                                <input type="number" :value="totalMediosPagoDirectos.toFixed(2)"
+                                                    readonly
                                                     class="mt-1 block w-full border-gray-300 bg-gray-100 rounded-md" />
                                             </div>
                                         </div>
@@ -1243,7 +1353,8 @@ $cliente->loadMissing('creditos');
                                 Siguiente
                             </button>
 
-                            <button type="button" @click="isShowingBajoCuentaSteps = true; cargarOpcionesYapeCliente(); cargarNombreYapeCompleto()"
+                            <button type="button"
+                                @click="isShowingBajoCuentaSteps = true; cargarOpcionesYapeCliente(); cargarNombreYapeCompleto()"
                                 x-show="!isRenewal && !isShowingBajoCuentaSteps"
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
                                 Siguiente
@@ -1281,18 +1392,29 @@ $cliente->loadMissing('creditos');
             <span x-text="open ? '▲ Ocultar información' : '▼ Ver información del cliente'"></span>
         </button>
 
-        <div x-show="open" x-transition class="mt-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4">
+        <div x-show="open" x-transition
+            class="mt-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Documento:</span> {{ $cliente->numero_documento }}</div>
-                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Celular:</span> {{ $cliente->celular }}</div>
-                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Teléfono:</span> {{ $cliente->telefono }}</div>
-                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Dirección:</span> {{ $cliente->direccion }}</div>
+                <div class="text-gray-900 dark:text-gray-100"><span
+                        class="font-medium text-gray-700 dark:text-gray-200">Documento:</span>
+                    {{ $cliente->numero_documento }}</div>
+                <div class="text-gray-900 dark:text-gray-100"><span
+                        class="font-medium text-gray-700 dark:text-gray-200">Celular:</span> {{ $cliente->celular }}
+                </div>
+                <div class="text-gray-900 dark:text-gray-100"><span
+                        class="font-medium text-gray-700 dark:text-gray-200">Teléfono:</span> {{ $cliente->telefono }}
+                </div>
+                <div class="text-gray-900 dark:text-gray-100"><span
+                        class="font-medium text-gray-700 dark:text-gray-200">Dirección:</span> {{ $cliente->direccion }}
+                </div>
                 <!-- <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Negocio/Alias:</span> {{ $cliente->nombre_negocio }}</div> -->
 
-                <div class="text-gray-900 dark:text-gray-100"><span class="font-medium text-gray-700 dark:text-gray-200">Ciudad:</span> {{ $cliente->ciudad }}</div>
+                <div class="text-gray-900 dark:text-gray-100"><span
+                        class="font-medium text-gray-700 dark:text-gray-200">Ciudad:</span> {{ $cliente->ciudad }}</div>
                 <div class="text-gray-900 dark:text-gray-100">
                     <span class="font-medium text-gray-700 dark:text-gray-200">Status:</span>
-                    <span class="{{ $cliente->activo ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300' }}">
+                    <span
+                        class="{{ $cliente->activo ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300' }}">
                         {{ $cliente->activo ? 'Activo' : 'Inactivo' }}
                     </span>
                 </div>
