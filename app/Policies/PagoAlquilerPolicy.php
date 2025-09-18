@@ -74,7 +74,7 @@ class PagoAlquilerPolicy
      */
     public function delete(User $user, PagoAlquiler $pagoAlquiler)
     {
-        return $user->can('Eliminar Pago Alquiler')
+        return $user->can('Eliminar Pagos Alquiler')
             ? Response::allow()
             : Response::deny('No tienes permiso para eliminar este pago de alquiler.');
     }

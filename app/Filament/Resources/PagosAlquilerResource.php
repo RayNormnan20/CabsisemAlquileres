@@ -247,7 +247,14 @@ class PagosAlquilerResource extends Resource
                         'title' => 'Editar',
                         'class' => 'hover:bg-primary-50 rounded-full'
                     ]),
-               Tables\Actions\ViewAction::make(),
+                //Tables\Actions\ViewAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation()
+                    ->modalHeading('Eliminar Pago Alquiler')
+                    ->modalSubheading('¿Estás seguro de que deseas eliminar este pago de alquiler? Esta acción no se puede deshacer.')
+                    ->modalButton('Sí, eliminar')
+                    ->successNotificationTitle('Pago eliminado')
+                    ->visible(fn () => auth()->user()->can('Eliminar Pagos Alquiler')),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

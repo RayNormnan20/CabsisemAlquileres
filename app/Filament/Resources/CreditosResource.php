@@ -8,6 +8,7 @@ use App\Models\Creditos;
 use App\Models\OrdenCobro;
 use App\Models\TipoPago;
 use App\Models\YapeCliente;
+use App\Settings\GeneralSettings;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
@@ -743,11 +744,24 @@ class CreditosResource extends Resource
     {
         return $table
             ->columns([
+                
                 Tables\Columns\TextColumn::make('fecha_credito')
                     ->label('Fecha Crédito')
                     ->date('d/m/Y')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('cliente.nombre_completo')
+                    ->label('Cliente')
+                    ->searchable(['cliente.nombre', 'cliente.apellido'])
+                    ->sortable()
+                    ->visible(function ($livewire = null) {
+                        // Ocultar la columna cliente cuando hay un cliente seleccionado
+                        if (!$livewire) {
+                            $livewire = $this;
+                        }
+                        return !($livewire && property_exists($livewire, 'clienteId') && $livewire->clienteId);
+                    }),
+                    
                 Tables\Columns\TextColumn::make('valor_credito')
                     ->label('Valor')
                     ->sortable(),
@@ -762,17 +776,48 @@ class CreditosResource extends Resource
                     ->suffix(function ($record) {
                         return ($record && $record->es_adicional) ? null : '%';
                     })
-                ->sortable(),
-
+                    ->sortable()
+                    ->visible(function ($livewire = null) {
+                        // Si hay un cliente seleccionado desde el header, siempre mostrar
+                        if (!$livewire) {
+                            $livewire = $this;
+                        }
+                        if ($livewire && property_exists($livewire, 'clienteId') && $livewire->clienteId) {
+                            return true;
+                        }
+                        // Si no hay cliente seleccionado, usar configuración de general settings
+                        return app(\App\Settings\GeneralSettings::class)->mostrar_porcentaje_interes ?? true;
+                    }),
 
                 Tables\Columns\TextColumn::make('tipoPago.nombre')
                     ->label('Tipo')
-                    ->sortable(),
-
+                    ->sortable()
+                    ->visible(function ($livewire = null) {
+                        // Si hay un cliente seleccionado desde el header, siempre mostrar
+                        if (!$livewire) {
+                            $livewire = $this;
+                        }
+                        if ($livewire && property_exists($livewire, 'clienteId') && $livewire->clienteId) {
+                            return true;
+                        }
+                        // Si no hay cliente seleccionado, usar configuración de general settings
+                        return app(\App\Settings\GeneralSettings::class)->mostrar_tipo_pago ?? true;
+                    }),
 
                 Tables\Columns\TextColumn::make('numero_cuotas')
                     ->label('Nr. cuotas')
-                    ->sortable(),
+                    ->sortable()
+                    ->visible(function ($livewire = null) {
+                        // Si hay un cliente seleccionado desde el header, siempre mostrar
+                        if (!$livewire) {
+                            $livewire = $this;
+                        }
+                        if ($livewire && property_exists($livewire, 'clienteId') && $livewire->clienteId) {
+                            return true;
+                        }
+                        // Si no hay cliente seleccionado, usar configuración de general settings
+                        return app(\App\Settings\GeneralSettings::class)->mostrar_numero_cuotas ?? true;
+                    }),
 
                 Tables\Columns\TextColumn::make('valor_cuota')
                     ->label('Cuota')

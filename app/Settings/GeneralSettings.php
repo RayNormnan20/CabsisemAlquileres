@@ -21,6 +21,10 @@ class GeneralSettings extends Settings
 
     public bool $enable_segundo_recorrido_filter;
 
+    public bool $mostrar_porcentaje_interes ;
+    public bool $mostrar_tipo_pago ;
+    public bool $mostrar_numero_cuotas;
+
     public static function group(): string
     {
         return 'general';

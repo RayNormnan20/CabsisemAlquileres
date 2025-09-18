@@ -93,6 +93,7 @@ class ListCreditos extends ListRecords
         $this->fechaDesde = null;
         $this->fechaHasta = null;
         $this->fechaPeriodo = 'hoy';
+        $this->clienteId = null; // Limpiar también la selección del cliente
         $this->aplicarPeriodoFecha('hoy');
     }
 
@@ -234,6 +235,11 @@ class ListCreditos extends ListRecords
     protected function shouldPersistTableFiltersInSession(): bool
     {
         return true;
+    }
+
+    protected function shouldPersistTableColumnToggleInSession(): bool
+    {
+        return false; // Desactivar persistencia de estado de columnas toggleables
     }
 
     public function isTableVisible(): bool

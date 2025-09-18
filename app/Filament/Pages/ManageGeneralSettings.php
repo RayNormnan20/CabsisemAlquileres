@@ -98,6 +98,18 @@ class ManageGeneralSettings extends SettingsPage
                                         ->label('Habilitar opción de renovación')
                                         ->helperText('Si está habilitado, se mostrará la opción "Habilitar Renovación" en la planilla del recaudador para créditos vencidos.'),
 
+                                    Toggle::make('mostrar_porcentaje_interes')
+                                        ->label('Mostrar columna Porcentaje de Interés')
+                                        ->helperText('Si está habilitado, se mostrará la columna "Porcentaje de Interés" en la tabla de créditos (solo para Administradores).'),
+
+                                    Toggle::make('mostrar_tipo_pago')
+                                        ->label('Mostrar columna Tipo de Pago')
+                                        ->helperText('Si está habilitado, se mostrará la columna "Tipo" en la tabla de créditos (solo para Administradores).'),
+
+                                    Toggle::make('mostrar_numero_cuotas')
+                                        ->label('Mostrar columna Número de Cuotas')
+                                        ->helperText('Si está habilitado, se mostrará la columna "Nr. cuotas" en la tabla de créditos (solo para Administradores).'),
+
                                     Select::make('site_language')
                                         ->label(__('Site language'))
                                         ->helperText(__('The language used by the platform.'))
