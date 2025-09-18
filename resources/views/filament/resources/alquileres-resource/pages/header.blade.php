@@ -6,6 +6,20 @@ $siguienteId = $currentIndex !== false && isset($edificioIds[$currentIndex + 1])
 null;
 @endphp
 
+{{-- HEADER CON BOTÓN DE AGREGAR ALQUILER --}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Listado de Alquileres</h1>
+    
+    {{-- Botones de acción del header --}}
+    @if(isset($headerActions) && count($headerActions) > 0)
+    <div class="flex gap-2">
+        @foreach($headerActions as $action)
+            {{ $action }}
+        @endforeach
+    </div>
+    @endif
+</div>
+
 {{-- SELECTOR DE EDIFICIO CON NAVEGACIÓN Y FILTRO --}}
 <div class="mb-6">
     <div class="flex items-center justify-center gap-4 mb-4">
