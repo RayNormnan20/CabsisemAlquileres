@@ -146,11 +146,12 @@ class ClientesResource extends Resource
     {
         return $table
             ->columns([
+                /*
                 TextColumn::make('id_cliente')
                     ->label('#')
                     ->sortable()
                     ->searchable(),
-
+                */
                 TextColumn::make('nombre_completo')
                     ->label('Nombre')
                     ->searchable(['nombre', 'apellido'])
@@ -221,6 +222,50 @@ class ClientesResource extends Resource
                     ->extraAttributes([
                         'title' => 'Editar',
                         'class' => 'hover:bg-primary-50 rounded-full'
+                    ]),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->size('lg')
+                    ->before(function ($record, $action) {
+                        // Verificar si el cliente tiene créditos asignados
+                        $totalCreditos = $record->creditos()->count();
+                        if ($totalCreditos > 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No se puede eliminar')
+                                ->body("No se puede eliminar el cliente {$record->nombre_completo} porque tiene créditos asignados.")
+                                ->danger()
+                                ->send();
+                            
+                            // Detener la eliminación y cerrar el modal
+                            $action->cancel();
+                            return;
+                        }
+                        
+                        // Registrar la actividad ANTES de que el registro sea eliminado
+                        \App\Models\LogActividad::registrar(
+                            'Clientes', // Tipo de actividad
+                            'Eliminó al cliente: ' . $record->nombre . ' ' . $record->apellido, // Mensaje
+                            [ // Metadata adicional
+                                'cliente_id' => $record->id_cliente,
+                                'documento' => $record->numero_documento,
+                                'nombre_completo' => $record->nombre . ' ' . $record->apellido,
+                                'datos_eliminados' => $record->toArray() // Guarda una copia de los datos del cliente eliminado
+                            ]
+                        );
+                    })
+                    ->after(function () {
+                        // Notificación de éxito después de eliminar
+                        \Filament\Notifications\Notification::make()
+                            ->title('Cliente eliminado exitosamente')
+                            ->success()
+                            ->send();
+                    })
+                    ->extraAttributes([
+                        'title' => 'Eliminar',
+                        'class' => 'hover:bg-danger-50 rounded-full'
                     ]),
 
                     Tables\Actions\Action::make('view_photos')
@@ -299,8 +344,55 @@ class ClientesResource extends Resource
                     // Acción vacía necesaria para el modal
                 })
             ])
+            
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                // Eliminación masiva deshabilitada por seguridad
+                // La eliminación masiva de clientes está comentada para evitar eliminaciones accidentales
+                // Si se necesita habilitar en el futuro, descomentar el código siguiente:
+                
+                /*
+                Tables\Actions\DeleteBulkAction::make()
+                    ->before(function ($records, $action) {
+                        // Verificar si algún cliente tiene créditos asignados
+                        foreach ($records as $cliente) {
+                            $totalCreditos = $cliente->creditos()->count();
+                            if ($totalCreditos > 0) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('No se puede eliminar')
+                                    ->body("No se puede eliminar el cliente {$cliente->nombre_completo} porque tiene créditos asignados.")
+                                    ->danger()
+                                    ->send();
+                                
+                                // Detener la acción y cerrar el modal
+                                $action->cancel();
+                                return;
+                            }
+                        }
+                        
+                        // Registrar la actividad para cada cliente que será eliminado
+                        foreach ($records as $cliente) {
+                            \App\Models\LogActividad::registrar(
+                                'Clientes', // Tipo de actividad
+                                'Eliminó al cliente (eliminación masiva): ' . $cliente->nombre . ' ' . $cliente->apellido, // Mensaje
+                                [ // Metadata adicional
+                                    'cliente_id' => $cliente->id_cliente,
+                                    'documento' => $cliente->numero_documento,
+                                    'nombre_completo' => $cliente->nombre . ' ' . $cliente->apellido,
+                                    'datos_eliminados' => $cliente->toArray(), // Guarda una copia de los datos del cliente eliminado
+                                    'tipo_eliminacion' => 'masiva' // Indica que fue eliminación masiva
+                                ]
+                            );
+                        }
+                    })
+                    ->after(function ($records) {
+                        // Notificación de éxito después de eliminar
+                        $cantidad = count($records);
+                        \Filament\Notifications\Notification::make()
+                            ->title("Se eliminaron {$cantidad} cliente(s) exitosamente")
+                            ->success()
+                            ->send();
+                    }),
+                */
             ]);
     }
 

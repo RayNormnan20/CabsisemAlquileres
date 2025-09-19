@@ -43,8 +43,23 @@ class EditClientes extends EditRecord
     {
         return [
             // Re-agrega el DeleteAction aquí para manejar la eliminación desde la página de edición
+            
             Actions\DeleteAction::make()
-                ->before(function () {
+                ->before(function ($action) {
+                    // Verificar si el cliente tiene créditos asignados
+                    $totalCreditos = $this->record->creditos()->count();
+                    if ($totalCreditos > 0) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('No se puede eliminar')
+                            ->body("No se puede eliminar el cliente {$this->record->nombre_completo} porque tiene créditos asignados.")
+                            ->danger()
+                            ->send();
+                        
+                        // Detener la eliminación y cerrar el modal
+                        $action->cancel();
+                        return;
+                    }
+                    
                     // Registra la actividad ANTES de que el registro sea eliminado
                     LogActividad::registrar(
                         'Clientes', // Tipo de actividad
