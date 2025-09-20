@@ -22,7 +22,7 @@ import Echo from 'laravel-echo';
 
 import Pusher from 'pusher-js';
 window.Pusher = Pusher;
-
+/*
 // Configuración dinámica basada en el entorno
 const isProduction = window.location.protocol === 'https:';
 const wsHost = import.meta.env.VITE_PUSHER_HOST || (isProduction ? 'cabsisem.net.pe' : '127.0.0.1');
@@ -46,3 +46,4 @@ window.Echo = new Echo({
         }
     }
 });
+*/
