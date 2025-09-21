@@ -22,6 +22,7 @@ class Creditos extends Model
     protected $fillable = [
         'id_cliente',
         'id_ruta',
+        'id_usuario_creador',
         'fecha_credito',
         'id_concepto',
         'valor_credito',
@@ -74,9 +75,16 @@ class Creditos extends Model
     {
         parent::boot();
 
+        static::creating(function ($credito) {
+            // Asignar automáticamente el usuario autenticado al crear un crédito
+            if (!$credito->id_usuario_creador && auth()->check()) {
+                $credito->id_usuario_creador = auth()->id();
+            }
+        });
+
         static::created(function ($credito) {
             event(new CreditoCreated($credito));
-            
+
             // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
              $movimiento = new \App\Models\Movimiento();
              $movimiento->fill([
@@ -88,7 +96,7 @@ class Creditos extends Model
                  'tipo_concepto' => $credito->concepto->tipo ?? 'Gastos'
              ]);
              event(new MovimientoCreated($movimiento));
-             
+
              // Disparar evento de planilla recaudador
              $planillaData = [
                  'id_credito' => $credito->id_credito,
@@ -101,7 +109,7 @@ class Creditos extends Model
 
         static::updated(function ($credito) {
             event(new CreditoUpdated($credito));
-            
+
             // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
              $movimiento = new \App\Models\Movimiento();
              $movimiento->fill([
@@ -113,7 +121,7 @@ class Creditos extends Model
                  'tipo_concepto' => $credito->concepto->tipo ?? 'Gastos'
              ]);
              event(new MovimientoUpdated($movimiento));
-             
+
              // Disparar evento de planilla recaudador
              $planillaData = [
                  'id_credito' => $credito->id_credito,
@@ -158,6 +166,11 @@ class Creditos extends Model
     public function ruta()
     {
         return $this->belongsTo(Ruta::class, 'id_ruta');
+    }
+
+    public function usuarioCreador()
+    {
+        return $this->belongsTo(User::class, 'id_usuario_creador');
     }
 
     public function yapeCliente()

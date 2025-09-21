@@ -110,6 +110,10 @@ class ManageGeneralSettings extends SettingsPage
                                         ->label('Mostrar columna Número de Cuotas')
                                         ->helperText('Si está habilitado, se mostrará la columna "Nr. cuotas" en la tabla de créditos (solo para Administradores).'),
 
+                                    Toggle::make('mostrar_usuario_creador')
+                                        ->label('Mostrar columna Usuario Creador')
+                                        ->helperText('Si está habilitado, se mostrará la columna "Creado por" en la tabla de créditos (solo para Administradores).'),
+
                                     Select::make('site_language')
                                         ->label(__('Site language'))
                                         ->helperText(__('The language used by the platform.'))

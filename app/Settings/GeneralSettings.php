@@ -24,6 +24,7 @@ class GeneralSettings extends Settings
     public bool $mostrar_porcentaje_interes ;
     public bool $mostrar_tipo_pago ;
     public bool $mostrar_numero_cuotas;
+    public bool $mostrar_usuario_creador;
 
     public static function group(): string
     {

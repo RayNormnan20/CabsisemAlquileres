@@ -36,7 +36,12 @@ class ListVistaMovimientos extends ListRecords
 
     protected function getTableRecordsPerPageSelectOptions(): array
     {
-        return [10, 25, 50, 100];
+        return [-1 => 'Todos', 10, 25, 50, 100];
+    }
+
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return -1; // Por defecto mostrar todos los registros
     }
 
     protected function getHeaderWidgets(): array
@@ -44,11 +49,6 @@ class ListVistaMovimientos extends ListRecords
         return [
             IngresosGastosWebSocketWidget::class,
         ];
-    }
-
-    protected function getDefaultTableRecordsPerPageSelectOption(): int
-    {
-        return 25;
     }
 
     protected function getHeader(): View

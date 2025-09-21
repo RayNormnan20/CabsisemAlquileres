@@ -744,11 +744,28 @@ class CreditosResource extends Resource
     {
         return $table
             ->columns([
-                
+
                 Tables\Columns\TextColumn::make('fecha_credito')
                     ->label('Fecha Crédito')
                     ->date('d/m/Y')
                     ->sortable(),
+
+               Tables\Columns\TextColumn::make('usuarioCreador.name')
+                    ->label('Creado por')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable()
+                    ->visible(function ($livewire = null) {
+                        // Si hay un cliente seleccionado desde el header, siempre mostrar
+                        if (!$livewire) {
+                            $livewire = $this;
+                        }
+                        if ($livewire && property_exists($livewire, 'clienteId') && $livewire->clienteId) {
+                            return true;
+                        }
+                        // Si no hay cliente seleccionado, usar configuración de general settings
+                        return app(\App\Settings\GeneralSettings::class)->mostrar_usuario_creador ?? false;
+                    }),
 
                 Tables\Columns\TextColumn::make('cliente.nombre_completo')
                     ->label('Cliente')
@@ -761,7 +778,7 @@ class CreditosResource extends Resource
                         }
                         return !($livewire && property_exists($livewire, 'clienteId') && $livewire->clienteId);
                     }),
-                    
+
                 Tables\Columns\TextColumn::make('valor_credito')
                     ->label('Valor')
                     ->sortable(),

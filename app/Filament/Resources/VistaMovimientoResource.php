@@ -71,10 +71,13 @@ class VistaMovimientoResource extends Resource
                     'success' => 'Ingresos',
                     'danger' => 'Gastos',
                 ]),
-                
+
         ])
-        ->defaultSort('fecha', 'asc');
-        
+        ->defaultSort('fecha', 'asc')
+        ->bulkActions([
+            // Eliminamos todas las acciones masivas para deshabilitar el delete masivo
+        ]);
+
 }
     public static function getPages(): array
     {
