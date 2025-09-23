@@ -40,15 +40,34 @@ public function applyFilters($filters)
     {
         $rutaId = Session::get('selected_ruta_id');
         
-        return Abonos::query()
-            ->when($this->fechaDesde ?? request()->query('fechaDesde'), fn($q) => $q->whereDate('fecha_pago', '>=', $this->fechaDesde ?? request()->query('fechaDesde')))
-            ->when($this->fechaHasta ?? request()->query('fechaHasta'), fn($q) => $q->whereDate('fecha_pago', '<=', $this->fechaHasta ?? request()->query('fechaHasta')))
-            ->when($this->clienteId ?? request()->query('clienteId'), fn($q) => $q->where('id_cliente', $this->clienteId ?? request()->query('clienteId')))
-            ->when($this->tipoConcepto ?? request()->query('tipoConcepto'), fn($q) => $q->whereHas('conceptosabonos', fn($q2) => 
-                $q2->where('tipo_concepto', $this->tipoConcepto ?? request()->query('tipoConcepto'))))
-            ->when($rutaId, fn($q) => $q->whereHas('cliente', fn($q2) => 
-                $q2->where('id_ruta', $rutaId)))
-            ->with(['usuario', 'cliente']);
+        $query = Abonos::query();
+        
+        // Aplicar filtros de fecha - MISMO COMPORTAMIENTO QUE ListAbonos
+        $fechaDesde = $this->fechaDesde ?? request()->query('fechaDesde');
+        $fechaHasta = $this->fechaHasta ?? request()->query('fechaHasta');
+        
+        if ($fechaDesde && $fechaHasta) {
+            $query->whereDate('fecha_pago', '>=', $fechaDesde)
+                  ->whereDate('fecha_pago', '<=', $fechaHasta);
+        } elseif ($fechaDesde) {
+            $query->whereDate('fecha_pago', '>=', $fechaDesde);
+        } elseif ($fechaHasta) {
+            $query->whereDate('fecha_pago', '<=', $fechaHasta);
+        } else {
+            // APLICAR FILTRO POR DEFECTO DE "HOY" - igual que en ListAbonos
+            $hoy = \Carbon\Carbon::today()->format('Y-m-d');
+            $query->whereDate('fecha_pago', $hoy);
+        }
+        
+        // Aplicar otros filtros
+        $query->when($this->clienteId ?? request()->query('clienteId'), fn($q) => $q->where('id_cliente', $this->clienteId ?? request()->query('clienteId')))
+              ->when($this->tipoConcepto ?? request()->query('tipoConcepto'), fn($q) => $q->whereHas('conceptosabonos', fn($q2) => 
+                  $q2->where('tipo_concepto', $this->tipoConcepto ?? request()->query('tipoConcepto'))))
+              ->when($rutaId, fn($q) => $q->whereHas('cliente', fn($q2) => 
+                  $q2->where('id_ruta', $rutaId)))
+              ->with(['usuario', 'cliente']);
+              
+        return $query;
     }
 
     public function getFooterData()

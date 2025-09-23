@@ -165,6 +165,18 @@ class PagosAlquilerResource extends Resource
                     ->sortable()
                     ->default('Sin inquilino'),
 
+                TextColumn::make('usuarioRegistro.name')
+                    ->label('Registrado por')
+                    ->formatStateUsing(function ($record) {
+                        if ($record->usuarioRegistro) {
+                            return $record->usuarioRegistro->name ?? 'Usuario sin nombre';
+                        }
+                        return 'Sin usuario';
+                    })
+                    ->searchable(['usuarioRegistro.name'])
+                    ->sortable()
+                    ->default('Sin usuario'),
+
                 TextColumn::make('fecha_pago')
                     ->label('Fecha Pago')
                     ->date()

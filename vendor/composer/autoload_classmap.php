@@ -21,6 +21,7 @@ return array(
     'AnourValar\\EloquentSerialize\\Package' => $vendorDir . '/anourvalar/eloquent-serialize/src/Package.php',
     'AnourValar\\EloquentSerialize\\Service' => $vendorDir . '/anourvalar/eloquent-serialize/src/Service.php',
     'App\\Console\\Commands\\ActualizarSaldoCreditoAdicional' => $baseDir . '/app/Console/Commands/ActualizarSaldoCreditoAdicional.php',
+    'App\\Console\\Commands\\AsignarCreadorCreditos' => $baseDir . '/app/Console/Commands/AsignarCreadorCreditos.php',
     'App\\Console\\Commands\\ClearCreditosCache' => $baseDir . '/app/Console/Commands/ClearCreditosCache.php',
     'App\\Console\\Commands\\CreateTestAbono' => $baseDir . '/app/Console/Commands/CreateTestAbono.php',
     'App\\Console\\Commands\\TranslateLangFile' => $baseDir . '/app/Console/Commands/TranslateLangFile.php',

@@ -970,6 +970,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'AnourValar\\EloquentSerialize\\Package' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Package.php',
         'AnourValar\\EloquentSerialize\\Service' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Service.php',
         'App\\Console\\Commands\\ActualizarSaldoCreditoAdicional' => __DIR__ . '/../..' . '/app/Console/Commands/ActualizarSaldoCreditoAdicional.php',
+        'App\\Console\\Commands\\AsignarCreadorCreditos' => __DIR__ . '/../..' . '/app/Console/Commands/AsignarCreadorCreditos.php',
         'App\\Console\\Commands\\ClearCreditosCache' => __DIR__ . '/../..' . '/app/Console/Commands/ClearCreditosCache.php',
         'App\\Console\\Commands\\CreateTestAbono' => __DIR__ . '/../..' . '/app/Console/Commands/CreateTestAbono.php',
         'App\\Console\\Commands\\TranslateLangFile' => __DIR__ . '/../..' . '/app/Console/Commands/TranslateLangFile.php',

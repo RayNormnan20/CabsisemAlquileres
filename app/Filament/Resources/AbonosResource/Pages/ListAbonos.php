@@ -241,6 +241,16 @@ public function updated($name)
         return true;
     }
 
+    protected function getTableRecordsPerPageSelectOptions(): array
+    {
+        return [-1 => 'Todos', 10, 25, 50, 100];
+    }
+
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return -1; // -1 representa "todos" en Filament
+    }
+
     /**
      * Listener para el evento 'goToActionRecord' emitido por los botones de navegación del modal.
      * Este método se define en el componente de página (ListAbonos) porque es el componente padre
