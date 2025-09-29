@@ -63,6 +63,9 @@ class ClientesResource extends Resource
                                         ->orderBy('nombre')
                                         ->pluck('nombre', 'id_tipo_documento');
                                 })
+                                ->default(function () {
+                                    return TipoDocumento::where('nombre', 'DNI')->value('id_tipo_documento');
+                                })
                                 ->required()
                                 ->searchable()
                                 ->preload(), // Esto mejora el rendimiento con muchos registros

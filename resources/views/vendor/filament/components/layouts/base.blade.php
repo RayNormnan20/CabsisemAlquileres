@@ -84,6 +84,7 @@
 
         {{ \Filament\Facades\Filament::renderHook('scripts.start') }}
 
+        @livewire('livewire-ui-modal')
         @livewireScripts
 
         <script>

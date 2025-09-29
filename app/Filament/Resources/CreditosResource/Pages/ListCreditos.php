@@ -12,6 +12,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Session;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\CreditosExcelExport;
+use Filament\Notifications\Notification;
+use Illuminate\Http\Request;
 
 class ListCreditos extends ListRecords
 {
@@ -20,7 +22,10 @@ class ListCreditos extends ListRecords
     public ?int $currentRutaId = null;
     public ?string $currentRutaName = null;
 
-    protected $listeners = ['globalRouteChanged' => 'applyRouteFilter'];
+    protected $listeners = [
+        'globalRouteChanged' => 'applyRouteFilter',
+        'eliminarCredito' => 'eliminarCredito'
+    ];
 
     public ?int $clienteId = null;
     public bool $mostrarSoloActivos = true; // Nueva propiedad para controlar el filtro
@@ -318,4 +323,74 @@ class ListCreditos extends ListRecords
         // Redirigir a la página de vista del crédito
         return redirect()->route('filament.resources.creditos.view', ['record' => $creditoActivo->id_credito]);
     }
+
+    /**
+     * Eliminar crédito sin abonos
+     */
+    public function eliminarCredito($creditoId)
+    {
+        try {
+            $credito = Creditos::findOrFail($creditoId);
+            
+            // Verificar que el crédito no tenga abonos
+            if ($credito->abonos()->exists()) {
+                Notification::make()
+                    ->title('No se puede eliminar el crédito')
+                    ->body('Este crédito tiene abonos realizados y no puede ser eliminado.')
+                    ->danger()
+                    ->send();
+                return;
+            }
+
+            // Eliminar el YapeCliente asociado si existe
+            if ($credito->yapeCliente) {
+                $credito->yapeCliente->forceDelete();
+            }
+
+            $clienteNombre = $credito->cliente?->nombre . ' ' . $credito->cliente?->apellido;
+            $rutaNombre = $credito->cliente?->ruta?->nombre ?? 'Ruta desconocida';
+
+            // Registrar en el log de actividad
+            \App\Models\LogActividad::registrar(
+                'Créditos',
+                "Eliminó el crédito de {$clienteNombre} de la ruta {$rutaNombre}",
+                [
+                    'credito_id' => $credito->id_credito,
+                    'cliente_id' => $credito->id_cliente,
+                    'datos_eliminados' => $credito->toArray(),
+                ]
+            );
+
+            // Eliminar el crédito
+            $credito->delete();
+
+            Notification::make()
+                ->title('Crédito eliminado')
+                ->body('El crédito ha sido eliminado correctamente.')
+                ->success()
+                ->send();
+
+            // Refrescar la vista
+            $this->resetTable();
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error al eliminar crédito')
+                ->body('Ocurrió un error: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Vista personalizada para el listado con diseño responsivo
+     */
+    protected function getViewData(): array
+    {
+        return array_merge(parent::getViewData(), [
+            'records' => $this->getTableRecords(),
+        ]);
+    }
+
+    protected static string $view = 'filament.resources.creditos-resource.list-creditos-responsive';
 }

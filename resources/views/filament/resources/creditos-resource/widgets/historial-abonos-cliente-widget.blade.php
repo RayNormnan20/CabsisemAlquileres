@@ -208,7 +208,12 @@
 
             <div class="mobile-header">
                 <div>Historial de Abonos</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">{{ $cliente->fecha_registro ?? '29 Sep 2024' }} • {{ $cliente->hora_registro ?? '14:41' }}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">
+                    Cliente: {{ $this->record->nombre }} {{ $this->record->apellido }}
+                    @php
+                        $creditoActivo = $this->getCreditoActivo();
+                    @endphp
+                </div>
             </div>
 
             <div class="mobile-container">

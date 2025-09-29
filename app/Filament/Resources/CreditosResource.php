@@ -786,6 +786,7 @@ class CreditosResource extends Resource
 
                 Tables\Columns\TextColumn::make('valor_credito')
                     ->label('Valor')
+                    ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('porcentaje_interes')
@@ -853,6 +854,7 @@ class CreditosResource extends Resource
 
                 Tables\Columns\TextColumn::make('saldo_actual')
                     ->label('Saldo')
+                    ->formatStateUsing(fn ($state) => 'S/ ' . number_format($state, 2))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('fecha_vencimiento')
@@ -1030,6 +1032,7 @@ class CreditosResource extends Resource
             'edit' => Pages\EditCreditos::route('/{record}/edit'),
             'view' => Pages\ViewCredito::route('/{record}'), // Ensure this is active
             'historial-cliente' => Pages\ViewHistorialCliente::route('/historial-cliente/{cliente}'),
+            'historial-credito' => Pages\ViewHistorialCliente::route('/historial-credito/{credito}'),
 
         ];
     }

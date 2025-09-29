@@ -6,6 +6,7 @@ use App\Filament\Resources\CreditosResource;
 
 use App\Filament\Resources\CreditosResource\Widgets\HistorialAbonosClienteWidget;
 use App\Models\Clientes;
+use App\Models\Creditos;
 use Filament\Resources\Pages\Page;
 
 class ViewHistorialCliente extends Page
@@ -16,9 +17,16 @@ class ViewHistorialCliente extends Page
 
     public Clientes $record;
 
-    public function mount(int|string $cliente): void
+    public function mount(int|string $cliente = null, int|string $credito = null): void
     {
-        $this->record = Clientes::findOrFail($cliente);
+        if ($credito) {
+            // Si viene un crédito, obtenemos el cliente desde el crédito
+            $creditoModel = Creditos::findOrFail($credito);
+            $this->record = $creditoModel->cliente;
+        } else {
+            // Si viene un cliente directamente
+            $this->record = Clientes::findOrFail($cliente);
+        }
     }
 
     public function getTitle(): string
