@@ -1024,7 +1024,7 @@ class CreditosResource extends Resource
             'create' => Pages\CreateCreditos::route('/create'),
             'edit' => Pages\EditCreditos::route('/{record}/edit'),
             'view' => Pages\ViewCredito::route('/{record}'), // Ensure this is active
-
+            'historial-cliente' => Pages\ViewHistorialCliente::route('/historial-cliente/{cliente}'),
 
         ];
     }

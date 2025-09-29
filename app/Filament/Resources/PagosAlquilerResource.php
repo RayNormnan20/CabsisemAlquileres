@@ -206,7 +206,7 @@ class PagosAlquilerResource extends Resource
                 TextColumn::make('referencia_pago')
                     ->label('Referencia')
                     ->limit(20)
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
                     ->label('Registrado')
@@ -287,5 +287,14 @@ class PagosAlquilerResource extends Resource
     {
         $data['id_usuario_registro'] = Auth::id();
         return $data;
+    }
+    protected function getTableRecordsPerPageSelectOptions(): array
+    {
+        return [-1 => 'Todos', 10, 25, 50, 100];
+    }
+
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return -1; // -1 representa "todos" en Filament
     }
 }

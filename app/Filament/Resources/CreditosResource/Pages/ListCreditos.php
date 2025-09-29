@@ -264,4 +264,58 @@ class ListCreditos extends ListRecords
 
         return Excel::download(new CreditosExcelExport($query), $filename);
     }
+
+    /**
+     * Redirige a la página de historial completo del cliente
+     */
+    public function verHistorialCliente()
+    {
+        if (!$this->clienteId) {
+            $this->notify('warning', 'Debe seleccionar un cliente primero.');
+            return;
+        }
+
+        // Buscar el cliente para obtener su información
+        $cliente = Clientes::find($this->clienteId);
+        
+        if (!$cliente) {
+            $this->notify('danger', 'Cliente no encontrado.');
+            return;
+        }
+
+        // Usar el método de navegación de Livewire
+        $this->redirect(url("/creditos/historial-cliente/{$this->clienteId}"));
+    }
+
+    /**
+     * Redirige al historial del crédito activo del cliente
+     */
+    public function verCreditoActivo()
+    {
+        if (!$this->clienteId) {
+            $this->notify('warning', 'Debe seleccionar un cliente primero.');
+            return;
+        }
+
+        // Buscar el crédito activo del cliente (con saldo > 0)
+        $creditoActivo = Creditos::where('id_cliente', $this->clienteId)
+            ->where('saldo_actual', '>', 0)
+            ->orderBy('fecha_credito', 'desc')
+            ->first();
+
+        // Si no hay crédito activo, buscar el último crédito del cliente
+        if (!$creditoActivo) {
+            $creditoActivo = Creditos::where('id_cliente', $this->clienteId)
+                ->orderBy('fecha_credito', 'desc')
+                ->first();
+        }
+
+        if (!$creditoActivo) {
+            $this->notify('warning', 'Este cliente no tiene créditos registrados.');
+            return;
+        }
+
+        // Redirigir a la página de vista del crédito
+        return redirect()->route('filament.resources.creditos.view', ['record' => $creditoActivo->id_credito]);
+    }
 }
