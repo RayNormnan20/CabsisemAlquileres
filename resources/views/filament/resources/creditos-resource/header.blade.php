@@ -152,7 +152,7 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
     </div>
 
     <!-- Botones de acción -->
-    <div class="flex gap-2">
+    <div class="flex gap-2" style="display: flex !important; visibility: visible !important;">
         @if($clienteId)
         <button wire:click="resetearFiltros"
             class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md transition-colors">
@@ -177,9 +177,9 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
             </svg>
             {{ $clienteId ? 'Excel' : 'Excel' }}
         </button>
-        @if($clienteId)
-        <button wire:click="verHistorialCliente"
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors flex items-center gap-1">
+        <button wire:click="{{ $clienteId ? 'verHistorialCliente' : '' }}"
+            class="px-4 py-2 {{ $clienteId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed' }} text-white text-sm rounded-md transition-colors flex items-center gap-1"
+            {{ !$clienteId ? 'disabled' : '' }}>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
@@ -187,7 +187,6 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
             </svg>
             Historial
         </button>
-        @endif
         
     </div>
 </div>

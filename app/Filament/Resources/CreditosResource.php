@@ -771,6 +771,11 @@ class CreditosResource extends Resource
                     ->label('Cliente')
                     ->searchable(['cliente.nombre', 'cliente.apellido'])
                     ->sortable()
+                    ->color('primary')
+                    ->weight('bold')
+                    ->url(fn ($record) => $record->cliente ? route('filament.resources.creditos.historial-cliente', ['cliente' => $record->cliente->id_cliente]) : null)
+                    ->openUrlInNewTab(false)
+                    ->tooltip('Ver historial del cliente')
                     ->visible(function ($livewire = null) {
                         // Ocultar la columna cliente cuando hay un cliente seleccionado
                         if (!$livewire) {
