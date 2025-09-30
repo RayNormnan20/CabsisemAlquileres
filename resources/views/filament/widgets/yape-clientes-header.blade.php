@@ -8,7 +8,8 @@
             {{ $fechaDesde ? \Carbon\Carbon::parse($fechaDesde)->format('d M Y') : 'Desde' }}
             -
             {{ $fechaHasta ? \Carbon\Carbon::parse($fechaHasta)->format('d M Y') : 'Hasta' }}
-            <svg class="w-4 h-4 ml-1 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-4 h-4 ml-1 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
         </button>
@@ -28,7 +29,8 @@
                     <option value="mes_pasado">Mes pasado</option>
                     <option value="ultimos_7_dias">Últimos 7 días</option>
                     <option value="ultimos_30_dias">Últimos 30 días</option>
-                    <option value="personalizado">Personalizado</option>
+                    <option value="desde_primer_registro">Todas las fechas</option>
+                    <!--  <option value="personalizado">Personalizado</option> -->
                 </select>
             </div>
 
@@ -46,7 +48,7 @@
             </div>
 
             <div class="flex justify-between items-center pt-2">
-                <button wire:click="limpiarFiltros" 
+                <button wire:click="limpiarFiltros"
                     class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                     Limpiar filtros
                 </button>
@@ -59,11 +61,11 @@
 </div>
 
 <script>
-    function dateRangePicker() {
-        return {
-            init() {
-                // Inicialización si es necesaria
-            }
+function dateRangePicker() {
+    return {
+        init() {
+            // Inicialización si es necesaria
         }
     }
+}
 </script>

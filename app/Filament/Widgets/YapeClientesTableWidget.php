@@ -30,7 +30,7 @@ class YapeClientesTableWidget extends BaseWidget
     // Propiedades para el filtro de período
     public ?string $fechaDesde = null;
     public ?string $fechaHasta = null;
-    public string $periodoSeleccionado = 'mes_actual';
+    public string $periodoSeleccionado = 'desde_primer_registro';
     public bool $fechasValidas = true;
 
     public function mount(): void
@@ -72,6 +72,16 @@ class YapeClientesTableWidget extends BaseWidget
                 break;
             case 'ultimos_30_dias':
                 $this->fechaDesde = Carbon::now()->subDays(29)->format('Y-m-d');
+                $this->fechaHasta = Carbon::today()->format('Y-m-d');
+                break;
+            case 'desde_primer_registro':
+                $primerRegistro = YapeCliente::orderBy('created_at', 'asc')->first();
+                if ($primerRegistro) {
+                    $this->fechaDesde = Carbon::parse($primerRegistro->created_at)->format('Y-m-d');
+                } else {
+                    // Si no hay registros, usar fecha actual
+                    $this->fechaDesde = Carbon::today()->format('Y-m-d');
+                }
                 $this->fechaHasta = Carbon::today()->format('Y-m-d');
                 break;
             case 'personalizado':
