@@ -393,4 +393,20 @@ class ListCreditos extends ListRecords
     }
 
     protected static string $view = 'filament.resources.creditos-resource.list-creditos-responsive';
+
+    /**
+     * Opciones de paginación para el listado de créditos
+     */
+    protected function getTableRecordsPerPageSelectOptions(): array
+    {
+        return [-1 => 'Todos', 10, 25, 50, 100];
+    }
+
+    /**
+     * Opción por defecto de registros por página
+     */
+    protected function getDefaultTableRecordsPerPageSelectOption(): int
+    {
+        return -1; // -1 representa "todos" en Filament
+    }
 }
