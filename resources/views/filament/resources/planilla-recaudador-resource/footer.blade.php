@@ -1,5 +1,6 @@
 <div class="mt-8 space-y-6">
     <!-- TABLA DE PRÉSTAMOS REGULARES -->
+    @if($estadoCredito !== 'adicionales')
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div class="bg-yellow-400 px-4 py-2">
             <h2 class="text-center font-bold text-black text-lg">PLANILLA RECAUDADOR</h2>
@@ -83,6 +84,7 @@
             </table>
         </div>
     </div>
+    @endif
     
     <!-- TABLA DE ADICIONALES -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">

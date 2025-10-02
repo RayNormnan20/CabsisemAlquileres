@@ -128,7 +128,7 @@ class ListPlanillaRecaudadors extends ListRecords
             'credito' => $creditosAdicionales->sum('valor_credito'),
             'abonos' => $creditosAdicionales->sum('total_abonos'),
             'saldo' => $creditosAdicionales->sum('saldo_actual'),
-            'cuota' => $creditosAdicionales->sum('porcentaje_interes')
+            'cuota' => $creditosAdicionales->sum('cuota_real')
         ];
         
         $totalGeneral = [
@@ -143,7 +143,8 @@ class ListPlanillaRecaudadors extends ListRecords
             'creditosAdicionales' => $creditosAdicionales,
             'totalesRegulares' => $totalesRegulares,
             'totalesAdicionales' => $totalesAdicionales,
-            'totalGeneral' => $totalGeneral
+            'totalGeneral' => $totalGeneral,
+            'estadoCredito' => $this->estadoCredito
         ]);
     }
 
@@ -257,13 +258,16 @@ class ListPlanillaRecaudadors extends ListRecords
    public function exportToPDF()
 {
     try {
-        // Usar la misma lógica que en getFooter() para obtener los datos de ambas tablas
+        // Usar la misma lógica que en getTableQuery() para respetar todos los filtros
         $queryBase = parent::getTableQuery()
             ->when($this->estadoCredito === 'activos', function (Builder $query) {
                 return $query->where('saldo_actual', '>', 0);
             })
             ->when($this->estadoCredito === 'cancelados', function (Builder $query) {
                 return $query->where('saldo_actual', '<=', 0);
+            })
+            ->when($this->estadoCredito === 'adicionales', function (Builder $query) {
+                return $query->where('es_adicional', 1);
             })
             ->when($this->rutaId, function (Builder $query) {
                 return $query->where('id_ruta', $this->rutaId);
@@ -282,11 +286,17 @@ class ListPlanillaRecaudadors extends ListRecords
                 break;
         }
         
-        // Créditos regulares (no adicionales)
-        $creditosRegulares = (clone $queryBase)->where('es_adicional', 0)->get();
-        
-        // Créditos adicionales
-        $creditosAdicionales = (clone $queryBase)->where('es_adicional', 1)->get();
+        // Si el filtro es 'adicionales', solo obtener créditos adicionales
+        if ($this->estadoCredito === 'adicionales') {
+            $creditosRegulares = collect(); // Colección vacía
+            $creditosAdicionales = $queryBase->get();
+        } else {
+            // Créditos regulares (no adicionales)
+            $creditosRegulares = (clone $queryBase)->where('es_adicional', 0)->get();
+            
+            // Créditos adicionales
+            $creditosAdicionales = (clone $queryBase)->where('es_adicional', 1)->get();
+        }
 
         if ($creditosRegulares->isEmpty() && $creditosAdicionales->isEmpty()) {
             $this->notify('warning', 'No hay datos para exportar');
@@ -310,7 +320,7 @@ class ListPlanillaRecaudadors extends ListRecords
             'credito' => $creditosRegulares->sum('valor_credito') + $creditosAdicionales->sum('valor_credito'),
             'abonos' => $creditosRegulares->sum('total_abonos') + $creditosAdicionales->sum('total_abonos'),
             'saldo' => $creditosRegulares->sum('saldo_actual') + $creditosAdicionales->sum('saldo_actual'),
-            'cuota' => $creditosRegulares->sum('valor_cuota') + $creditosAdicionales->sum('valor_cuota')
+            'cuota' => $creditosRegulares->sum('valor_cuota') + $creditosAdicionales->sum('cuota_real')
         ];
 
         $pdf = Pdf::loadView('filament.resources.pdf.planilla-recaudador', [

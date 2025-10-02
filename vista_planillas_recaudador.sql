@@ -15,6 +15,10 @@ SELECT
     cr.id_ruta,
     cr.es_adicional,
     cr.porcentaje_interes,
+    CASE 
+        WHEN cr.es_adicional = 1 THEN cr.porcentaje_interes
+        ELSE cr.valor_cuota
+    END AS cuota_real,
     (
         SELECT a.fecha_pago 
         FROM abonos a 
