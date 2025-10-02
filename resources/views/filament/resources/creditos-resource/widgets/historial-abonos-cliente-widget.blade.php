@@ -1,5 +1,4 @@
-<div>
-        <div class="historial-abonos-mobile">
+<div class="historial-abonos-mobile">
             <style>
                 .historial-abonos-mobile {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -288,5 +287,4 @@
                     </div>
                 @endif
             </div>
-        </div>
 </div>

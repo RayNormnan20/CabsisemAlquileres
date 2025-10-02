@@ -126,14 +126,46 @@ class PagosAlquilerResource extends Resource
                                 ->maxLength(500)
                                 ->rows(3)
                                 ->columnSpanFull(),
-
+                            /*
                             FileUpload::make('recibo_path')
                                 ->label('Recibo/Comprobante')
                                 ->acceptedFileTypes(['application/pdf', 'image/*'])
                                 ->directory('recibos')
                                 ->maxSize(5120) // 5MB
                                 ->columnSpanFull(),
-                        ])->columns(1),
+                                */
+
+
+                            FileUpload::make('foto_1_path')
+                                ->label('Foto 1')
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->directory('pagos_alquiler/fotos')
+                                ->maxSize(5120) // 5MB
+                                ->image()
+                                ->imageResizeMode('cover')
+                                ->imageResizeTargetWidth('1920')
+                                ->imageResizeTargetHeight('1080'),
+
+                            FileUpload::make('foto_2_path')
+                                ->label('Foto 2')
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->directory('pagos_alquiler/fotos')
+                                ->maxSize(5120) // 5MB
+                                ->image()
+                                ->imageResizeMode('cover')
+                                ->imageResizeTargetWidth('1920')
+                                ->imageResizeTargetHeight('1080'),
+
+                            FileUpload::make('foto_3_path')
+                                ->label('Foto 3')
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                                ->directory('pagos_alquiler/fotos')
+                                ->maxSize(5120) // 5MB
+                                ->image()
+                                ->imageResizeMode('cover')
+                                ->imageResizeTargetWidth('1920')
+                                ->imageResizeTargetHeight('1080'),
+                        ])->columns(3),
                 ])
             ]);
     }
@@ -259,6 +291,55 @@ class PagosAlquilerResource extends Resource
                         'title' => 'Editar',
                         'class' => 'hover:bg-primary-50 rounded-full'
                     ]),
+
+                Tables\Actions\Action::make('view_fotos')
+                    ->label('')
+                    ->icon('heroicon-o-eye')
+                    ->color(fn($record) => ($record->foto_1_path || $record->foto_2_path || $record->foto_3_path) ? 'primary' : 'gray')
+                    ->size('sm')
+                    ->button()
+                    ->modalHeading('Fotos del Pago de Alquiler')
+                    ->modalContent(function ($record) {
+                        $fotos = collect([
+                            ['path' => $record->foto_1_path, 'label' => 'Foto 1'],
+                            ['path' => $record->foto_2_path, 'label' => 'Foto 2'],
+                            ['path' => $record->foto_3_path, 'label' => 'Foto 3']
+                        ])->filter(fn($foto) => !empty($foto['path']));
+
+                        if ($fotos->isEmpty()) {
+                            return new \Illuminate\Support\HtmlString('<div class="text-center py-8"><p class="text-gray-500 text-lg">No hay fotos disponibles para este pago</p></div>');
+                        }
+
+                        $html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+
+                        foreach ($fotos as $foto) {
+                            $imageUrl = asset('storage/' . $foto['path']);
+                            $label = $foto['label'];
+
+                            $html .= <<<HTML
+                                <div class="space-y-2">
+                                    <p class="text-sm font-medium text-gray-700 text-center">{$label}</p>
+                                    <div class="flex justify-center">
+                                        <img src="{$imageUrl}"
+                                            class="rounded-lg max-h-64 max-w-full object-contain cursor-pointer border shadow-sm"
+                                            onclick="window.open(this.src, '_blank')"
+                                            alt="{$label}">
+                                    </div>
+                                </div>
+HTML;
+                        }
+
+                        $html .= '</div>';
+
+                        return new \Illuminate\Support\HtmlString($html);
+                    })
+                    ->modalWidth('4xl')
+                    ->modalButton('Cerrar')
+                    ->action(function () {
+                        // Acción vacía necesaria para el modal
+                    })
+                    ->tooltip(fn($record) => ($record->foto_1_path || $record->foto_2_path || $record->foto_3_path) ? 'Ver Fotos' : 'Sin fotos disponibles'),
+
                 //Tables\Actions\ViewAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->requiresConfirmation()

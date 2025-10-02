@@ -24,6 +24,9 @@ class PagoAlquiler extends Model
         'referencia_pago',
         'observaciones',
         'recibo_path',
+        'foto_1_path',
+        'foto_2_path',
+        'foto_3_path',
         'id_usuario_registro'
     ];
 
@@ -50,6 +53,22 @@ class PagoAlquiler extends Model
     public function getReciboUrlAttribute()
     {
         return $this->recibo_path ? asset('storage/' . $this->recibo_path) : null;
+    }
+
+    // Accessors para URLs de las fotos
+    public function getFoto1UrlAttribute()
+    {
+        return $this->foto_1_path ? asset('storage/' . $this->foto_1_path) : null;
+    }
+
+    public function getFoto2UrlAttribute()
+    {
+        return $this->foto_2_path ? asset('storage/' . $this->foto_2_path) : null;
+    }
+
+    public function getFoto3UrlAttribute()
+    {
+        return $this->foto_3_path ? asset('storage/' . $this->foto_3_path) : null;
     }
 
     protected static function boot()

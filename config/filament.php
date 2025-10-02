@@ -203,6 +203,8 @@ return [
 
     'broadcasting' => [
 
+        // Configuración de broadcasting comentada para evitar errores de Pusher
+        /*
          'echo' => [
              'broadcaster' => 'pusher',
              'key' => env('VITE_PUSHER_APP_KEY'),
@@ -214,6 +216,7 @@ return [
              'encrypted' => env('APP_ENV') === 'production',
              'enabledTransports' => ['ws', 'wss'],
          ],
+         */
 
     ],
 

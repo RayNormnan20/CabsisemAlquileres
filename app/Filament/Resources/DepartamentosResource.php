@@ -144,10 +144,15 @@ class DepartamentosResource extends Resource
 
                             FileUpload::make('foto_path')
                                 ->label('Foto del Departamento')
-                                ->image()
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
                                 ->directory('departamentos')
                                 ->maxSize(5120) // 5MB
+                                ->image()
+                                ->imageResizeMode('cover')
+                                ->imageResizeTargetWidth('1920')
+                                ->imageResizeTargetHeight('1080')
                                 ->columnSpanFull(),
+
 
                             Toggle::make('activo')
                                 ->label('Departamento Activo')

@@ -575,7 +575,7 @@
                                     </th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        FOTO ALQUILER
+                                        FOTOS PAGO
                                     </th>
                                 </tr>
                             </thead>
@@ -598,26 +598,26 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                         <div class="flex items-center space-x-1">
-                                            @if($detalle['imagen_1_path'])
-                                            <img src="{{ asset('storage/' . $detalle['imagen_1_path']) }}" alt="Imagen 1"
+                                            @if($detalle['foto_1_path'])
+                                            <img src="{{ asset('storage/' . $detalle['foto_1_path']) }}" alt="Foto Pago 1"
                                                 class="h-[18px] w-[18px] rounded-full object-cover border border-gray-200 cursor-pointer hover:scale-110 transition-transform"
-                                                onclick="window.open('{{ asset('storage/' . $detalle['imagen_1_path']) }}', '_blank')"
-                                                title="Click para ver Imagen 1">
+                                                onclick="window.open('{{ asset('storage/' . $detalle['foto_1_path']) }}', '_blank')"
+                                                title="Click para ver Foto del Pago 1">
                                             @endif
-                                            @if($detalle['imagen_2_path'])
-                                            <img src="{{ asset('storage/' . $detalle['imagen_2_path']) }}" alt="Imagen 2"
+                                            @if($detalle['foto_2_path'])
+                                            <img src="{{ asset('storage/' . $detalle['foto_2_path']) }}" alt="Foto Pago 2"
                                                 class="h-[18px] w-[18px] rounded-full object-cover border border-gray-200 cursor-pointer hover:scale-110 transition-transform"
-                                                onclick="window.open('{{ asset('storage/' . $detalle['imagen_2_path']) }}', '_blank')"
-                                                title="Click para ver Imagen 2">
+                                                onclick="window.open('{{ asset('storage/' . $detalle['foto_2_path']) }}', '_blank')"
+                                                title="Click para ver Foto del Pago 2">
                                             @endif
-                                            @if($detalle['imagen_3_path'])
-                                            <img src="{{ asset('storage/' . $detalle['imagen_3_path']) }}" alt="Imagen 3"
+                                            @if($detalle['foto_3_path'])
+                                            <img src="{{ asset('storage/' . $detalle['foto_3_path']) }}" alt="Foto Pago 3"
                                                 class="h-[18px] w-[18px] rounded-full object-cover border border-gray-200 cursor-pointer hover:scale-110 transition-transform"
-                                                onclick="window.open('{{ asset('storage/' . $detalle['imagen_3_path']) }}', '_blank')"
-                                                title="Click para ver Imagen 3">
+                                                onclick="window.open('{{ asset('storage/' . $detalle['foto_3_path']) }}', '_blank')"
+                                                title="Click para ver Foto del Pago 3">
                                             @endif
-                                            @if(!$detalle['imagen_1_path'] && !$detalle['imagen_2_path'] &&
-                                            !$detalle['imagen_3_path'])
+                                            @if(!$detalle['foto_1_path'] && !$detalle['foto_2_path'] &&
+                                            !$detalle['foto_3_path'])
                                             <span class="text-gray-400 text-xs">Sin fotos</span>
                                             @endif
                                         </div>

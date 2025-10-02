@@ -3,7 +3,7 @@
 // Función para inicializar los listeners de WebSocket
 export function initializeWebSocketListeners() {
     if (typeof window.Echo === 'undefined') {
-        console.warn('Laravel Echo no está disponible. Asegúrate de que esté configurado correctamente.');
+        //console.warn('Laravel Echo no está disponible. Asegúrate de que esté configurado correctamente.');
         return;
     }
 
