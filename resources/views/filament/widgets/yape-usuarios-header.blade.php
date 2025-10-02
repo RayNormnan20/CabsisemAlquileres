@@ -1,5 +1,5 @@
 <div x-data="dateRangePicker()" x-init="init()" class="relative bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-4">
-    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Usuarios que Abonaron a Yape</h2>
+    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Yapes por Cobrador</h2>
 
     <div class="relative inline-block text-left w-full md:w-auto" x-data="{ open: false }">
         <button @click="open = !open"
