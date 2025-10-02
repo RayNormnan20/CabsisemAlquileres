@@ -9,6 +9,7 @@ use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 
 class ListVistaMovimientos extends ListRecords
@@ -19,11 +20,40 @@ class ListVistaMovimientos extends ListRecords
     public ?string $fechaHasta = null;
     public string $periodoSeleccionado = 'hoy';
     public bool $fechasValidas = true;
+    
+    // Propiedades para el filtrado por ruta
+    public ?int $currentRutaId = null;
+    public ?string $currentRutaName = null;
+
+    // Listeners para eventos globales de cambio de ruta
+    protected $listeners = [
+        'globalRouteChanged' => 'applyRouteFilter',
+    ];
 
     public function mount(): void
     {
         parent::mount();
+        
+        // Inicializar filtro de ruta desde la sesión
+        if (Session::has('selected_ruta_id')) {
+            $this->currentRutaId = Session::get('selected_ruta_id');
+            $this->currentRutaName = Session::get('selected_ruta_name');
+        } else {
+            $this->currentRutaId = null;
+            $this->currentRutaName = 'Todas las Rutas';
+        }
+        
         $this->aplicarPeriodo();
+    }
+
+    // Método para aplicar el filtro de ruta cuando se emite el evento
+    public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
+    {
+        $this->currentRutaId = $rutaId;
+        $this->currentRutaName = $rutaName ?? 'Todas las Rutas';
+
+        // Restablece la página de la tabla para aplicar el nuevo filtro
+        $this->resetPage();
     }
 
     protected function getActions(): array
@@ -68,13 +98,22 @@ class ListVistaMovimientos extends ListRecords
             return parent::getTableQuery()->whereRaw('1=0');
         }
 
-        return parent::getTableQuery()
-            ->when($this->fechaDesde, function (Builder $query) {
+        $query = parent::getTableQuery();
+
+        // Filtrar por ruta si está seleccionada
+        if ($this->currentRutaId) {
+            $query->where('id_ruta', $this->currentRutaId);
+        }
+
+        // Aplicar filtros de fecha
+        $query->when($this->fechaDesde, function (Builder $query) {
                 return $query->whereDate('fecha', '>=', $this->fechaDesde);
             })
             ->when($this->fechaHasta, function (Builder $query) {
                 return $query->whereDate('fecha', '<=', $this->fechaHasta);
             });
+
+        return $query;
     }
 
     public function aplicarPeriodo(): void

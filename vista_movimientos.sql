@@ -8,7 +8,8 @@ SELECT
     u.name AS usuario,
     co.nombre AS concepto,
     co.tipo AS tipo_concepto,
-    a.observaciones AS observaciones
+    a.observaciones AS observaciones,
+    c.id_ruta AS id_ruta
 FROM abonos a
 JOIN clientes c ON c.id_cliente = a.id_cliente
 JOIN users u ON u.id = a.id_usuario
@@ -30,7 +31,8 @@ SELECT
     ) AS usuario,
     co2.nombre AS concepto,
     co2.tipo AS tipo_concepto,
-    NULL AS observaciones
+    NULL AS observaciones,
+    cr.id_ruta AS id_ruta
 FROM creditos cr
 JOIN clientes c2 ON c2.id_cliente = cr.id_cliente
 JOIN conceptos co2 ON co2.id = cr.id_concepto;
