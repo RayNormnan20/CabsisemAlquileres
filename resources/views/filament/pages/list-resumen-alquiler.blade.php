@@ -507,29 +507,29 @@
                                             <span class="pago-label">Cobrador:</span>
                                             <span class="pago-value">{{ $detalle['cobrador_nombre'] ?? 'N/A' }}</span>
                                         </div>
-                                        @if($detalle['imagen_1_path'] || $detalle['imagen_2_path'] || $detalle['imagen_3_path'])
+                                        @if($detalle['foto_1_path'] || $detalle['foto_2_path'] || $detalle['foto_3_path'])
                                         <div class="pago-fotos">
                                             <div class="pago-info" style="margin-bottom: 0.25rem;">
-                                                <span class="pago-label">Fotos del Alquiler:</span>
+                                                <span class="pago-label">Fotos del Pago:</span>
                                             </div>
                                             <div class="fotos-container">
-                                                @if($detalle['imagen_1_path'])
-                                                <img src="{{ asset('storage/' . $detalle['imagen_1_path']) }}" alt="Imagen 1"
+                                                @if($detalle['foto_1_path'])
+                                                <img src="{{ asset('storage/' . $detalle['foto_1_path']) }}" alt="Foto Pago 1"
                                                     class="foto-alquiler"
-                                                    onclick="window.open('{{ asset('storage/' . $detalle['imagen_1_path']) }}', '_blank')"
-                                                    title="Click para ver Imagen 1">
+                                                    onclick="window.open('{{ asset('storage/' . $detalle['foto_1_path']) }}', '_blank')"
+                                                    title="Click para ver Foto del Pago 1">
                                                 @endif
-                                                @if($detalle['imagen_2_path'])
-                                                <img src="{{ asset('storage/' . $detalle['imagen_2_path']) }}" alt="Imagen 2"
+                                                @if($detalle['foto_2_path'])
+                                                <img src="{{ asset('storage/' . $detalle['foto_2_path']) }}" alt="Foto Pago 2"
                                                     class="foto-alquiler"
-                                                    onclick="window.open('{{ asset('storage/' . $detalle['imagen_2_path']) }}', '_blank')"
-                                                    title="Click para ver Imagen 2">
+                                                    onclick="window.open('{{ asset('storage/' . $detalle['foto_2_path']) }}', '_blank')"
+                                                    title="Click para ver Foto del Pago 2">
                                                 @endif
-                                                @if($detalle['imagen_3_path'])
-                                                <img src="{{ asset('storage/' . $detalle['imagen_3_path']) }}" alt="Imagen 3"
+                                                @if($detalle['foto_3_path'])
+                                                <img src="{{ asset('storage/' . $detalle['foto_3_path']) }}" alt="Foto Pago 3"
                                                     class="foto-alquiler"
-                                                    onclick="window.open('{{ asset('storage/' . $detalle['imagen_3_path']) }}', '_blank')"
-                                                    title="Click para ver Imagen 3">
+                                                    onclick="window.open('{{ asset('storage/' . $detalle['foto_3_path']) }}', '_blank')"
+                                                    title="Click para ver Foto del Pago 3">
                                                 @endif
                                             </div>
                                         </div>
