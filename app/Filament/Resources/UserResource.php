@@ -104,25 +104,26 @@ class UserResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label(__('Full name'))
+                    ->label(__('Nombre'))
                     ->sortable()
                     ->searchable(),
-                
+                /*
                 Tables\Columns\TextColumn::make('nombres')
                     ->label(__('Nombres'))
                     ->sortable()
                     ->searchable(),
-                
+                */
                 Tables\Columns\TextColumn::make('apellidos')
                     ->label(__('Apellidos'))
                     ->sortable()
                     ->searchable(),
 
+                    /*
                 Tables\Columns\TextColumn::make('email')
                     ->label(__('Email address'))
                     ->sortable()
                     ->searchable(),
-
+*/
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Estado')
                     ->boolean(),
@@ -131,12 +132,13 @@ class UserResource extends Resource
                     ->label(__('Cargo'))
                     ->limit(2),
 
+                    /*
                 Tables\Columns\TextColumn::make('email_verified_at')
                     ->label(__('Email verified at'))
                     ->dateTime()
                     ->sortable()
                     ->searchable(),
-
+*/
                 
                 /* Tables\Columns\TextColumn::make('socials')
                     ->label(__('Linked social networks'))
