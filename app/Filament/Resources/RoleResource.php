@@ -103,7 +103,7 @@ class RoleResource extends Resource
           
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+               // Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
