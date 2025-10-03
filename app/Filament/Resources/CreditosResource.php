@@ -591,7 +591,7 @@ class CreditosResource extends Resource
                                            // ->relationship() // esto asume que tu modelo tiene ->conceptosCredito()
                                             ->schema([
                                                 Select::make('tipo_concepto')
-                                                    ->label('Tipo de Concepto')
+                                                    ->label('Forma de entrega')
                                                     ->options([
                                                         'Efectivo' => 'Efectivo',
                                                         'Yape' => 'Yape',

@@ -724,7 +724,13 @@ class CreditoController extends Controller
                 'success' => true,
                 'message' => 'Crédito cancelado correctamente.',
                 'abono_id' => $abono->id_abono,
-                'monto_cancelado' => $abono->monto_abono
+                'monto_cancelado' => $abono->monto_abono,
+                'saldo_anterior' => $abono->saldo_anterior,
+                'saldo_posterior' => $abono->saldo_posterior,
+                'cliente_id' => $credito->id_cliente,
+                'cliente_nombre' => $credito->cliente->nombre_completo ?? ($credito->cliente->nombre ?? 'Cliente'),
+                // URL sugerida para redirigir a crear nuevo crédito del mismo cliente
+                'redirect_url' => route('filament.resources.creditos.create', ['cliente_id' => $credito->id_cliente])
             ], 200);
 
         } catch (\Exception $e) {

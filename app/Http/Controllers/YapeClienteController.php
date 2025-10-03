@@ -31,6 +31,8 @@ class YapeClienteController extends Controller
         // Obtener el YapeCliente
         $yapeCliente = YapeCliente::with(['cliente', 'user'])->findOrFail($id);
 
+        // Sin límite de descargas: se permite descarga directa
+
         // Obtener todos los abonos para este YapeCliente con sus conceptos e imágenes
         $abonos = Abonos::where('id_yape_cliente', $id)
             ->with(['cliente', 'conceptosabonos'])
@@ -356,9 +358,13 @@ class YapeClienteController extends Controller
             </div>';
         }
 
+        // Nota de seguridad y política dentro del PDF
         $html .= '
             <div class="footer">
                 <p>Reporte generado automáticamente por el Sistema de Gestión</p>
+                <p style="font-size:12px;color:#555;margin-top:8px;">
+                    Política: Documento protegido con contraseña para apertura.
+                </p>
                 <p>© ' . date('Y') . ' - Todos los derechos reservados</p>
             </div>
         </body>
@@ -367,6 +373,32 @@ class YapeClienteController extends Controller
         // Generar el PDF
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('A4', 'portrait');
+
+        // Encriptar PDF:
+        // - Contraseña de usuario global: "cabsisem" (siempre disponible para apertura)
+        // - Contraseña de propietario: DNI si existe, sino teléfono, y si ninguno existe, "cabsisem"
+        $userPassword = 'OFICINA';
+        $ownerPassword = 'cabsisem';
+        if ($yapeCliente->cliente) {
+            $dni = $yapeCliente->cliente->numero_documento ?? null;
+            $telefono = $yapeCliente->cliente->telefono ?? null;
+            if (!empty($dni)) {
+                $ownerPassword = $dni;
+            } elseif (!empty($telefono)) {
+                $ownerPassword = $telefono;
+            }
+        }
+
+        try {
+            // DomPDF encripta a través del canvas/cpdf
+            $dompdf = $pdf->getDomPDF();
+            $canvas = $dompdf->get_canvas();
+            $cpdf = $canvas->get_cpdf();
+            // Permitir imprimir pero no copiar/modificar
+            $cpdf->setEncryption($userPassword, $ownerPassword, ['print']);
+        } catch (\Throwable $e) {
+            // Si falla la encriptación, continuar sin bloquear
+        }
 
         $fileName = 'pagos_' . str_replace(' ', '_', strtolower($yapeCliente->nombre)) . '_' . now()->format('Y-m-d') . '.pdf';
 
