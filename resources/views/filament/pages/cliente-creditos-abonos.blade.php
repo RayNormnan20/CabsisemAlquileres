@@ -51,7 +51,7 @@
                                 </button>
 
                                 <div x-show="open" @click.away="open = false" x-transition
-                                    class="absolute z-50 mt-2 w-[370px] rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black dark:ring-gray-600 ring-opacity-5 p-4 space-y-4">
+                                    class="absolute z-50 mt-2 right-0 md:left-0 w-[350px] md:w-[370px] rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black dark:ring-gray-600 ring-opacity-5 p-4 space-y-4">
 
                                     <div>
                                         <label class="block text-sm text-gray-600 dark:text-gray-200 mb-1">Período:</label>
