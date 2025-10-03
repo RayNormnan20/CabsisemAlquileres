@@ -16,7 +16,16 @@ class UserAccessSettings extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && auth()->user()->can('Manage general settings');
+        // Solo mostrar en navegación para usuarios con rol "Administrador"
+        return auth()->check() && auth()->user()->hasRole('Administrador');
+    }
+
+    public function mount(): void
+    {
+        // Restringir acceso directo a la página: solo "Administrador"
+        if (! auth()->check() || ! auth()->user()->hasRole('Administrador')) {
+            abort(403);
+        }
     }
 
     protected function getHeading(): string
