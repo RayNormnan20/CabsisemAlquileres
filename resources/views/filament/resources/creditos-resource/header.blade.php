@@ -206,6 +206,15 @@ $cliente->loadMissing('creditos');
         <div x-data="{
                     open: false,
                     showDeactivationModal: false,
+                    // Nuevos estados para cancelación con modal
+                    showCancelModal: false,
+                    showCancelResultModal: false,
+                    cancelCreditoId: null,
+                    cancelSaldoActual: 0,
+                    cancelRedirectUrl: '',
+
+                    // Modal de horarios removido, se gestiona en Configuración
+
                     deactivatingCreditId: null,
                     isRenewal: false,
                     mostrarRenovacionCompleta: false,
@@ -791,16 +800,7 @@ $cliente->loadMissing('creditos');
                         @endphp
 
                         @if($creditoActivo)
-                        // Verificar que el saldo actual sea mayor a 0
-                        const saldoActual = {{ $creditoActivo->saldo_actual ?? 0 }};
-
-                        if (saldoActual <= 0) {
-                            alert('No se puede cancelar un crédito con saldo actual de 0 o menor.');
-                            return;
-                        }
-
-                        // Confirmar la cancelación
-                        if (confirm(`¿Está seguro de que desea cancelar este crédito?\nSaldo actual: S/ ${saldoActual.toFixed(2)}`)) {
+                            const saldoActual = {{ $creditoActivo->saldo_actual ?? 0 }};
                             const creditoId = {{ $creditoActivo->id_credito ?? 'null' }};
 
                             if (!creditoId) {
@@ -808,34 +808,54 @@ $cliente->loadMissing('creditos');
                                 return;
                             }
 
-                            fetch('/creditos/cancelar', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
-                                },
-                                body: JSON.stringify({
-                                    credito_id: creditoId
-                                })
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    alert(data.message || 'Crédito cancelado exitosamente.');
-                                    location.reload();
-                                } else {
-                                    alert(data.error || 'Error al cancelar el crédito.');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('Error de conexión al cancelar el crédito.');
-                            });
-                        }
+                            // Mostrar modal de confirmación con saldo actual
+                            this.cancelCreditoId = creditoId;
+                            this.cancelSaldoActual = saldoActual;
+                            this.cancelRedirectUrl = `{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente]) }}`;
+                            this.showCancelModal = true;
                         @else
-                        alert('No hay crédito activo para cancelar.');
+                            alert('No hay crédito activo para cancelar.');
                         @endif
                     },
+
+                    performCancellation() {
+                        if (!this.cancelCreditoId) {
+                            alert('Error: Falta el ID del crédito.');
+                            return;
+                        }
+                        fetch('/creditos/cancelar', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                            },
+                            body: JSON.stringify({ credito_id: this.cancelCreditoId })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Cerrar modal de confirmación y mostrar resultado con saldo 0
+                                this.showCancelModal = false;
+                                this.cancelSaldoActual = 0;
+                                this.showCancelResultModal = true;
+                                // Guardar posible URL de redirección
+                                this.cancelRedirectUrl = data.redirect_url || this.cancelRedirectUrl;
+                            } else {
+                                alert(data.error || 'Error al cancelar el crédito.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error de conexión al cancelar el crédito.');
+                        });
+                    },
+
+                    renewCredit() {
+                        const url = this.cancelRedirectUrl || `{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente]) }}`;
+                        window.location.href = url;
+                    },
+
+                    // saveAccessHours removido. Gestión de horarios en Configuración.
 
                     // Funciones para el modal de renovación
                     showRenovacionSteps() {
@@ -853,6 +873,8 @@ $cliente->loadMissing('creditos');
                 class="inline-flex items-center px-3 py-1 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 Editar Cliente
             </a>
+
+            {{-- Configurar Horario movido a Configuración > Horarios de acceso --}}
 
             @if($cliente->creditos->isNotEmpty())
             {{-- Grupo para el botón Editar Crédito y el Dropdown de Acciones --}}
@@ -1392,6 +1414,89 @@ $cliente->loadMissing('creditos');
                     </div>
                 </div>
             </div>
+
+            {{-- Modal: Confirmar Cancelación --}}
+            <div x-show="showCancelModal" x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div x-show="showCancelModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+                        aria-hidden="true" @click="showCancelModal = false"></div>
+
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                    <div x-show="showCancelModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="sm:flex sm:items-start">
+                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.26-3.168 1.26-4.034 0L.436 4.673A1.875 1.875 0 012.007 2.25h14.536a1.875 1.875 0 011.571 2.423L12 9v3.75M10.125 15.75L12 21.75l-1.875-6zm-.825-4.725L12 11.25m0 0l-1.875-6z" />
+                                    </svg>
+                                </div>
+                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                    <h2 class="text-lg font-semibold text-gray-900">Cancelar Crédito</h2>
+                                    <p class="mt-2 text-sm text-gray-700">Saldo actual: <span class="font-bold">S/ <span x-text="Number(cancelSaldoActual).toFixed(2)"></span></span></p>
+                                    <p class="mt-1 text-sm text-gray-600">¿Está seguro de que desea cancelar este crédito?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="button" @click="performCancellation()"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-white text-base font-medium hover:bg-primary-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                                Confirmar
+                            </button>
+                            <button type="button" @click="showCancelModal = false"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Modal: Resultado de Cancelación y Renovación --}}
+            <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" aria-hidden="true" @click="showCancelResultModal = false"></div>
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                    <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">Abono realizado!</h2>
+                            <p class="mt-2 text-sm text-gray-700">Saldo: <span class="font-bold">S/ <span x-text="Number(cancelSaldoActual).toFixed(2)"></span></span></p>
+                            <p class="mt-2 text-sm text-gray-700">¿Desea renovar el crédito?</p>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="button" @click="renewCredit()"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-white text-base font-medium hover:bg-primary-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                                Aceptar
+                            </button>
+                            <button type="button" @click="showCancelResultModal = false; location.reload();"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Modal de horarios removido --}}
         </div>
 
     </div>

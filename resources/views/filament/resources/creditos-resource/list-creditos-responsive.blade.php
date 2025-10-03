@@ -1,7 +1,7 @@
 {{-- Vista responsiva para listado de créditos --}}
 <x-filament::page>
-<div class="creditos-responsive-container">
-    <style>
+    <div class="creditos-responsive-container">
+        <style>
         .creditos-responsive-container {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
@@ -21,7 +21,7 @@
             background: white;
             margin-bottom: 0.75rem;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             border-left: 4px solid #3b82f6;
         }
@@ -161,7 +161,7 @@
             .mobile-creditos-container {
                 display: none;
             }
-            
+
             .desktop-creditos-table {
                 display: block;
             }
@@ -176,119 +176,124 @@
         .fecha-normal {
             color: #28a745;
         }
-    </style>
+        </style>
 
-    <!-- Diseño para móviles - Cards -->
-    <div class="mobile-creditos-container">
-        @if($records && $records->count() > 0)
+        <!-- Diseño para móviles - Cards -->
+        <div class="mobile-creditos-container">
+            @if($records && $records->count() > 0)
             @foreach($records as $record)
-                <div class="credito-item">
-                    <div class="credito-header">
-                        @if(!property_exists($this, 'clienteId') || !$this->clienteId)
-                            <div class="credito-cliente">{{ $record->cliente->nombre_completo ?? 'Sin cliente' }}</div>
-                        @else
-                            <div class="credito-cliente">Crédito #{{ $record->id_credito }}</div>
-                        @endif
-                        <div class="credito-estado {{ $record->saldo_actual > 0 ? 'estado-activo' : 'estado-pagado' }}">
-                            {{ $record->saldo_actual > 0 ? 'ACTIVO' : 'PAGADO' }}
-                        </div>
-                    </div>
-                    <div class="credito-body">
-                        <div class="credito-info">
-                            <span class="credito-label">Fecha:</span>
-                            <span class="credito-value">{{ $record->fecha_credito->format('d/m/Y') }}</span>
-                        </div>
-                        <div class="credito-info-grid">
-                            <div class="credito-info">
-                                <span class="credito-label">Valor:</span>
-                                <span class="credito-value">S/ {{ number_format($record->valor_credito, 2) }}</span>
-                            </div>
-                            <div class="credito-info">
-                                <span class="credito-label">Saldo:</span>
-                                <span class="credito-value">S/ {{ number_format($record->saldo_actual, 2) }}</span>
-                            </div>
-                        </div>
-                        <div class="credito-info-grid">
-                            <div class="credito-info">
-                                <span class="credito-label">Cuota:</span>
-                                <span class="credito-value">
-                                    @if($record->es_adicional)
-                                        S/ {{ number_format($record->porcentaje_interes, 2) }}
-                                    @else
-                                        S/ {{ number_format($record->valor_cuota, 2) }}
-                                    @endif
-                                </span>
-                            </div>
-                            <div class="credito-info">
-                                <span class="credito-label">Vencimiento:</span>
-                                <span class="credito-value {{ now()->gt($record->fecha_vencimiento) ? 'fecha-vencida' : 'fecha-normal' }}">
-                                    {{ $record->fecha_vencimiento->format('d/m/Y') }}
-                                </span>
-                            </div>
-                        </div>
-                        @if($record->tipoPago)
-                            <div class="credito-info">
-                                <span class="credito-label">Tipo:</span>
-                                <span class="credito-value">{{ $record->tipoPago->nombre }}</span>
-                            </div>
-                        @endif
-                        @if($record->conceptosCredito && $record->conceptosCredito->count() > 0)
-                            <div class="credito-detalle">
-                                <strong>Detalle:</strong>
-                                {{ $record->conceptosCredito->map(fn($c) => "{$c->tipo_concepto}: S/ " . number_format($c->monto, 2))->join(' | ') }}
-                            </div>
-                        @endif
-                        <div class="credito-actions">
-                            @php
-                                // Verificar si el crédito tiene abonos
-                                $tieneAbonos = $record->abonos()->exists();
-                            @endphp
-                            
-                            {{-- Siempre mostrar Ver Historial (accede por crédito específico) --}}
-                            <a href="{{ route('filament.resources.creditos.historial-credito', ['credito' => $record->id_credito]) }}" 
-                               class="credito-action-btn btn-primary">
-                                Ver Historial
-                            </a>
-                            
-                            @if(!$tieneAbonos)
-                                {{-- Si no tiene abonos, también mostrar botón para eliminar --}}
-                                <button onclick="eliminarCredito({{ $record->id_credito }})" 
-                                        class="credito-action-btn btn-danger">
-                                    Eliminar
-                                </button>
-                            @endif
-                            @if($record->conceptosCredito->where('foto_comprobante', '!=', null)->isNotEmpty())
-                                <button class="credito-action-btn btn-secondary" 
-                                        onclick="Livewire.emit('openModal', 'modal-comprobantes', {{ json_encode(['creditoId' => $record->id_credito]) }})">
-                                    Ver Comprobantes
-                                </button>
-                            @endif
-                        </div>
+            <div class="credito-item">
+                <div class="credito-header">
+                    @if(!property_exists($this, 'clienteId') || !$this->clienteId)
+                    <div class="credito-cliente">{{ $record->cliente->nombre_completo ?? 'Sin cliente' }}</div>
+                    @else
+                    <div class="credito-cliente">Crédito #{{ $record->id_credito }}</div>
+                    @endif
+                    <div class="credito-estado {{ $record->saldo_actual > 0 ? 'estado-activo' : 'estado-pagado' }}">
+                        {{ $record->saldo_actual > 0 ? 'ACTIVO' : 'PAGADO' }}
                     </div>
                 </div>
+                <div class="credito-body">
+                    <div class="credito-info">
+                        <span class="credito-label">Fecha:</span>
+                        <span class="credito-value">{{ $record->fecha_credito->format('d/m/Y') }}</span>
+                    </div>
+                    <div class="credito-info-grid">
+                        <div class="credito-info">
+                            <span class="credito-label">Valor:</span>
+                            <span class="credito-value">S/ {{ number_format($record->valor_credito, 2) }}</span>
+                        </div>
+                        <div class="credito-info">
+                            <span class="credito-label">Saldo:</span>
+                            <span class="credito-value">S/ {{ number_format($record->saldo_actual, 2) }}</span>
+                        </div>
+                    </div>
+                    <div class="credito-info-grid">
+                        <div class="credito-info">
+                            <span class="credito-label">Cuota:</span>
+                            <span class="credito-value">
+                                @if($record->es_adicional)
+                                S/ {{ number_format($record->porcentaje_interes, 2) }}
+                                @else
+                                S/ {{ number_format($record->valor_cuota, 2) }}
+                                @endif
+                            </span>
+                        </div>
+                        <div class="credito-info">
+                            <span class="credito-label">Interés:</span>
+                            <span class="credito-value"> {{ number_format($record->porcentaje_interes) }} %</span>
+                        </div>
+                    </div>
+                    <div class="credito-info">
+                        <span class="credito-label">Vencimiento:</span>
+                        <span
+                            class="credito-value {{ now()->gt($record->fecha_vencimiento) ? 'fecha-vencida' : 'fecha-normal' }}">
+                            {{ $record->fecha_vencimiento->format('d/m/Y') }}
+                        </span>
+                    </div>
+                    @if($record->tipoPago)
+                    <div class="credito-info">
+                        <span class="credito-label">Tipo:</span>
+                        <span class="credito-value">{{ $record->tipoPago->nombre }}</span>
+                    </div>
+                    @endif
+                    @if($record->conceptosCredito && $record->conceptosCredito->count() > 0)
+                    <div class="credito-detalle">
+                        <strong>Detalle:</strong>
+                        {{ $record->conceptosCredito->map(fn($c) => "{$c->tipo_concepto}: S/ " . number_format($c->monto, 2))->join(' | ') }}
+                    </div>
+                    @endif
+                    <div class="credito-actions">
+                        @php
+                        // Verificar si el crédito tiene abonos
+                        $tieneAbonos = $record->abonos()->exists();
+                        @endphp
+
+                        {{-- Siempre mostrar Ver Historial (accede por crédito específico) --}}
+                        <a href="{{ route('filament.resources.creditos.historial-credito', ['credito' => $record->id_credito]) }}"
+                            class="credito-action-btn btn-primary">
+                            Ver Historial
+                        </a>
+
+                        @if(!$tieneAbonos)
+                        {{-- Si no tiene abonos, también mostrar botón para eliminar --}}
+                        <button onclick="eliminarCredito({{ $record->id_credito }})"
+                            class="credito-action-btn btn-danger">
+                            Eliminar
+                        </button>
+                        @endif
+                        @if($record->conceptosCredito->where('foto_comprobante', '!=', null)->isNotEmpty())
+                        <button class="credito-action-btn btn-secondary"
+                            onclick="Livewire.emit('openModal', 'modal-comprobantes', {{ json_encode(['creditoId' => $record->id_credito]) }})">
+                            Ver Comprobantes
+                        </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
             @endforeach
-        @else
+            @else
             <div class="empty-state-creditos">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">💳</div>
                 <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Sin créditos disponibles</div>
                 <div>No hay créditos que coincidan con los filtros aplicados.</div>
             </div>
-        @endif
+            @endif
+        </div>
+
+        <!-- Diseño para PC - Tabla original de Filament -->
+        <div class="desktop-creditos-table">
+            {{-- Aquí se renderiza la tabla original de Filament --}}
+            {{ $this->table }}
+        </div>
     </div>
 
-    <!-- Diseño para PC - Tabla original de Filament -->
-    <div class="desktop-creditos-table">
-        {{-- Aquí se renderiza la tabla original de Filament --}}
-        {{ $this->table }}
-    </div>
-</div>
-
-<script>
-function eliminarCredito(creditoId) {
-    if (confirm('¿Está seguro de que desea eliminar este crédito?\n\nEsta acción no se puede deshacer.')) {
-        // Usar Livewire para eliminar el crédito
-        Livewire.emit('eliminarCredito', creditoId);
+    <script>
+    function eliminarCredito(creditoId) {
+        if (confirm('¿Está seguro de que desea eliminar este crédito?\n\nEsta acción no se puede deshacer.')) {
+            // Usar Livewire para eliminar el crédito
+            Livewire.emit('eliminarCredito', creditoId);
+        }
     }
-}
-</script>
+    </script>
 </x-filament::page>

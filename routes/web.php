@@ -30,7 +30,7 @@ Route::post('/mobile-logout', function () {
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    
+
     return response()->json([
         'success' => true,
         'message' => 'Sesión cerrada exitosamente desde dispositivo móvil'
@@ -67,6 +67,9 @@ Route::post('/planilla-recaudador/renovacion', [\App\Filament\Resources\Planilla
 Route::get('/creditos/{credito}/yape-cliente', [CreditoController::class, 'getYapeCliente'])->name('creditos.yape-cliente');
 Route::get('/clientes/{cliente}/yape-cliente-completo', [CreditoController::class, 'getYapeClienteCompleto'])->name('clientes.yape-cliente-completo');
 Route::get('/clientes/{cliente}/yape-clientes', [CreditoController::class, 'getYapeClientes'])->name('clientes.yape-clientes');
+
+// Guardar horarios de acceso del usuario autenticado
+Route::post('/usuarios/horario', [\App\Http\Controllers\UserAccessController::class, 'saveHours'])->middleware(['auth']);
 
 // NUEVAS RUTAS CON CACHÉ (SOLO AGREGAR)
 Route::get('/creditos/activos', [CreditoController::class, 'index'])->name('creditos.activos');

@@ -109,6 +109,7 @@ return [
         'register' => [
             Pages\Dashboard::class,
             \App\Filament\Pages\PagosDelDia::class,
+            \App\Filament\Pages\UserAccessSettings::class,
         ],
     ],
 
@@ -339,7 +340,8 @@ return [
             SubstituteBindings::class,
             DispatchServingFilamentEvent::class,
             MirrorConfigToSubpackages::class,
-            LocaleMiddleware::class
+            LocaleMiddleware::class,
+            \App\Http\Middleware\RestrictAccessHours::class
         ],
     ],
 
