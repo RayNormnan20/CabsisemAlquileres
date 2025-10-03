@@ -108,14 +108,12 @@ class ListResumenAlquiler extends ListRecords
         // Determinar la fecha límite (fecha fin del alquiler o fecha actual, lo que sea menor)
         $fechaLimite = $fechaFin && $fechaFin->lt($fechaActual) ? $fechaFin : $fechaActual;
 
-        // Limitar a máximo 12 meses hacia atrás para evitar demasiados registros
-        $fechaInicioLimitada = $fechaActual->copy()->subMonths(11)->startOfMonth();
-        if ($fechaInicio->lt($fechaInicioLimitada)) {
-            $fechaInicio = $fechaInicioLimitada;
-        }
+        // Mostrar desde el inicio del alquiler (sin limitar a 12 meses)
+        // Mantener inicio de mes para una visualización uniforme
+        $fechaInicio = $fechaInicio->copy()->startOfMonth();
 
         // Generar meses desde el inicio del alquiler hasta la fecha límite
-        $fechaMes = $fechaInicio->copy()->startOfMonth();
+        $fechaMes = $fechaInicio->copy();
 
         while ($fechaMes->lte($fechaLimite->startOfMonth())) {
             $mes = $fechaMes->format('Y-m');
