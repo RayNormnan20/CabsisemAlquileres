@@ -377,7 +377,7 @@ class YapeClienteController extends Controller
         // Encriptar PDF:
         // - Contraseña de usuario global: "cabsisem" (siempre disponible para apertura)
         // - Contraseña de propietario: DNI si existe, sino teléfono, y si ninguno existe, "cabsisem"
-        $userPassword = 'cabsisem';
+        $userPassword = 'OFICINA';
         $ownerPassword = 'cabsisem';
         if ($yapeCliente->cliente) {
             $dni = $yapeCliente->cliente->numero_documento ?? null;
