@@ -457,7 +457,7 @@
     <!-- JavaScript para mostrar/ocultar el footer -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded - Iniciando script del footer');
+            // console.log('DOM loaded - Iniciando script del footer');
             
             // Variable para rastrear el último estado del footer
             let lastFooterState = null;
@@ -472,8 +472,8 @@
                     return;
                 }
                 
-                console.log('🔄 Actualizando contenido del footer con nuevos datos');
-                console.log('📊 Datos recibidos:', data);
+                // console.log('🔄 Actualizando contenido del footer con nuevos datos');
+                // console.log('📊 Datos recibidos:', data);
                 
                 // Generar HTML para pagos mensuales
                 let pagosMensualesHTML = '';
