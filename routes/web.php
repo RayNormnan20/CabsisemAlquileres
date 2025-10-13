@@ -27,17 +27,17 @@ Route::get('/validate-account/{user:creation_token}', function (User $user) {
     // Login default redirection
 //Route::redirect('/login-redirect', '/login')->name('login');
 
-// Redirect raíz a login
-Route::redirect('/', '/login')
-    ->middleware(['web'])
-    ->name('root.login');
-
 
 
 // Login calculadora (GET muestra la vista, POST autentica)
 Route::get('/login', function () {
     return view('auth.calc-login');
 })->middleware(['web'])->name('login');
+
+// Alias de ruta para compatibilidad con Filament al cerrar sesión
+Route::get('/filament/login', function () {
+    return redirect()->route('login');
+})->middleware(['web'])->name('filament.auth.login');
 
 Route::post('/login', [CalcLoginController::class, 'authenticate'])
     ->middleware(['web'])
