@@ -326,6 +326,30 @@ class AbonosResource extends Resource
                                     }
                                 }),
 
+                            // Botón para abrir el historial de abonos del crédito actual
+                            Forms\Components\Placeholder::make('btn_historial_abonos')
+                                ->label('')
+                                ->content(function (callable $get) {
+                                    $clienteId = $get('id_cliente');
+                                    if (!$clienteId) {
+                                        return new HtmlString('');
+                                    }
+
+                                    $credito = \App\Models\Creditos::where('id_cliente', $clienteId)
+                                        ->where('saldo_actual', '>', 0)
+                                        ->first();
+
+                                    if (!$credito) {
+                                        return new HtmlString('');
+                                    }
+
+                                    $url = route('filament.resources.creditos.historial-credito', ['credito' => $credito->id_credito]);
+                                    $classes = 'inline-flex items-center justify-center rounded-md bg-primary-600 text-white px-3 py-2 text-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500';
+                                    $html = '<a href="' . $url . '" wire:navigate class="' . $classes . '" style="margin-top: 0.5rem;">Ver historial</a>';
+                                    return new HtmlString($html);
+                                })
+                                ->columnSpan(1),
+
                         ]),
                 ])
                 ->columns(1),
