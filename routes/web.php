@@ -27,6 +27,12 @@ Route::get('/validate-account/{user:creation_token}', function (User $user) {
     // Login default redirection
 //Route::redirect('/login-redirect', '/login')->name('login');
 
+// Redirect raíz a login
+Route::redirect('/', '/login')
+    ->middleware(['web'])
+    ->name('root.login');
+
+
 
 // Login calculadora (GET muestra la vista, POST autentica)
 Route::get('/login', function () {
