@@ -11,6 +11,7 @@ use App\Http\Controllers\CreditoController;
 use App\Http\Controllers\RutaController;
 use App\Http\Controllers\YapeClienteController;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Auth\CalcLoginController;
 
 // Validate an account
 Route::get('/validate-account/{user:creation_token}', function (User $user) {
@@ -22,8 +23,19 @@ Route::get('/validate-account/{user:creation_token}', function (User $user) {
         DispatchServingFilamentEvent::class
     ]);
 
-// Login default redirection
-Route::redirect('/login-redirect', '/login')->name('login');
+
+    // Login default redirection
+//Route::redirect('/login-redirect', '/login')->name('login');
+
+
+// Login calculadora (GET muestra la vista, POST autentica)
+Route::get('/login', function () {
+    return view('auth.calc-login');
+})->middleware(['web'])->name('login');
+
+Route::post('/login', [CalcLoginController::class, 'authenticate'])
+    ->middleware(['web'])
+    ->name('login.post');
 
 // Mobile logout route
 Route::post('/mobile-logout', function () {
