@@ -80,11 +80,12 @@
             <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-primary-500"
                 onclick="window.location.href='{{ route('filament.resources.clientes.index') }}'">
                 <div class="text-center">
-                    <div class="bg-primary-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                    <!-- Ícono oculto en móvil, visible desde md -->
+                    <div class="bg-primary-100 p-1 rounded-full w-10 h-10 items-center justify-center mx-auto mb-1 hidden md:flex">
                         <x-heroicon-o-users class="w-5 h-5 text-primary-600" />
                     </div>
-                    <h3 class="text-xs font-bold text-gray-800 leading-tight">CLIENTES</h3>
-                    <p class="text-[10px] text-gray-500 leading-tight">{{ $totalClientesRuta }} registrados</p> {{-- ¡CORREGIDO! --}}
+                    <h3 class="text-lg font-semibold text-gray-700">CLIENTES</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">{{ $totalClientesRuta }} registrados</p>
                 </div>
             </div>
 
@@ -92,10 +93,10 @@
             <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-green-500"
                 onclick="window.location.href='{{ route('filament.resources.abonos.index') }}'">
                 <div class="text-center">
-                    <div class="bg-green-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                    <div class="bg-green-100 p-1 rounded-full w-10 h-10 items-center justify-center mx-auto mb-1 hidden md:flex">
                         <x-heroicon-o-cash class="w-5 h-5 text-green-600" />
                     </div>
-                    <h3 class="text-xs font-bold text-gray-800 leading-tight">ABONOS</h3>
+                    <h3 class="text-lg font-semibold text-gray-700">ABONOS</h3>
                     <p class="text-[10px] text-gray-500 leading-tight">{{ $totalAbonosRutaCount }} registrados</p>
                     <p class="text-[10px] text-gray-500 leading-tight">S/ {{ $totalAbonosRutaSum }} abonados</p>
                 </div>
@@ -105,11 +106,11 @@
             <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-indigo-500"
                 onclick="window.location.href='{{ route('filament.resources.creditos.index') }}'">
                 <div class="text-center">
-                    <div class="bg-indigo-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                    <div class="bg-indigo-100 p-1 rounded-full w-10 h-10 items-center justify-center mx-auto mb-1 hidden md:flex">
                         <x-heroicon-o-office-building class="w-5 h-5 text-indigo-600" />
                     </div>
-                    <h3 class="text-xs font-bold text-gray-800 leading-tight">CRÉDITOS</h3>
-                    <p class="text-[10px] text-gray-500 leading-tight">{{ $totalCreditosRutaCount }} activos</p> {{-- ¡CORREGIDO! --}}
+                    <h3 class="text-lg font-semibold text-gray-700">CRÉDITOS</h3>
+                    <p class="text-[10px] text-gray-500 leading-tight">{{ $totalCreditosRutaCount }} activos</p>
                     <p class="text-[10px] text-gray-500 leading-tight">S/ {{ $totalCreditosRutaSum }} otorgados</p>
                 </div>
             </div>
@@ -118,10 +119,10 @@
             <div class="bg-white p-2 rounded-xl shadow cursor-pointer transition hover:scale-105 hover:shadow-xl border-l-4 border-blue-500"
                 onclick="window.location.href='{{ route('filament.pages.pagos-del-dia') }}'">
                 <div class="text-center">
-                    <div class="bg-blue-100 p-1 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-1">
+                    <div class="bg-blue-100 p-1 rounded-full w-10 h-10 items-center justify-center mx-auto mb-1 hidden md:flex">
                         <x-heroicon-o-eye class="w-5 h-5 text-blue-600" />
                     </div>
-                    <h3 class="text-xs font-bold text-gray-800 leading-tight">PAGOS</h3>
+                    <h3 class="text-lg font-semibold text-gray-700">PAGOS</h3>
                     <div class="space-y-1">
                         <div class="flex justify-between items-center">
                             <span class="text-[9px] text-yellow-600 font-medium">YAPE:</span>
@@ -138,6 +139,7 @@
                 </div>
             </div>
         </div>
+
 
     </div>
 </x-filament::card>

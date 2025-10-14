@@ -9,11 +9,18 @@ use App\Filament\Widgets\YapeClientesTableWidget;
 use App\Filament\Widgets\YapesTotalesDelDiaWidget;
 use App\Filament\Widgets\YapeUsuariosWidget;
 use Filament\Pages\Dashboard as BasePage;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Session;
 
 class Dashboard extends BasePage
 {
     protected static bool $shouldRegisterNavigation = false;
+
+    protected function getHeading(): string|Htmlable
+    {
+        // Ocultar el encabezado de la página ("Escritorio")
+        return '';
+    }
 
     public function mount(): void
     {
