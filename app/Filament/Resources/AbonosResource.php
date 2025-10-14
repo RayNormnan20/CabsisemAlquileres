@@ -603,7 +603,7 @@ public static function table(Table $table): Table
                     ->sortable(),
 
                     Tables\Columns\TextColumn::make('conceptosabonos')
-                    ->label('Detalle Entrega')
+                    ->label('Detalle Pago')
                     ->formatStateUsing(function ($record) {
                         return $record->conceptosabonos
                             ->map(fn($c) => "{$c->tipo_concepto}: S/ " . number_format($c->monto, 2))

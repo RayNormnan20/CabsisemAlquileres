@@ -27,6 +27,13 @@ class ViewHistorialCliente extends Page
             // Si viene un cliente directamente
             $this->record = Clientes::findOrFail($cliente);
         }
+
+        // Guardar temporalmente el cliente seleccionado para la página de Abonos
+        // Esto permitirá que al regresar desde Historial se restaure el filtro de cliente una sola vez
+        if ($this->record && $this->record->id_cliente) {
+            session()->put('abonos_cliente_id', $this->record->id_cliente);
+            session()->put('abonos_mostrar_creditos', true);
+        }
     }
 
     public function getTitle(): string

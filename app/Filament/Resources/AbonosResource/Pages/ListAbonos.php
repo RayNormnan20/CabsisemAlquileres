@@ -52,6 +52,19 @@ class ListAbonos extends ListRecords
     {
         parent::mount();
 
+        // Restaurar el cliente seleccionado desde sesión si existe
+        // Se usa pull para que sea TEMPORAL: solo al regresar desde Historial
+        $persistedClienteId = session()->pull('abonos_cliente_id');
+        if ($persistedClienteId && empty($this->clienteId)) {
+            $this->clienteId = $persistedClienteId;
+        }
+
+        // Mostrar créditos automáticamente al volver desde Historial (una sola vez)
+        $mostrarCreditosOnce = session()->pull('abonos_mostrar_creditos', false);
+        if ($mostrarCreditosOnce) {
+            $this->mostrarCreditos = true;
+        }
+
         // Establecer fechas del día actual si no hay filtros aplicados
         if (is_null($this->fechaDesde)) {
             $this->aplicarPeriodo(); // Esto establecerá automáticamente el rango del día actual
@@ -216,6 +229,11 @@ class ListAbonos extends ListRecords
 
     protected function getFooterWidgets(): array
     {
+        // Ocultar el footer cuando se está mostrando la vista de créditos integrada
+        if ($this->mostrarCreditos === true) {
+            return [];
+        }
+
         return [
             \App\Filament\Resources\AbonosResource\Widgets\AbonosFooter::class
 
