@@ -83,6 +83,7 @@
                     <option value="Efectivo">Efectivo</option>
                 </select>
             </div>
+            <!--
             @role('Administrador')
             <div class="flex-6">
                 <select wire:model="rutaId"
@@ -95,6 +96,7 @@
                 </select>
             </div>
             @endrole
+        -->
         </div>
 
         <!-- Segunda fila en móvil: filtros de fecha y botón de abonos -->
@@ -298,6 +300,126 @@
     </div>
     @else
     @endif
+    @endif
+
+    {{-- Vista de Créditos integrada dentro de Abonos (responsive) --}}
+    @if(($mostrarCreditos ?? false) && ($clienteId ?? null))
+        <!-- Oculta completamente la tabla de Filament mientras se muestran los créditos -->
+        <style>
+            .filament-tables-container,
+            .fi-ta,
+            .fi-ta-header,
+            .fi-ta-toolbar,
+            .fi-ta-content,
+            .fi-ta-table,
+            .fi-ta-footer,
+            .fi-ta-pagination {
+                display: none !important;
+            }
+        </style>
+
+        @php
+            // Cargar directamente los créditos del cliente, ordenados por fecha
+            $creditosRecords = \App\Models\Creditos::with(['cliente','tipoPago','conceptosCredito','abonos'])
+                ->where('id_cliente', $clienteId)
+                ->orderByDesc('fecha_credito')
+                ->get();
+
+            $__creditosCount = $creditosRecords->count();
+        @endphp
+
+      
+
+        {{-- Listado de créditos integrado (fallback robusto) --}}
+        <div class="mt-3">
+            @if($creditosRecords->count() > 0)
+                <div class="space-y-3">
+                    @foreach($creditosRecords as $record)
+                        <div class="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow p-3">
+                            <div class="flex items-center justify-between">
+                                <div class="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                                    @php $clienteNombre = optional($record->cliente)->nombre_completo; @endphp
+                                    {{ $clienteNombre ? $clienteNombre : ('Crédito #' . $record->id_credito) }}
+                                </div>
+                                <span class="text-xs font-semibold px-2 py-1 rounded {{ $record->saldo_actual > 0 ? 'bg-green-100 text-green-700 dark:bg-green-600 dark:text-green-100' : 'bg-red-100 text-red-700 dark:bg-red-600 dark:text-red-100' }}">
+                                    {{ $record->saldo_actual > 0 ? 'ACTIVO' : 'PAGADO' }}
+                                </span>
+                            </div>
+
+                            <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-300">Fecha:</span>
+                                    <span class="text-gray-900 dark:text-gray-100">{{ optional($record->fecha_credito)->format('d/m/Y') ?? (is_string($record->fecha_credito) ? \Carbon\Carbon::parse($record->fecha_credito)->format('d/m/Y') : '') }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-300">Valor:</span>
+                                    <span class="text-gray-900 dark:text-gray-100">S/ {{ number_format($record->valor_credito, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-300">Saldo:</span>
+                                    <span class="text-gray-900 dark:text-gray-100">S/ {{ number_format($record->saldo_actual, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-300">Cuota:</span>
+                                    <span class="text-gray-900 dark:text-gray-100">
+                                        @if($record->es_adicional)
+                                            S/ {{ number_format($record->porcentaje_interes, 2) }}
+                                        @else
+                                            S/ {{ number_format($record->valor_cuota, 2) }}
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="credito-info">
+                            <span class="credito-label">Interés:</span>
+                            <span class="credito-value"> {{ number_format($record->porcentaje_interes) }} %</span>
+                        </div>
+                                @if($record->tipoPago)
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-300">Tipo:</span>
+                                    <span class="text-gray-900 dark:text-gray-100">{{ $record->tipoPago->nombre }}</span>
+                                </div>
+                                @endif
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-300">Vencimiento:</span>
+                                    <span class="text-gray-900 dark:text-gray-100 {{ $record->fecha_vencimiento ? (now()->gt($record->fecha_vencimiento) ? 'text-red-600' : 'text-green-600') : '' }}">
+                                        {{ optional($record->fecha_vencimiento)->format('d/m/Y') ?? (is_string($record->fecha_vencimiento) ? \Carbon\Carbon::parse($record->fecha_vencimiento)->format('d/m/Y') : '') }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            @if($record->conceptosCredito && $record->conceptosCredito->count() > 0)
+                                <div class="mt-2 text-xs text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 rounded p-2">
+                                    <strong>Detalle:</strong>
+                                    {{ $record->conceptosCredito->map(function($c){
+                                        try { return "{$c->tipo_concepto}: S/ " . number_format($c->monto, 2); } catch(\Throwable $e) { return "{$c->tipo_concepto}: S/ " . (string) $c->monto; }
+                                    })->join(' | ') }}
+                                </div>
+                            @endif
+
+                            <div class="mt-3 flex flex-row gap-2 sm:gap-3">
+                                @php $tieneAbonos = $record->abonos()->exists(); @endphp
+                                <a href="{{ route('filament.resources.creditos.historial-credito', ['credito' => $record->id_credito]) }}" class="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs sm:text-sm font-semibold rounded-md bg-blue-600 hover:bg-blue-700 text-white">Ver Historial</a>
+                                <!--
+                                @if(!$tieneAbonos)
+                                <button onclick="eliminarCredito({{ $record->id_credito }})" class="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs sm:text-sm font-semibold rounded-md bg-red-600 hover:bg-red-700 text-white">Eliminar</button>
+                                @endif
+                                
+                                @if($record->conceptosCredito->where('foto_comprobante', '!=', null)->isNotEmpty())
+                                    <button class="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs sm:text-sm font-semibold rounded-md bg-gray-600 hover:bg-gray-700 text-white" onclick="Livewire.emit('openModal', 'modal-comprobantes', {{ json_encode(['creditoId' => $record->id_credito]) }})">Ver Comprobantes</button>
+                                @endif
+                                -->
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center p-6 text-gray-600 dark:text-gray-300">
+                    <div class="text-3xl mb-2">💳</div>
+                    <div class="font-semibold mb-1">Sin créditos disponibles</div>
+                    <div>No hay créditos que coincidan con los filtros aplicados.</div>
+                </div>
+            @endif
+        </div>
     @endif
 </div>
 

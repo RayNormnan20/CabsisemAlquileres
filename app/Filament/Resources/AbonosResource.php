@@ -653,6 +653,15 @@ public static function table(Table $table): Table
                     ->tooltip('Exportar Excel con imágenes')
                     ->action(fn ($livewire) => $livewire->exportExcel())
                     ->button(),
+
+                Action::make('Créditos')
+                    ->icon('heroicon-o-collection')
+                    ->tooltip('Ver créditos del cliente')
+                    ->color('primary')
+                    ->disabled(fn ($livewire) => !property_exists($livewire, 'clienteId') || blank($livewire->clienteId))
+                    ->action(fn ($livewire) => method_exists($livewire, 'toggleCreditos') ? $livewire->toggleCreditos() : null)
+                    ->button()
+
             ])
             ->actions([
                 Action::make('edit') // Usando la clase importada directamente

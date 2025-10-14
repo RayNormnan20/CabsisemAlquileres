@@ -85,6 +85,14 @@ class ListAbonos extends ListRecords
         ];
     }
 
+    // Estado para mostrar la vista de créditos dentro de Abonos
+    public bool $mostrarCreditos = false;
+
+    public function toggleCreditos(): void
+    {
+        $this->mostrarCreditos = !$this->mostrarCreditos;
+    }
+
     public function aplicarPeriodo()
     {
         $hoy = Carbon::today();
@@ -201,6 +209,8 @@ class ListAbonos extends ListRecords
             'clienteId' => $this->clienteId,
             'cliente' => $this->clienteId ? Clientes::with(['creditos', 'abonos'])->find($this->clienteId) : null,
             'tipoConcepto' => $this->tipoConcepto,
+            // Pasamos el estado del toggle para que el header decida si mostrar la lista de créditos
+            'mostrarCreditos' => $this->mostrarCreditos,
         ]);
     }
 
@@ -291,6 +301,56 @@ public function updated($name)
         $filename = 'abonos_' . now()->format('Y-m-d_H-i') . '.xlsx';
 
         return Excel::download(new AbonosExport($query), $filename);
+    }
+
+    // --- Watchers de Livewire para restablecer los abonos al cambiar filtros ---
+    public function updatedClienteId($value): void
+    {
+        $this->mostrarCreditos = false;
+        $this->emit('filter-abonos', [
+            'clienteId' => $this->clienteId,
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
+            'tipoConcepto' => $this->tipoConcepto
+        ]);
+    }
+
+    public function updatedFechaDesde($value): void
+    {
+        $this->mostrarCreditos = false;
+        $this->emit('filter-abonos', [
+            'clienteId' => $this->clienteId,
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
+            'tipoConcepto' => $this->tipoConcepto
+        ]);
+    }
+
+    public function updatedFechaHasta($value): void
+    {
+        $this->mostrarCreditos = false;
+        $this->emit('filter-abonos', [
+            'clienteId' => $this->clienteId,
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
+            'tipoConcepto' => $this->tipoConcepto
+        ]);
+    }
+
+    public function updatedTipoConcepto($value): void
+    {
+        $this->mostrarCreditos = false;
+        $this->emit('filter-abonos', [
+            'clienteId' => $this->clienteId,
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
+            'tipoConcepto' => $this->tipoConcepto
+        ]);
+    }
+
+    public function updatedPeriodoSeleccionado($value): void
+    {
+        $this->mostrarCreditos = false;
     }
 
 }
