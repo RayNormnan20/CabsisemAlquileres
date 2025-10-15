@@ -19,7 +19,7 @@ class ListPlanillaRecaudadors extends ListRecords
     protected static string $resource = PlanillaRecaudadorResource::class;
 
     public ?string $ordenarPor = 'ruta';
-    public ?string $estadoCredito = 'todos';
+    public ?string $estadoCredito = 'activos';
     public ?string $rutaId = null;
     public bool $filtrosValidos = true;
 
