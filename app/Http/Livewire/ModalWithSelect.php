@@ -59,6 +59,16 @@ class ModalWithSelect extends Component
                 'selected_ruta_name' => $ruta->nombre_completo ?? $ruta->nombre,
             ]);
 
+            // Persistir la última ruta seleccionada en el usuario
+            if ($user = auth()->user()) {
+                try {
+                    $user->last_selected_ruta_id = $ruta->id_ruta;
+                    $user->save();
+                } catch (\Throwable $e) {
+                    // Silenciar errores para no interrumpir la experiencia del usuario
+                }
+            }
+
             Notification::make()
                 ->title('Opción seleccionada: ' . ($ruta->nombre_completo ?? $ruta->nombre))
                 ->success()
@@ -71,40 +81,14 @@ class ModalWithSelect extends Component
         return redirect()->to(request()->header('Referer'));
 
     }
-    
-    /* public function updatedSelectedOption($value)
-    {   
-        $selectedRutaId = null;
-        $newLabel = 'Ruta';
-        
-        
+
+    // Al cambiar la opción en el select, ejecutar automáticamente la acción de "Seleccionar"
+    public function updatedSelectedOption($value)
+    {
         if (!empty($value)) {
-            $selectedRuta = $this->rutas->firstWhere('id_ruta', $value);
-            if ($selectedRuta) {
-                $selectedRutaId = $selectedRuta->id_ruta;
-                // Usa el atributo accesorio 'nombre_completo' si lo definiste
-                $newLabel = $selectedRuta->nombre_completo ?? $selectedRuta->nombre;
-            }
+            $this->confirmSelection();
         }
-        
-        $this->emitTo('route-button', 'optionSelectedInModal', $newLabel);
-        
-        $this->emit('routeSelected', $selectedRutaId, $newLabel); 
-        
-        Notification::make()
-        ->title('Opción seleccionada: ' . $newLabel)
-        ->success()
-        ->send();
-        
-        if ($this->routeButtonComponentId) {
-            $this->emitTo('route-button', 'optionSelectedInModal', $newLabel);
-        } else {
-            
-            $this->emit('optionSelectedInModal', $newLabel);
-        }
-        
-        $this->closeModal(); 
-    } */
+    }
     
     public function render()
     {

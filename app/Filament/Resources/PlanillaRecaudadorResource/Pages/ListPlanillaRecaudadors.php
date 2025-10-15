@@ -29,10 +29,24 @@ class ListPlanillaRecaudadors extends ListRecords
         
         // Verificar si hay una ruta seleccionada en la sesión
         if (!Session::has('selected_ruta_id')) {
-            // Si no hay, cargar la primera ruta activa del usuario
             $user = auth()->user();
-            $ruta = $user->rutas()->where('activa', true)->first();
-            
+            $ruta = null;
+
+            // 1) Priorizar la última ruta persistida en el usuario
+            if (!empty($user->last_selected_ruta_id)) {
+                $ruta = Ruta::find($user->last_selected_ruta_id);
+            }
+
+            // 2) Si no existe, tomar la primera ruta activa asignada al usuario
+            if (!$ruta) {
+                $ruta = $user->rutas()->where('activa', true)->first();
+            }
+
+            // 3) Si el usuario no tiene rutas activas, tomar la primera activa global
+            if (!$ruta) {
+                $ruta = Ruta::where('activa', true)->first();
+            }
+
             if ($ruta) {
                 Session::put('selected_ruta_id', $ruta->id_ruta);
                 Session::put('selected_ruta_name', $ruta->nombre_completo ?? $ruta->nombre);

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use App\Models\Ruta;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -53,16 +54,33 @@ class EnsureSelectedRoute
             return $next($request);
         }
 
-        if (!Session::has('selected_ruta_id') || Session::get('selected_ruta_id') === null) {
-            $ruta = $user->rutas()->where('activa', true)->first();
+        // Forzar sincronización con la ruta persistida en el primer request autenticado
+        $initializedKey = 'route_initialized_for_user';
+        $alreadyInitialized = Session::get($initializedKey) === $user->id;
+        $currentSelected = Session::get('selected_ruta_id');
+        $persistedSelected = !empty($user->last_selected_ruta_id) ? (int) $user->last_selected_ruta_id : null;
 
-            if ($ruta) {
-                $rutaId = $ruta->id_ruta;
-                $rutaName = $ruta->nombre_completo ?? $ruta->nombre;
-            } else {
-                $rutaId = null;
-                $rutaName = 'Ruta';
+        // Inicializar si nunca se hizo o si la sesión no coincide con lo persistido
+        if (!$alreadyInitialized || $currentSelected !== $persistedSelected) {
+            $ruta = null;
+
+            // 1) Priorizar la ruta persistida en el usuario
+            if (!empty($user->last_selected_ruta_id)) {
+                $ruta = Ruta::where('id_ruta', $user->last_selected_ruta_id)->first();
             }
+
+            // 2) Si no existe, caer a la primera ruta activa del usuario
+            if (!$ruta) {
+                $ruta = $user->rutas()->where('activa', true)->first();
+            }
+
+            // 3) Si el usuario no tiene rutas activas asignadas, tomar la primera activa global
+            if (!$ruta) {
+                $ruta = Ruta::where('activa', true)->first();
+            }
+
+            $rutaId = $ruta ? $ruta->id_ruta : null;
+            $rutaName = $ruta ? ($ruta->nombre_completo ?? $ruta->nombre) : 'Ruta';
 
             Session::put('selected_ruta_id', $rutaId);
             Session::put('selected_ruta_name', $rutaName);
@@ -71,6 +89,9 @@ class EnsureSelectedRoute
                 'id' => $rutaId,
                 'name' => $rutaName,
             ]);
+
+            // Marcar que ya inicializamos la ruta para este usuario en esta sesión
+            Session::put($initializedKey, $user->id);
         }
 
         return $next($request);
