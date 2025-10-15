@@ -70,7 +70,7 @@ class ModalWithSelect extends Component
             }
 
             Notification::make()
-                ->title('Opción seleccionada: ' . ($ruta->nombre_completo ?? $ruta->nombre))
+                ->title('Ruta seleccionada: ' . ($ruta->nombre_completo ?? $ruta->nombre))
                 ->success()
                 ->send();
 
