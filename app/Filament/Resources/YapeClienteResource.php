@@ -129,9 +129,7 @@ public static function form(Form $form): Form
                     ->icon('heroicon-o-trash')
                     ->requiresConfirmation(),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

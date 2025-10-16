@@ -349,9 +349,7 @@ HTML;
                     ->successNotificationTitle('Pago eliminado')
                     ->visible(fn () => auth()->user()->can('Eliminar Pagos Alquiler')),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ])
+            ->bulkActions([])
             ->defaultSort('fecha_pago', 'desc');
     }
 

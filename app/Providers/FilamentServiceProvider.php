@@ -35,6 +35,7 @@ class FilamentServiceProvider extends ServiceProvider
                 Filament::registerNavigationItems([
                     NavigationItem::make('Liquidaciones')
                         ->url(ClienteCreditosAbonos::getUrl())
+                        ->isActiveWhen(fn (): bool => request()->url() === url(ClienteCreditosAbonos::getUrl()))
                         ->icon('heroicon-o-document-report')
                         ->group('Movimientos')
                         ->sort(4)
@@ -46,6 +47,7 @@ class FilamentServiceProvider extends ServiceProvider
                 Filament::registerNavigationItems([
                     NavigationItem::make('Trasladar Clientes')
                         ->url(TrasladarClientes::getUrl())
+                        ->isActiveWhen(fn (): bool => request()->url() === url(TrasladarClientes::getUrl()))
                         ->icon('heroicon-o-switch-horizontal')
                         ->group('Movimientos')
                         ->sort(4)

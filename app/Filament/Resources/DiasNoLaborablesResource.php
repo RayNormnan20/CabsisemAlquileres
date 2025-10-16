@@ -133,9 +133,7 @@ class DiasNoLaborablesResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ])
+            ->bulkActions([])
             ->defaultSort('fecha', 'desc');
     }
 

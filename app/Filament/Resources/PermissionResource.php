@@ -34,6 +34,10 @@ class PermissionResource extends Resource
         return __('Configuración');
     }
 
+    // Permite ocultar la vista del panel
+    protected static bool $shouldRegisterNavigation = false;
+
+
 
     public static function form(Form $form): Form
     {
@@ -76,9 +80,7 @@ class PermissionResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

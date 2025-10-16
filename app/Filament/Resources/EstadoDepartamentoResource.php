@@ -76,9 +76,11 @@ class EstadoDepartamentoResource extends Resource
     {
         return $table
             ->columns([
+                /*
                 TextColumn::make('id_estado_departamento')
                     ->label('#')
                     ->sortable(),
+                    */
 
                 TextColumn::make('nombre')
                     ->searchable()
@@ -127,9 +129,7 @@ class EstadoDepartamentoResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getPages(): array

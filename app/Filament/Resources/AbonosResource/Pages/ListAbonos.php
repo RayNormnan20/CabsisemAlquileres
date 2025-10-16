@@ -371,4 +371,10 @@ public function updated($name)
         $this->mostrarCreditos = false;
     }
 
+    // Desactivar completamente acciones masivas y ocultar los checkboxes de selección
+    protected function getTableBulkActions(): array
+    {
+        return [];
+    }
+
 }
