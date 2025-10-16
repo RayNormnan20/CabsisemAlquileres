@@ -127,7 +127,7 @@ class MobileSessionManager {
             this.handleWindowFocus();
         });
 
-        // Detectar inactividad (reducido a 30 segundos)
+        // Detectar inactividad (ajustado a 60 segundos)
         this.setupInactivityTimer();
     }
 
@@ -136,7 +136,7 @@ class MobileSessionManager {
      */
     setupInactivityTimer() {
         let inactivityTimer;
-        const INACTIVITY_TIMEOUT = 30000; // Aumentado de 5 a 15 segundos
+        const INACTIVITY_TIMEOUT = 60000; // 1 minuto de inactividad
 
         const resetTimer = () => {
             clearTimeout(inactivityTimer);
@@ -150,7 +150,7 @@ class MobileSessionManager {
                     // Android necesita más tiempo debido al teclado virtual
                     timeoutDuration = this.isAndroid ? 120000 : 90000; // Aumentado: 2min Android, 1.5min otros
                 } else if (this.isAndroid) {
-                    timeoutDuration = 30000; // Android general más tiempo (aumentado de 8s a 30s)
+                    timeoutDuration = 60000; // Android general: 1 minuto
                 }
                 inactivityTimer = setTimeout(() => {
                     this.logWithDebounce('Inactividad detectada - logout móvil');
