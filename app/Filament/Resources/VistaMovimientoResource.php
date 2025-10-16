@@ -39,6 +39,10 @@ class VistaMovimientoResource extends Resource
             TextColumn::make('usuario')
                 ->label('Usuario'),
 
+            TextColumn::make('cliente')
+                ->label('Cliente')
+                ->searchable(),
+
             TextColumn::make('concepto')
                 ->label('Concepto')
                 ->searchable(),

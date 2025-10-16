@@ -603,13 +603,23 @@ public static function table(Table $table): Table
                     ->sortable(),
 
                     Tables\Columns\TextColumn::make('conceptosabonos')
-                    ->label('Detalle Pago')
+                    ->label('Detalle')
                     ->formatStateUsing(function ($record) {
                         return $record->conceptosabonos
-                            ->map(fn($c) => "{$c->tipo_concepto}: S/ " . number_format($c->monto, 2))
+                            ->map(fn($c) => $c->tipo_concepto)
                             ->join(' | ');
                     })
                     ->wrap() // para que no se desborde si es muy largo
+                    ->searchable(false),
+
+                Tables\Columns\TextColumn::make('conceptosabonos_monto')
+                    ->label('Monto')
+                    ->formatStateUsing(function ($record) {
+                        return $record->conceptosabonos
+                            ->map(fn($c) => "S/ " . number_format($c->monto, 2))
+                            ->join(' | ');
+                    })
+                    ->wrap()
                     ->searchable(false),
             ])
             ->filters([

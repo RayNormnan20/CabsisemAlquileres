@@ -4,7 +4,7 @@ SELECT
     'Abono' AS tipo_movimiento,
     a.fecha_pago AS fecha,
     a.monto_abono AS monto,
-    c.nombre AS cliente,
+     CONCAT(c.nombre, ' ', c.apellido) AS cliente,
     u.name AS usuario,
     co.nombre AS concepto,
     co.tipo AS tipo_concepto,
@@ -22,7 +22,7 @@ SELECT
     'Crédito' AS tipo_movimiento,
     cr.fecha_credito AS fecha,
     cr.valor_credito AS monto,
-    c2.nombre AS cliente,
+    CONCAT(c2.nombre, ' ', c2.apellido) AS cliente,
     (
         SELECT u2.name FROM users u2
         JOIN usuario_ruta ur ON ur.user_id = u2.id
