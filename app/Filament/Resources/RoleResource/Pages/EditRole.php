@@ -13,8 +13,16 @@ class EditRole extends EditRecord
     protected function getActions(): array
     {
         return [
-            Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
+           // Actions\ViewAction::make(),
+          //  Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function afterSave(): void
+    {
+        // Leer directamente del estado Livewire para incluir cambios hechos desde la vista personalizada
+        $permissions = data_get($this, 'data.permissions', []);
+        // Sincroniza permisos seleccionados explícitamente, asegurando que se registren en el rol
+        $this->record->permissions()->sync($permissions);
     }
 }

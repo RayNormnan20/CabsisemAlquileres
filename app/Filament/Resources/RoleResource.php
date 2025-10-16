@@ -8,6 +8,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use Filament\Forms;
 use Filament\Resources\Form;
+use Filament\Forms\Components\View;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
@@ -50,11 +51,27 @@ class RoleResource extends Resource
                                     ->maxLength(255)
                                     ->required(),
 
-                                Forms\Components\CheckboxList::make('permissions')
-                                    ->label(__('Permissions'))
-                                    ->required()
-                                    ->columns(4)
-                                    ->relationship('permissions', 'name'),
+                                // Vista personalizada expandible para agrupar los permisos por módulo
+                                View::make('filament.resources.role.permissions-tree')
+                                    ->viewData([
+                                        'permissions' => Permission::orderBy('name')->get(),
+                                    ])
+                                    ->columnSpanFull(),
+
+                                // Campo oculto para inicializar el estado de permisos en el formulario sin dehidratar al guardar
+                                Forms\Components\Hidden::make('permissions')
+                                    ->default(fn ($record) => $record?->permissions()->pluck('id')->all() ?? [])
+                                    ->dehydrated(false)
+                                    ->afterStateHydrated(function (Forms\Components\Hidden $component, $state) {
+                                        // Si no hay estado aún, hidratar desde el record para preselección en edición
+                                        if (is_array($state) && count($state)) {
+                                            return;
+                                        }
+
+                                        $livewire = $component->getLivewire();
+                                        $record = method_exists($livewire, 'getRecord') ? $livewire->getRecord() : ($livewire->record ?? null);
+                                        $component->state($record ? $record->permissions()->pluck('id')->all() : []);
+                                    }),
                             ]),
                     ])
             ]);
