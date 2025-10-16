@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
 use App\Filament\Widgets\PlanillaRecaudadorWebSocketWidget;
+use Carbon\Carbon;
 
 class ListPlanillaRecaudadors extends ListRecords
 {
@@ -106,6 +107,10 @@ class ListPlanillaRecaudadors extends ListRecords
             ->when($this->estadoCredito === 'cancelados', function (Builder $query) {
                 return $query->where('saldo_actual', '<=', 0);
             })
+            ->when($this->estadoCredito === 'vencidos', function (Builder $query) {
+                return $query->whereDate('fecha_vencimiento', '<', Carbon::now())
+                             ->where('saldo_actual', '>', 0);
+            })
             // Removemos el filtro de 'adicionales' para mostrar ambos tipos
             ->when($this->rutaId, function (Builder $query) {
                 return $query->where('id_ruta', $this->rutaId);
@@ -145,12 +150,22 @@ class ListPlanillaRecaudadors extends ListRecords
             'cuota' => $creditosAdicionales->sum('cuota_real')
         ];
         
-        $totalGeneral = [
-            'credito' => $totalesRegulares['credito'] + $totalesAdicionales['credito'],
-            'abonos' => $totalesRegulares['abonos'] + $totalesAdicionales['abonos'],
-            'saldo' => $totalesRegulares['saldo'] + $totalesAdicionales['saldo'],
-            'cuota' => $totalesRegulares['cuota'] + $totalesAdicionales['cuota']
-        ];
+        // Ajustar Total General según la selección
+        if ($this->estadoCredito === 'adicionales') {
+            $totalGeneral = [
+                'credito' => $totalesAdicionales['credito'],
+                'abonos' => $totalesAdicionales['abonos'],
+                'saldo' => $totalesAdicionales['saldo'],
+                'cuota' => $totalesAdicionales['cuota']
+            ];
+        } else {
+            $totalGeneral = [
+                'credito' => $totalesRegulares['credito'] + $totalesAdicionales['credito'],
+                'abonos' => $totalesRegulares['abonos'] + $totalesAdicionales['abonos'],
+                'saldo' => $totalesRegulares['saldo'] + $totalesAdicionales['saldo'],
+                'cuota' => $totalesRegulares['cuota'] + $totalesAdicionales['cuota']
+            ];
+        }
         
         return view('filament.resources.planilla-recaudador-resource.footer', [
             'creditosRegulares' => $creditosRegulares,
@@ -162,7 +177,7 @@ class ListPlanillaRecaudadors extends ListRecords
         ]);
     }
 
-   protected function getTableQuery(): Builder
+    protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery()
             ->when($this->estadoCredito === 'activos', function (Builder $query) {
@@ -170,6 +185,10 @@ class ListPlanillaRecaudadors extends ListRecords
             })
             ->when($this->estadoCredito === 'cancelados', function (Builder $query) {
                 return $query->where('saldo_actual', '<=', 0);
+            })
+            ->when($this->estadoCredito === 'vencidos', function (Builder $query) {
+                return $query->whereDate('fecha_vencimiento', '<', Carbon::now())
+                             ->where('saldo_actual', '>', 0);
             })
             ->when($this->estadoCredito === 'adicionales', function (Builder $query) {
                 return $query->where('es_adicional', 1);
@@ -280,6 +299,10 @@ class ListPlanillaRecaudadors extends ListRecords
             ->when($this->estadoCredito === 'cancelados', function (Builder $query) {
                 return $query->where('saldo_actual', '<=', 0);
             })
+            ->when($this->estadoCredito === 'vencidos', function (Builder $query) {
+                return $query->whereDate('fecha_vencimiento', '<', Carbon::now())
+                             ->where('saldo_actual', '>', 0);
+            })
             ->when($this->estadoCredito === 'adicionales', function (Builder $query) {
                 return $query->where('es_adicional', 1);
             })
@@ -329,13 +352,22 @@ class ListPlanillaRecaudadors extends ListRecords
             ]
         ]);
 
-        // Calcular totales generales
-        $totalGeneral = [
-            'credito' => $creditosRegulares->sum('valor_credito') + $creditosAdicionales->sum('valor_credito'),
-            'abonos' => $creditosRegulares->sum('total_abonos') + $creditosAdicionales->sum('total_abonos'),
-            'saldo' => $creditosRegulares->sum('saldo_actual') + $creditosAdicionales->sum('saldo_actual'),
-            'cuota' => $creditosRegulares->sum('valor_cuota') + $creditosAdicionales->sum('cuota_real')
-        ];
+        // Calcular totales generales respetando selección
+        if ($this->estadoCredito === 'adicionales') {
+            $totalGeneral = [
+                'credito' => $creditosAdicionales->sum('valor_credito'),
+                'abonos' => $creditosAdicionales->sum('total_abonos'),
+                'saldo' => $creditosAdicionales->sum('saldo_actual'),
+                'cuota' => $creditosAdicionales->sum('cuota_real')
+            ];
+        } else {
+            $totalGeneral = [
+                'credito' => $creditosRegulares->sum('valor_credito') + $creditosAdicionales->sum('valor_credito'),
+                'abonos' => $creditosRegulares->sum('total_abonos') + $creditosAdicionales->sum('total_abonos'),
+                'saldo' => $creditosRegulares->sum('saldo_actual') + $creditosAdicionales->sum('saldo_actual'),
+                'cuota' => $creditosRegulares->sum('valor_cuota') + $creditosAdicionales->sum('cuota_real')
+            ];
+        }
 
         $pdf = Pdf::loadView('filament.resources.pdf.planilla-recaudador', [
             'creditosRegulares' => $creditosRegulares,

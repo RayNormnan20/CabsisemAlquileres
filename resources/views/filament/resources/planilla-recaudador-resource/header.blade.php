@@ -117,6 +117,7 @@
                 <option value="activos">Créditos Activos</option>
                 <option value="cancelados">Créditos Cancelados</option>
                 <option value="adicionales">Créditos Adicionales</option>
+                <option value="vencidos">Créditos Vencidos</option>
             </select>
         </div>
     </div>
