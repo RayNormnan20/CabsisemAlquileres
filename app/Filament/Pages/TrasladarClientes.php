@@ -21,6 +21,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Actions\Action;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class TrasladarClientes extends Page implements HasForms
@@ -44,7 +45,7 @@ class TrasladarClientes extends Page implements HasForms
 
     public $rutaOrigen = null;
     public $rutaDestino = null;
-    public $tipoTraslado = 'solo_saldo';
+    public $tipoTraslado = 'historial_completo';
     public $clientesSeleccionados = [];
     public $clientesDisponibles = [];
     public $clientesConDatos = [];
@@ -54,7 +55,7 @@ class TrasladarClientes extends Page implements HasForms
         $this->clientesSeleccionados = [];
         $this->clientesDisponibles = [];
         $this->clientesConDatos = [];
-        $this->tipoTraslado = 'solo_saldo';
+        $this->tipoTraslado = 'historial_completo';
 
         // Obtener la ruta de la sesión como ruta de origen por defecto
         $rutaSesion = Session::get('selected_ruta_id');
@@ -64,7 +65,7 @@ class TrasladarClientes extends Page implements HasForms
         $this->form->fill([
             'rutaOrigen' => $rutaSesion,
             'rutaDestino' => null,
-            'tipoTraslado' => 'solo_saldo',
+            'tipoTraslado' => 'historial_completo',
             'clientesSeleccionados' => [],
         ]);
 
@@ -180,10 +181,10 @@ class TrasladarClientes extends Page implements HasForms
                             'solo_saldo' => 'Trasladar solo el saldo',
                             'historial_completo' => 'Trasladar historial completo',
                         ])
-                        ->default('solo_saldo')
+                        ->default('historial_completo')
                         ->reactive()
                         ->afterStateUpdated(function ($state) {
-                            $this->tipoTraslado = is_string($state) ? $state : 'solo_saldo';
+                            $this->tipoTraslado = is_string($state) ? $state : 'historial_completo';
                         }),
                 ])
         ];
@@ -295,7 +296,23 @@ class TrasladarClientes extends Page implements HasForms
                         'ruta_destino_id' => $this->rutaDestino
                     ];
 
+                    // Actualizar la ruta del cliente
                     $cliente->update(['id_ruta' => $this->rutaDestino]);
+
+                    // Si es traslado historial completo, también actualizar los créditos
+                    if ($this->tipoTraslado === 'historial_completo') {
+                        // Log para depuración
+                        Log::info("TRASLADO HISTORIAL COMPLETO - Cliente ID: {$cliente->id_cliente}, Tipo: {$this->tipoTraslado}, Ruta destino: {$this->rutaDestino}");
+
+                        // Actualizar todos los créditos del cliente a la nueva ruta
+                        $creditosActualizados = Creditos::where('id_cliente', $cliente->id_cliente)
+                                                       ->update(['id_ruta' => $this->rutaDestino]);
+
+                        Log::info("CRÉDITOS ACTUALIZADOS: {$creditosActualizados} créditos del cliente {$cliente->id_cliente}");
+                    } else {
+                        Log::info("TRASLADO SOLO SALDO - Cliente ID: {$cliente->id_cliente}, Tipo: {$this->tipoTraslado}");
+                    }
+
                     $clientesTrasladados++;
                 }
             }
@@ -341,13 +358,13 @@ class TrasladarClientes extends Page implements HasForms
             $this->clientesConDatos = [];
             $this->rutaDestino = null;
             $this->rutaOrigen = $rutaSesion;
-            $this->tipoTraslado = 'solo_saldo';
+            $this->tipoTraslado = 'historial_completo';
 
             // Llenar el formulario con la ruta de la sesión preseleccionada
             $this->form->fill([
                 'rutaOrigen' => $rutaSesion,
                 'rutaDestino' => null,
-                'tipoTraslado' => 'solo_saldo',
+                'tipoTraslado' => 'historial_completo',
                 'clientesSeleccionados' => [],
             ]);
 
