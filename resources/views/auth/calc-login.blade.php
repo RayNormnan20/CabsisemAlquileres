@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Login</title>
     <style>
         :root { --bg:#2f3b46; --panel:#3b4854; --accent:#f0c419; --text:#e5eef5; --muted:#94a3b8; }
         * { box-sizing:border-box; }
         body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
         .wrap { min-height:100vh; display:grid; place-items:center; padding:48px 24px; }
-        .calc { width:320px; max-width:95vw; background:var(--panel); border-radius:12px; box-shadow:0 16px 36px rgba(0,0,0,.35); overflow:hidden; }
+        .calc { width:320px; max-width:95vw; background:var(--panel); border-radius:12px; box-shadow:0 16px 36px rgba(0,0,0,.35); overflow:hidden; touch-action: manipulation; }
         .bar { height:6px; background:var(--accent); }
         .screen { padding:32px 16px; text-align:right; font-size:28px; min-height:140px; display:flex; flex-direction:column; justify-content:center; gap:10px; }
         .label { font-size:13px; color:var(--muted); text-align:left; }
@@ -18,7 +18,9 @@
         .btn { appearance:none; border:0; background:var(--panel); color:var(--text); padding:24px 0; font-size:20px; cursor:pointer; transition:background .15s ease; }
         .btn:hover { background:#4a5662; }
         .btn.op { color:var(--muted); }
-        .btn.eq { background:#415365; color:#fff; }
+        /* Agrandar el botón '=' para mejor legibilidad */
+        .btn.eq { font-size:28px; font-weight:600; }
+
         .btn.wide { grid-column:span 2; }
         .hidden { display:none; }
         @media (min-width:480px){ .calc{ width:360px; } }
@@ -29,6 +31,8 @@
             .screen{ min-height:30vh; font-size:32px; padding:40px 16px; }
             .grid{ height:70vh; grid-template-rows:repeat(5,1fr); }
             .btn{ padding:0; font-size:22px; }
+            /* Mantener el '=' más grande también en móvil */
+            .btn.eq{ font-size:26px; }
         }
     </style>
 </head>
@@ -74,6 +78,23 @@
 
 <script>
     (function(){
+        // Bloquear zoom en móviles (pinch y doble tap)
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        document.addEventListener('gesturechange', (e) => e.preventDefault());
+        document.addEventListener('gestureend', (e) => e.preventDefault());
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) { e.preventDefault(); }
+            lastTouchEnd = now;
+        }, { passive: false });
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) { e.preventDefault(); }
+        }, { passive: false });
+        document.addEventListener('touchmove', (e) => {
+            if (e.scale && e.scale !== 1) { e.preventDefault(); }
+        }, { passive: false });
+
         const display = document.getElementById('display');
         const error = document.getElementById('errorArea');
         const loginInput = document.getElementById('loginInput');
