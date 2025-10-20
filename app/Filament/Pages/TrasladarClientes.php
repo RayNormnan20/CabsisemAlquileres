@@ -231,6 +231,13 @@ class TrasladarClientes extends Page implements HasForms
                 ];
             }
 
+            // Ordenar alfabéticamente A→Z por nombre (case-insensitive)
+            asort($options, SORT_NATURAL | SORT_FLAG_CASE);
+            $clientesConDatos = collect($clientesConDatos)
+                ->sortBy(fn($c) => mb_strtolower($c['nombre']))
+                ->values()
+                ->toArray();
+
             $this->clientesDisponibles = $options;
             $this->clientesConDatos = $clientesConDatos;
         } catch (\Exception $e) {
