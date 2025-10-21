@@ -206,7 +206,8 @@ class ReportesCristian extends Page implements HasForms
         $fechaFin = $this->fechaHasta ?? now()->format('Y-m-d');
 
         $query = Abonos::query()
-            ->whereBetween('fecha_pago', [$fechaInicio, $fechaFin]);
+            ->whereDate('fecha_pago', '>=', $fechaInicio)
+            ->whereDate('fecha_pago', '<=', $fechaFin);
 
         // Filtrar por ruta si no es "todas"
         if ($this->rutaSeleccionada && $this->rutaSeleccionada !== 'todas') {
@@ -223,7 +224,8 @@ class ReportesCristian extends Page implements HasForms
         // Total por tipo de pago usando ConceptoAbono
         $conceptosQuery = ConceptoAbono::query()
             ->whereHas('abono', function ($q) use ($fechaInicio, $fechaFin) {
-                $q->whereBetween('fecha_pago', [$fechaInicio, $fechaFin]);
+                $q->whereDate('fecha_pago', '>=', $fechaInicio)
+                  ->whereDate('fecha_pago', '<=', $fechaFin);
                 if ($this->rutaSeleccionada && $this->rutaSeleccionada !== 'todas') {
                     $q->whereHas('credito.cliente', function ($subQ) {
                         $subQ->whereHas('ruta', function ($rutaQ) {
@@ -240,7 +242,8 @@ class ReportesCristian extends Page implements HasForms
         // Cargar datos de créditos para el reporte de préstamos entregados
         $creditosQuery = Creditos::query()
             ->with(['cliente.ruta', 'tipoPago'])
-            ->whereBetween('fecha_credito', [$fechaInicio, $fechaFin]);
+            ->whereDate('fecha_credito', '>=', $fechaInicio)
+            ->whereDate('fecha_credito', '<=', $fechaFin);
 
         // Filtrar por ruta si no es "todas"
         if ($this->rutaSeleccionada && $this->rutaSeleccionada !== 'todas') {
@@ -263,13 +266,15 @@ class ReportesCristian extends Page implements HasForms
         }
 
         $this->clientesAtendidos = (clone $clientesQuery)->whereHas('creditos.abonos', function ($q) use ($fechaInicio, $fechaFin) {
-            $q->whereBetween('fecha_pago', [$fechaInicio, $fechaFin]);
+            $q->whereDate('fecha_pago', '>=', $fechaInicio)
+              ->whereDate('fecha_pago', '<=', $fechaFin);
         })->count();
 
         $this->clientesPendientes = (clone $clientesQuery)->whereHas('creditos', function ($q) {
             $q->where('saldo_actual', '>', 0);
         })->whereDoesntHave('creditos.abonos', function ($q) use ($fechaInicio, $fechaFin) {
-            $q->whereBetween('fecha_pago', [$fechaInicio, $fechaFin]);
+            $q->whereDate('fecha_pago', '>=', $fechaInicio)
+              ->whereDate('fecha_pago', '<=', $fechaFin);
         })->count();
     }
 
