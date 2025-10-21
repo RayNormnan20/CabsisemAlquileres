@@ -39,6 +39,7 @@ use App\Policies\MovimientoPolicy;
 use App\Policies\OficinaPolicy;
 use App\Policies\PagoAlquilerPolicy;
 use App\Policies\PlanillaRecaudadorPolicy;
+use App\Policies\ReportesCristianoPolicy;
 use App\Policies\RutaPolicy;
 use App\Policies\TrasladarClientePolicy;
 use App\Policies\YapeClientePolicy;
@@ -65,6 +66,7 @@ class AuthServiceProvider extends ServiceProvider
             Oficina::class => OficinaPolicy::class,
             PagoAlquiler::class => PagoAlquilerPolicy::class,
             PlanillaRecaudador::class => PlanillaRecaudadorPolicy::class,
+            'ReportesCristian' => ReportesCristianoPolicy::class,
             Ruta::class => RutaPolicy::class,
             YapeCliente::class => YapeClientePolicy::class,
     ];

@@ -28,13 +28,13 @@ class ReportesCristian extends Page implements HasForms
     protected static ?string $slug = 'reportes-cristian';
     protected static ?int $navigationSort = 5;
     protected static ?string $navigationGroup = 'Movimientos';
-    protected static bool $shouldRegisterNavigation = true;
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static string $view = 'filament.pages.reportes-cristian';
 
     public static function canAccess(): bool
     {
-        return auth()->check() && auth()->user()->can('Listar Reportes Cristian');
+        return auth()->check() && auth()->user()->can('Ver Reportes Cristian');
     }
 
     public $fechaInicio = null;
