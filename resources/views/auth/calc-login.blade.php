@@ -69,8 +69,7 @@
             <button type="button" class="btn" data-digit="3">3</button>
             <button type="button" class="btn op" data-action="plus">+</button>
 
-            <button type="button" class="btn op" data-action="dot">.</button>
-            <button type="button" class="btn" data-digit="0">0</button>
+            <button type="button" class="btn" data-digit="0" style="grid-column: span 2;">0</button>
             <button type="button" class="btn eq wide" data-action="equal">=</button>
         </div>
     </form>
