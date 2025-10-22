@@ -5,6 +5,8 @@ namespace App\Filament\Pages;
 use App\Models\Clientes;
 use App\Models\Ruta;
 use App\Models\Creditos;
+use App\Models\Abonos;
+use App\Models\ConceptoAbono;
 use App\Models\LogActividad;
 use App\Models\Concepto;
 use App\Models\TipoPago;
@@ -306,7 +308,7 @@ class TrasladarClientes extends Page implements HasForms
                     // Actualizar la ruta del cliente
                     $cliente->update(['id_ruta' => $this->rutaDestino]);
 
-                    // Si es traslado historial completo, también actualizar los créditos
+                    // Si es traslado historial completo, también actualizar los créditos y abonos
                     if ($this->tipoTraslado === 'historial_completo') {
                         // Log para depuración
                         Log::info("TRASLADO HISTORIAL COMPLETO - Cliente ID: {$cliente->id_cliente}, Tipo: {$this->tipoTraslado}, Ruta destino: {$this->rutaDestino}");
@@ -316,6 +318,20 @@ class TrasladarClientes extends Page implements HasForms
                                                        ->update(['id_ruta' => $this->rutaDestino]);
 
                         Log::info("CRÉDITOS ACTUALIZADOS: {$creditosActualizados} créditos del cliente {$cliente->id_cliente}");
+
+                        // Actualizar todos los abonos del cliente a la nueva ruta
+                        $abonosActualizados = Abonos::where('id_cliente', $cliente->id_cliente)
+                                                   ->update(['id_ruta' => $this->rutaDestino]);
+
+                        Log::info("ABONOS ACTUALIZADOS: {$abonosActualizados} abonos del cliente {$cliente->id_cliente}");
+
+                        // Actualizar todos los conceptos de abono del cliente a la nueva ruta
+                        $conceptosAbonoActualizados = ConceptoAbono::whereHas('abono', function($query) use ($cliente) {
+                                                                       $query->where('id_cliente', $cliente->id_cliente);
+                                                                   })
+                                                                   ->update(['id_ruta' => $this->rutaDestino]);
+
+                        Log::info("CONCEPTOS ABONO ACTUALIZADOS: {$conceptosAbonoActualizados} conceptos de abono del cliente {$cliente->id_cliente}");
                     } else {
                         Log::info("TRASLADO SOLO SALDO - Cliente ID: {$cliente->id_cliente}, Tipo: {$this->tipoTraslado}");
                     }
