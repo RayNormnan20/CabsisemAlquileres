@@ -26,13 +26,13 @@
         @media (min-width:480px){ .calc{ width:360px; } }
         /* Móvil a pantalla completa */
         @media (max-width:480px){
-            .wrap{ padding:0; }
+            .wrap{ padding:0; padding-bottom:50px; }
             .calc{ width:100vw; height:100vh; border-radius:0; box-shadow:none; }
             .screen{ min-height:30vh; font-size:32px; padding:40px 16px; }
-            .grid{ height:70vh; grid-template-rows:repeat(5,1fr); }
-            .btn{ padding:0; font-size:22px; }
+            .grid{ height:65vh; grid-template-rows:repeat(5,1fr); }
+            .btn{ padding:0; font-size:32px; }
             /* Mantener el '=' más grande también en móvil */
-            .btn.eq{ font-size:26px; }
+            .btn.eq{ font-size:32px; }
         }
     </style>
 </head>
