@@ -182,7 +182,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
      */
     public function esCobradorDeRuta($rutaId)
     {
-        return $this->rutas()->where('id_ruta', $rutaId)->exists();
+        return $this->rutas()->where('ruta.id_ruta', $rutaId)->exists();
     }
 
     /**

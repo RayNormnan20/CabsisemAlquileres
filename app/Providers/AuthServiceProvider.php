@@ -128,12 +128,12 @@ class AuthServiceProvider extends ServiceProvider
 
             // Cobrador solo a sus rutas asignadas
             if ($user->hasRole('Cobrador')) {
-                return $user->rutas()->where('id_ruta', $ruta->id_ruta)->exists();
+                return $user->rutas()->where('ruta.id_ruta', $ruta->id_ruta)->exists();
             }
 
             // Revisador según configuración específica
             if ($user->hasRole('Revisador')) {
-                return $user->rutasRevisables()->where('id_ruta', $ruta->id_ruta)->exists();
+                return $user->rutasRevisables()->where('ruta.id_ruta', $ruta->id_ruta)->exists();
             }
 
             return false;

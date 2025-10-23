@@ -30,7 +30,7 @@ class CheckRutaAccess
         }
 
         // Cobrador: solo rutas asignadas
-        if ($user->hasRole('Cobrador') && $user->rutas()->where('id_ruta', $ruta->id_ruta)->exists()) {
+        if ($user->hasRole('Cobrador') && $user->rutas()->where('ruta.id_ruta', $ruta->id_ruta)->exists()) {
             return $next($request);
         }
 
@@ -45,6 +45,6 @@ class CheckRutaAccess
 
     protected function tieneAccesoRevisador($user, Ruta $ruta): bool
     {
-        return $user->rutasRevisables()->where('id_ruta', $ruta->id_ruta)->exists();
+        return $user->rutasRevisables()->where('ruta.id_ruta', $ruta->id_ruta)->exists();
     }
 }

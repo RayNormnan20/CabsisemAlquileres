@@ -4,75 +4,79 @@
 </div>
 
 @php
-// Lista completa de conceptos en el orden específico solicitado
-$conceptosPredeterminados = [
-'Yape',
-'Efectivo',
-'Cancelado',
-'Abono para completar',
-'Abono son firma achistaan',
-'Otros egresos',
-'Otros ingresos',
-'Abono sobrante',
-'Abono faltante',
-'Sueldo cobrador',
-'Efectivo cliente no registrado',
-'Abono de descuento'
+// ORDEN ESPECÍFICO de conceptos según requerimiento del usuario
+$ordenEspecifico = [
+    'Yape',
+    'Efectivo',
+    'Abono completar p.',
+    'Abono sin firma Chis',
+    'OTROS EGRESOS',
+    'OTROS INGRESOS',
+    'ABONO SOBRANTE COB',
+    'ABONO FALTANTE COB',
+    'SUELDO COBRADOR',
+    'ABONO DE DESCUENTO',
+    'ENTREGA CAJA COBRADOR',
+    'Efectivo CLi. No Regis.',
+    'Abono de Bajo Cuenta',
+    'Abono de Renovación',
+    'Cancelado'
 ];
 
-// Mapeo para normalizar conceptos (convertir variaciones a formato estándar)
-$mapeoConceptos = [
-'YAPE' => 'Yape',
-'Yape' => 'Yape',
-'EFECTIVO' => 'Efectivo',
-'Efectivo' => 'Efectivo',
-'CANCELADO' => 'Cancelado',
-'Cancelado' => 'Cancelado',
-'ABONO PARA COMPRA' => 'Abono para completar',
-'Abono para completar' => 'Abono para completar',
-'ABONO SON FIRMA ACHISTAAN' => 'Abono son firma achistaan',
-'Abono son firma achistaan' => 'Abono son firma achistaan',
-'OTROS EGRESOS' => 'Otros egresos',
-'Otros egresos' => 'Otros egresos',
-'OTROS INGRESOS' => 'Otros ingresos',
-'Otros ingresos' => 'Otros ingresos',
-'ABONO SOBRANTE' => 'Abono sobrante',
-'Abono sobrante' => 'Abono sobrante',
-'ABONO FALTANTE' => 'Abono faltante',
-'Abono faltante' => 'Abono faltante',
-'SUELDO COBRADOR' => 'Sueldo cobrador',
-'Sueldo cobrador' => 'Sueldo cobrador',
-'EFECTIVO CLIENTE NO REGISTRADO' => 'Efectivo cliente no registrado',
-'Efectivo cliente no registrado' => 'Efectivo cliente no registrado',
-'ABONO DE DESCUENTO' => 'Abono de descuento',
-'Abono de descuento' => 'Abono de descuento'
-];
+// Obtener todos los conceptos únicos de la base de datos
+$conceptosEnBD = \App\Models\ConceptoAbono::distinct()
+    ->pluck('tipo_concepto')
+    ->filter() // Eliminar valores nulos
+    ->toArray();
 
-// Usar solo los conceptos predeterminados en el orden específico
-$todosLosConceptos = $conceptosPredeterminados;
+// Combinar orden específico con conceptos adicionales de la BD
+$todosLosConceptos = [];
+foreach ($ordenEspecifico as $concepto) {
+    if (in_array($concepto, $conceptosEnBD)) {
+        $todosLosConceptos[] = $concepto;
+    }
+}
+// Agregar conceptos de la BD que no están en el orden específico
+foreach ($conceptosEnBD as $concepto) {
+    if (!in_array($concepto, $todosLosConceptos)) {
+        $todosLosConceptos[] = $concepto;
+    }
+}
 
-// Inicializar todos los conceptos con 0
+// Inicializar arrays para montos y cantidades
 $conceptosPorRuta = [];
+$cantidadPorConcepto = [];
 foreach ($todosLosConceptos as $concepto) {
-$conceptosPorRuta[$concepto] = 0;
+    $conceptosPorRuta[$concepto] = 0;
+    $cantidadPorConcepto[$concepto] = 0;
 }
 
-// Agrupar abonos por concepto y sumar montos (normalizando nombres)
+// Sumar montos y contar cantidad por concepto
 foreach ($datosAbonos as $abono) {
-foreach ($abono->conceptosabonos as $conceptoAbono) {
-$conceptoOriginal = $conceptoAbono->tipo_concepto;
-$monto = $conceptoAbono->monto;
-
-// Normalizar el concepto usando el mapeo
-$conceptoNormalizado = isset($mapeoConceptos[$conceptoOriginal])
-? $mapeoConceptos[$conceptoOriginal]
-: $conceptoOriginal;
-
-// Solo sumar si el concepto normalizado está en nuestra lista predeterminada
-if (in_array($conceptoNormalizado, $todosLosConceptos)) {
-$conceptosPorRuta[$conceptoNormalizado] += $monto;
+    foreach ($abono->conceptosabonos as $conceptoAbono) {
+        $conceptoOriginal = $conceptoAbono->tipo_concepto;
+        $monto = $conceptoAbono->monto;
+        
+        // Sumar monto y contar cantidad
+        if (isset($conceptosPorRuta[$conceptoOriginal])) {
+            $conceptosPorRuta[$conceptoOriginal] += $monto;
+            $cantidadPorConcepto[$conceptoOriginal]++;
+        }
+    }
 }
-}
+
+// Sumar conceptos sin id_abono (movimientos independientes)
+if (isset($conceptosSinAbono)) {
+    foreach ($conceptosSinAbono as $conceptoAbono) {
+        $conceptoOriginal = $conceptoAbono->tipo_concepto;
+        $monto = $conceptoAbono->monto;
+        
+        // Sumar monto y contar cantidad
+        if (isset($conceptosPorRuta[$conceptoOriginal])) {
+            $conceptosPorRuta[$conceptoOriginal] += $monto;
+            $cantidadPorConcepto[$conceptoOriginal]++;
+        }
+    }
 }
 
 // Los totales ya están calculados en $conceptosPorRuta
@@ -87,6 +91,9 @@ $conceptosPorRuta[$conceptoNormalizado] += $monto;
                     <i class="fas fa-tags mr-1"></i>Concepto
                 </th>
                 <th class="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider">
+                    <i class="fas fa-hashtag mr-1"></i>Cantidad
+                </th>
+                <th class="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider">
                     <i class="fas fa-calculator mr-1"></i>Total
                 </th>
             </tr>
@@ -97,6 +104,9 @@ $conceptosPorRuta[$conceptoNormalizado] += $monto;
                 <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ $concepto }}
                 </td>
+                <td class="px-2 py-2 whitespace-nowrap text-sm text-center font-medium {{ ($cantidadPorConcepto[$concepto] ?? 0) > 0 ? 'text-blue-600' : 'text-gray-400' }}">
+                    {{ $cantidadPorConcepto[$concepto] ?? 0 }}
+                </td>
                 <td
                     class="px-2 py-2 whitespace-nowrap text-sm text-center font-semibold {{ ($conceptosPorRuta[$concepto] ?? 0) > 0 ? 'text-green-600' : 'text-gray-400' }}">
                     {{ number_format($conceptosPorRuta[$concepto] ?? 0, 2) }}
@@ -104,7 +114,7 @@ $conceptosPorRuta[$conceptoNormalizado] += $monto;
             </tr>
             @empty
             <tr>
-                <td colspan="2" class="px-6 py-4 text-center text-gray-500">
+                <td colspan="3" class="px-6 py-4 text-center text-gray-500">
                     No hay datos disponibles para el período seleccionado
                 </td>
             </tr>
@@ -114,6 +124,9 @@ $conceptosPorRuta[$conceptoNormalizado] += $monto;
             <tr>
                 <td class="px-3 py-2 whitespace-nowrap text-sm font-bold text-gray-900">
                     <i class="fas fa-calculator mr-1"></i>TOTAL GENERAL
+                </td>
+                <td class="px-2 py-2 whitespace-nowrap text-sm font-bold text-center text-blue-600">
+                    {{ array_sum($cantidadPorConcepto) }}
                 </td>
                 <td class="px-2 py-2 whitespace-nowrap text-sm font-bold text-center text-red-600">
                     {{ number_format(array_sum($conceptosPorRuta), 2) }}

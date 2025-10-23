@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Filament\Pages\ClienteCreditosAbonos;
 use App\Filament\Pages\TrasladarClientes;
 use App\Filament\Pages\ReportesCristian;
+use App\Helpers\RutaPermissionHelper;
 
 class FilamentServiceProvider extends ServiceProvider
 {
@@ -30,7 +31,7 @@ class FilamentServiceProvider extends ServiceProvider
                 'Permissions',
                 'Clientes'
             ]);
-            
+
             // Registrar navegación condicional para Liquidaciones
             if (auth()->check() && auth()->user()->can('Listar Liquidaciones')) {
                 Filament::registerNavigationItems([
@@ -42,7 +43,7 @@ class FilamentServiceProvider extends ServiceProvider
                         ->sort(4)
                 ]);
             }
-            
+
             // Registrar navegación condicional para Trasladar Clientes
             if (auth()->check() && auth()->user()->can('Listar Trasladar Clientes')) {
                 Filament::registerNavigationItems([
@@ -54,9 +55,10 @@ class FilamentServiceProvider extends ServiceProvider
                         ->sort(4)
                 ]);
             }
-            
+
             // Registrar navegación condicional para Reportes Cristian
-            if (auth()->check() && auth()->user()->can('Ver Reportes Cristian')) {
+            // Ahora usa el nuevo sistema: permisos normales O estar en ruta asignada
+            if (RutaPermissionHelper::canAccessModule('ReportesCristian', 'Ver Reportes Cristian')) {
                 Filament::registerNavigationItems([
                     NavigationItem::make('Reportes Cristian')
                         ->url(ReportesCristian::getUrl())
@@ -64,6 +66,7 @@ class FilamentServiceProvider extends ServiceProvider
                         ->icon('heroicon-o-chart-bar')
                         ->group('Movimientos')
                         ->sort(5)
+                        // ->badge(RutaPermissionHelper::isUserInAssignedRoute() ? 'RUTA' : null) // Comentado temporalmente
                 ]);
             }
         });

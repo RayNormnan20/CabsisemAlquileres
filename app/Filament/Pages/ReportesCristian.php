@@ -7,6 +7,7 @@ use App\Models\Creditos;
 use App\Models\Abonos;
 use App\Models\ConceptoAbono;
 use App\Models\Ruta;
+use App\Helpers\RutaPermissionHelper;
 use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -34,7 +35,8 @@ class ReportesCristian extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->check() && auth()->user()->can('Ver Reportes Cristian');
+        // Usar el nuevo sistema: permisos normales O estar en ruta asignada
+        return RutaPermissionHelper::canAccessModule('ReportesCristian', 'Ver Reportes Cristian');
     }
 
     public $fechaInicio = null;
@@ -55,13 +57,91 @@ class ReportesCristian extends Page implements HasForms
     public $clientesPendientes = 0;
     public $datosCreditos = [];
     public $datosAbonos = [];
+    public $conceptosSinAbono = []; // NUEVO: Conceptos sin id_abono
+
+    // Modal de configuración de rutas
+    public $mostrarModalRutas = false;
+    public $rutasSeleccionadas = [];
+
+    /**
+     * Verificar si el usuario es administrador o super administrador
+     */
+    public function esAdministrador(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->hasRole('Administrador') || $user->hasRole('Super Administrador'));
+    }
+
+    /**
+     * Verificar si el acceso es mediante asignación de rutas (no administrador)
+     */
+    public function esAccesoPorRuta(): bool
+    {
+        return !$this->esAdministrador() && RutaPermissionHelper::isUserInAssignedRoute();
+    }
 
     public function mount()
     {
         $this->fechaInicio = Carbon::today()->format('Y-m-d');
         $this->fechaFin = Carbon::today()->format('Y-m-d');
+        $this->rutaSeleccionada = 'todas'; // Establecer valor por defecto
         $this->inicializarFiltroFecha();
         $this->cargarDatos();
+        $this->cargarRutasSeleccionadas();
+    }
+
+    public function abrirModalRutas()
+    {
+        $this->mostrarModalRutas = true;
+    }
+
+    public function cerrarModalRutas()
+    {
+        $this->mostrarModalRutas = false;
+    }
+
+    public function cargarRutasSeleccionadas()
+    {
+        // Cargar las rutas que pueden ver ReportesCristian desde la configuración
+        $configuracion = DB::table('configuracion_rutas_reportes')
+            ->where('modulo', 'ReportesCristian')
+            ->first();
+
+        if ($configuracion) {
+            $this->rutasSeleccionadas = json_decode($configuracion->rutas_permitidas, true) ?? [];
+        } else {
+            // Si no hay configuración, todas las rutas pueden ver por defecto
+            // $this->rutasSeleccionadas = \App\Models\Ruta::where('activa', true)->pluck('nombre')->toArray(); // Comentado temporalmente - quizás se use más adelante
+        }
+    }
+
+    public function guardarConfiguracionRutas()
+    {
+        try {
+            // Guardar o actualizar la configuración en la base de datos
+            DB::table('configuracion_rutas_reportes')->updateOrInsert(
+                ['modulo' => 'ReportesCristian'],
+                [
+                    'rutas_permitidas' => json_encode($this->rutasSeleccionadas),
+                    'updated_at' => now()
+                ]
+            );
+
+            $this->mostrarModalRutas = false;
+
+            Notification::make()
+                ->title('Configuración guardada')
+                ->body('Las rutas autorizadas para ver ReportesCristian han sido actualizadas.')
+                ->success()
+                ->send();
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error al guardar')
+                ->body('No se pudo guardar la configuración: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     public function inicializarFiltroFecha()
@@ -168,7 +248,7 @@ class ReportesCristian extends Page implements HasForms
     public function limpiarFiltros()
     {
         $this->periodoSeleccionado = 'hoy';
-        $this->rutaSeleccionada = null;
+        $this->rutaSeleccionada = 'todas'; // Establecer valor por defecto
         $this->inicializarFiltroFecha();
         $this->cargarDatos();
 
@@ -256,6 +336,21 @@ class ReportesCristian extends Page implements HasForms
 
         // Cargar datos de abonos para los reportes
         $this->datosAbonos = $query->with(['credito.cliente.ruta', 'conceptosabonos'])->get();
+
+        // NUEVO: Cargar conceptos de abono sin id_abono (movimientos independientes)
+        $conceptosSinAbonoQuery = ConceptoAbono::query()
+            ->whereNull('id_abono') // Solo los que NO tienen id_abono
+            ->whereDate('created_at', '>=', $fechaInicio)
+            ->whereDate('created_at', '<=', $fechaFin);
+
+        // Filtrar por ruta si no es "todas" (usando id_ruta directamente)
+        if ($this->rutaSeleccionada && $this->rutaSeleccionada !== 'todas') {
+            $conceptosSinAbonoQuery->whereHas('ruta', function ($rutaQ) {
+                $rutaQ->where('nombre', $this->rutaSeleccionada);
+            });
+        }
+
+        $this->conceptosSinAbono = $conceptosSinAbonoQuery->get();
 
         // Clientes atendidos y pendientes
         $clientesQuery = Clientes::query();
