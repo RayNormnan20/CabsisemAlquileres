@@ -31,10 +31,12 @@ class ResumenAlquilerResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'cliente_nombre';
 
+    /*
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::count();
     }
+        */
 
     public static function getNavigationBadgeColor(): ?string
     {
