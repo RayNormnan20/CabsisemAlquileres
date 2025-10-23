@@ -82,51 +82,25 @@ if (isset($conceptosSinAbono)) {
         }
     }
 }
-
-// Helpers de formato y timestamp seguros
-$fmtDate = function($dt){ if ($dt instanceof \Carbon\Carbon) return $dt->format('Y-m-d H:i'); if (is_string($dt)) { $ts = strtotime($dt); return $ts ? date('Y-m-d H:i', $ts) : null; } return null; };
-$tsFrom = function($dt){ if ($dt instanceof \Carbon\Carbon) return $dt->timestamp; if (is_string($dt)) { $ts = strtotime($dt); return $ts ?: null; } return null; };
-
-// Preparar registros detallados para el modal (cliente, usuario, ruta, fecha, referencia)
-$records = [];
-foreach ($datosAbonos as $abono) {
-    foreach ($abono->conceptosabonos as $conceptoAbono) {
-        $records[] = [
-            'concepto' => $conceptoAbono->tipo_concepto,
-            'monto' => (float) $conceptoAbono->monto,
-            'fecha' => $fmtDate($abono->fecha_pago ?? $abono->created_at),
-            'cliente' => optional($abono->cliente)->nombreCompleto ?? null,
-            'usuario' => optional($abono->usuario)->name ?? null,
-            'ruta' => optional($abono->ruta)->nombre ?? optional($abono->cliente->ruta)->nombre ?? ($abono->id_ruta ?? null),
-            'ruta_id' => $abono->id_ruta ?? optional($abono->ruta)->id_ruta ?? optional($abono->cliente->ruta)->id_ruta ?? null,
-            'fecha_ts' => $tsFrom($abono->fecha_pago ?? $abono->created_at),
-            // 'comprobante' => $conceptoAbono->foto_comprobante, // oculto segun requerimiento
-            'origen' => optional($abono->concepto)->nombre ?? optional($abono->concepto)->tipo ?? 'Abono',
-        ];
-    }
-}
-if (isset($conceptosSinAbono)) {
-    foreach ($conceptosSinAbono as $conceptoAbono) {
-        $records[] = [
-            'concepto' => $conceptoAbono->tipo_concepto,
-            'monto' => (float) $conceptoAbono->monto,
-            'fecha' => $fmtDate($conceptoAbono->created_at),
-            'cliente' => null,
-            'usuario' => optional($conceptoAbono->usuario)->name ?? null,
-            'ruta' => optional($conceptoAbono->ruta)->nombre ?? ($conceptoAbono->id_ruta ?? null),
-            'ruta_id' => $conceptoAbono->id_ruta ?? optional($conceptoAbono->ruta)->id ?? null,
-            'fecha_ts' => $tsFrom($conceptoAbono->created_at),
-            // 'comprobante' => $conceptoAbono->foto_comprobante,
-            'origen' => 'Movimiento',
-        ];
-    }
-}
-
-// Los totales ya están calculados en $conceptosPorRuta
 @endphp
 
 <!-- Tabla de Resultados (interactiva) -->
-<div x-data="{ open:false, selectedConcept:null, selectedRutaId: null, selectedRutaName: @entangle('rutaSeleccionada'), dateStart: @js($this->fechaDesde ? \Carbon\Carbon::parse($this->fechaDesde)->format('Y-m-d') : null), dateEnd: @js($this->fechaHasta ? \Carbon\Carbon::parse($this->fechaHasta)->format('Y-m-d') : null), records: @js($records), filtered(){ return this.records.filter(r => { if (this.selectedConcept && r.concepto !== this.selectedConcept) return false; const tsMs = ((r.fecha_ts ?? 0) * 1000); const startMs = this.dateStart ? Date.parse(this.dateStart) : null; const endMs = this.dateEnd ? Date.parse(this.dateEnd) + 86399999 : null; if (startMs && tsMs < startMs) return false; if (endMs && tsMs > endMs) return false; const currentRuta = (this.selectedRutaName && String(this.selectedRutaName) !== 'todas') ? String(this.selectedRutaName) : null; if (currentRuta) { const matchId = r.ruta_id != null && String(r.ruta_id) === currentRuta; const matchName = r.ruta && String(r.ruta) === currentRuta; if (!(matchId || matchName)) return false; } return true; }).sort((a,b) => ((a.fecha_ts ?? 0) > (b.fecha_ts ?? 0) ? -1 : 1)); } }" class="bg-white rounded-lg shadow w-full">
+<div x-data="{ open:false, selectedConcept:null, selectedRutaId: null, selectedRutaName: @entangle('rutaSeleccionada'), periodo: @entangle('periodoSeleccionado'), dateStartRaw: @entangle('fechaDesde'), dateEndRaw: @entangle('fechaHasta'), records: $wire.records, fmtDate(ms){ return ms ? new Date(ms).toLocaleString('es-PE') : null; }, parseDateMs(v){ if(!v) return null; const sRaw = String(v).trim(); const s = sRaw.toLowerCase().replace(',', '').replace(/\./g,''); const hasTime = /\d{2}:\d{2}/.test(sRaw) || /t\d{2}:\d{2}/.test(sRaw); if (hasTime) { const d = Date.parse(sRaw); if(!isNaN(d)) return d; } let m = s.match(/^(\d{2})[\\\/\-](\d{2})[\\\/\-](\d{4})$/); if(m){ const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yy = parseInt(m[3],10); return new Date(yy, mm, dd).getTime(); } m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m){ const yy = parseInt(m[1],10), mm = parseInt(m[2],10)-1, dd = parseInt(m[3],10); return new Date(yy, mm, dd).getTime(); } const d2 = Date.parse(sRaw); return isNaN(d2) ? null : d2; }, toMoney(v){ const n = Number(v||0); return new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN' }).format(n); }, rangeFromPeriodo(p){ const today = new Date(); let start = new Date(today.getFullYear(), today.getMonth(), today.getDate()); let end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23,59,59,999); const id = String(p||'').toLowerCase(); if(id==='hoy'){ /* start/end ya seteados */ } else if(id==='ayer'){ start.setDate(start.getDate()-1); end.setDate(end.getDate()-1); } else if(id==='esta_semana'){ const dow = start.getDay(); const diff = (dow===0?6:(dow-1)); start.setDate(start.getDate()-diff); end = new Date(start); end.setDate(start.getDate()+6); end.setHours(23,59,59,999); } else if(id==='semana_pasada'){ const dow = start.getDay(); const diff = (dow===0?6:(dow-1)); const startOfThisWeek = new Date(start); startOfThisWeek.setDate(startOfThisWeek.getDate()-diff); start = new Date(startOfThisWeek); start.setDate(startOfThisWeek.getDate()-7); end = new Date(startOfThisWeek); end.setDate(end.getDate()-1); end.setHours(23,59,59,999); } else if(id==='este_mes'){ start.setDate(1); end = new Date(start.getFullYear(), start.getMonth()+1, 0, 23,59,59,999); } else if(id==='mes_pasado'){ start = new Date(start.getFullYear(), start.getMonth()-1, 1); end = new Date(start.getFullYear(), start.getMonth(), 0, 23,59,59,999); } return { startMs: start.getTime(), endMs: end.getTime() }; }, appliedRange(){ const sRaw = this.dateStartRaw; const eRaw = this.dateEndRaw; let startMs = this.parseDateMs(sRaw); let endBase = this.parseDateMs(eRaw); if(!startMs || !endBase){ const r = this.rangeFromPeriodo(this.periodo); if(!startMs) startMs = r.startMs; if(!endBase) endBase = r.endMs; } const endMs = endBase ? (endBase + 86399999) : null; const startFmt = this.fmtDate(startMs); const endFmt = this.fmtDate(endMs); return { startMs, endMs, startFmt, endFmt }; }, filtered(){ const selected = (this.selectedConcept||'').trim().toLowerCase(); const norm = (s)=>String(s||'').trim().toLowerCase(); const selRuta = (this.selectedRutaName && this.selectedRutaName !== 'todas') ? norm(this.selectedRutaName) : null; const { startMs, endMs } = this.appliedRange(); const res = (this.records||[]).filter(it=>{ const tSec = Number(it.fecha_ts||0); const t = tSec ? (tSec*1000) : null; const inRange = t ? (t>=startMs && t<=endMs) : true; const matchesConcept = selected ? norm(it.concepto)===selected : true; const matchesRuta = selRuta ? (norm(it.ruta)===selRuta) : true; return inRange && matchesConcept && matchesRuta; }); console.log('[Modal Abonos] Estado filtros', { selectedConcept:this.selectedConcept, periodo:this.periodo, dateStartRaw:this.dateStartRaw, dateEndRaw:this.dateEndRaw, rutaSeleccionada:this.selectedRutaName, startMs, endMs, startFmt:this.fmtDate(startMs), endFmt:this.fmtDate(endMs), total:(this.records||[]).length }); console.log('[Modal Abonos] Resultado filtro', { count: res.length, sample: res.slice(0,3).map(x=>({ ts:x.fecha_ts, fecha:x.fecha, concepto:x.concepto, ruta:x.ruta, ruta_id:x.ruta_id }))}); return res; } }" x-effect="records = $wire.records">
+  <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-3 py-2 border-b">
+    <div class="text-sm text-gray-700">
+      <span class="font-medium">Rango:</span>
+      <span x-text="(appliedRange().startFmt ?? '—') + ' — ' + (appliedRange().endFmt ?? '—')"></span>
+    </div>
+    <div class="text-sm text-gray-700">
+      <span class="font-medium">Ruta:</span>
+      <span x-text="(selectedRutaName && selectedRutaName !== 'todas') ? selectedRutaName : 'todas'"></span>
+    </div>
+    <div class="text-sm text-gray-700">
+      <span class="font-medium">Registros:</span>
+      <span x-text="filtered().length"></span>
+    </div>
+  </div>
+  <!-- resto de la tabla permanece igual -->
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-600">
             <tr>

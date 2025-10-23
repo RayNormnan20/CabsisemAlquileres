@@ -58,6 +58,7 @@ class ReportesCristian extends Page implements HasForms
     public $datosCreditos = [];
     public $datosAbonos = [];
     public $conceptosSinAbono = []; // NUEVO: Conceptos sin id_abono
+    public $records = [];
 
     // Modal de configuración de rutas
     public $mostrarModalRutas = false;
@@ -351,6 +352,38 @@ class ReportesCristian extends Page implements HasForms
         }
 
         $this->conceptosSinAbono = $conceptosSinAbonoQuery->get();
+
+        // Construir registros detallados para el modal (concepto, monto, fecha, cliente, usuario, ruta)
+        $records = [];
+        foreach ($this->datosAbonos as $abono) {
+            foreach ($abono->conceptosabonos as $conceptoAbono) {
+                $records[] = [
+                    'concepto' => $conceptoAbono->tipo_concepto,
+                    'monto' => (float) $conceptoAbono->monto,
+                    'fecha' => ($abono->fecha_pago ?? $abono->created_at) ? ($abono->fecha_pago ?? $abono->created_at)->format('Y-m-d H:i') : null,
+                    'cliente' => optional($abono->cliente)->nombreCompleto ?? null,
+                    'usuario' => optional($abono->usuario)->name ?? null,
+                    'ruta' => optional($abono->ruta)->nombre ?? optional(optional($abono->credito)->cliente)->ruta->nombre ?? ($abono->id_ruta ?? null),
+                    'ruta_id' => $abono->id_ruta ?? optional($abono->ruta)->id_ruta ?? optional(optional($abono->credito)->cliente)->ruta->id_ruta ?? null,
+                    'fecha_ts' => ($abono->fecha_pago ?? $abono->created_at) ? ($abono->fecha_pago ?? $abono->created_at)->timestamp : null,
+                    'origen' => optional($abono->concepto)->nombre ?? optional($abono->concepto)->tipo ?? 'Abono',
+                ];
+            }
+        }
+        foreach ($this->conceptosSinAbono as $conceptoAbono) {
+            $records[] = [
+                'concepto' => $conceptoAbono->tipo_concepto,
+                'monto' => (float) $conceptoAbono->monto,
+                'fecha' => $conceptoAbono->created_at ? $conceptoAbono->created_at->format('Y-m-d H:i') : null,
+                'cliente' => null,
+                'usuario' => optional($conceptoAbono->usuario)->name ?? null,
+                'ruta' => optional($conceptoAbono->ruta)->nombre ?? ($conceptoAbono->id_ruta ?? null),
+                'ruta_id' => $conceptoAbono->id_ruta ?? optional($conceptoAbono->ruta)->id ?? null,
+                'fecha_ts' => $conceptoAbono->created_at ? $conceptoAbono->created_at->timestamp : null,
+                'origen' => optional($conceptoAbono->concepto)->nombre ?? optional($conceptoAbono->concepto)->tipo ?? 'Abono',
+            ];
+        }
+        $this->records = $records;
 
         // Clientes atendidos y pendientes
         $clientesQuery = Clientes::query();
