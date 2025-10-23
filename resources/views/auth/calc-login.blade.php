@@ -10,7 +10,6 @@
         body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
         .wrap { min-height:100vh; display:grid; place-items:center; padding:48px 24px; }
         .calc { width:320px; max-width:95vw; background:var(--panel); border-radius:12px; box-shadow:0 16px 36px rgba(0,0,0,.35); overflow:hidden; touch-action: manipulation; }
-        .bar { height:6px; background:var(--accent); }
         .screen { padding:32px 16px; text-align:right; font-size:28px; min-height:140px; display:flex; flex-direction:column; justify-content:center; gap:10px; }
         .label { font-size:13px; color:var(--muted); text-align:left; }
         .error { color:#ff7385; font-size:12px; min-height:16px; text-align:left; }
@@ -28,7 +27,7 @@
         @media (max-width:480px){
             .wrap{ padding:0; padding-bottom:50px; }
             .calc{ width:100vw; height:100vh; border-radius:0; box-shadow:none; }
-            .screen{ min-height:30vh; font-size:32px; padding:40px 16px; }
+            .screen{ min-height:30vh; font-size:50px; padding:40px 16px; }
             .grid{ height:65vh; grid-template-rows:repeat(5,1fr); }
             .btn{ padding:0; font-size:32px; }
             /* Mantener el '=' más grande también en móvil */
@@ -40,7 +39,6 @@
 <div class="wrap">
     <form class="calc" method="POST" action="{{ route('login') }}" id="calcLoginForm">
         @csrf
-        <div class="bar"></div>
         <div class="screen">
             <div id="display">&nbsp;</div>
             <div class="error" id="errorArea"></div>
