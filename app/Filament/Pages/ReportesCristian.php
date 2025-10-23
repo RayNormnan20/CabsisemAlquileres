@@ -389,6 +389,8 @@ class ReportesCristian extends Page implements HasForms
                     'ruta_id' => $abono->id_ruta ?? optional($abono->ruta)->id_ruta ?? optional(optional($abono->credito)->cliente)->ruta->id_ruta ?? null,
                     'fecha_ts' => ($abono->fecha_pago ?? $abono->created_at) ? ($abono->fecha_pago ?? $abono->created_at)->timestamp : null,
                     'origen' => optional($abono->concepto)->nombre ?? optional($abono->concepto)->tipo ?? 'Abono',
+                    // NUEVO: bandera para saber si es devolución
+                    'es_devolucion' => (bool) ($abono->es_devolucion ?? false),
                 ];
             }
         }
@@ -403,6 +405,8 @@ class ReportesCristian extends Page implements HasForms
                 'ruta_id' => $conceptoAbono->id_ruta ?? optional($conceptoAbono->ruta)->id ?? null,
                 'fecha_ts' => $conceptoAbono->created_at ? $conceptoAbono->created_at->timestamp : null,
                 'origen' => optional($conceptoAbono->concepto)->nombre ?? optional($conceptoAbono->concepto)->tipo ?? 'Abono',
+                // Movimientos independientes no son devolución
+                'es_devolucion' => false,
             ];
         }
         $this->records = $records;
