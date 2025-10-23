@@ -171,7 +171,7 @@ if (isset($conceptosSinAbono)) {
                     <span class="block leading-none text-2xl">&times;</span>
                 </button>
             </div>
-            <div class="max-h:[60vh] sm:max-h-[70vh] overflow-y-auto p-4">
+            <div class="max-h-[70vh] sm:max-h-[75vh] overflow-y-auto overscroll-contain p-4">
                 <template x-if="filtered().length === 0">
                     <p class="text-sm text-gray-500">No hay registros para este concepto en el período.</p>
                 </template>
