@@ -8,14 +8,14 @@
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-600">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    <i class="fas fa-route mr-2"></i>Ruta
+                <th class="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    <i class="fas fa-route mr-1"></i>Ruta
                 </th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
-                    <i class="fas fa-hashtag mr-2"></i>Cantidad
+                <th class="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider">
+                    <i class="fas fa-hashtag mr-1"></i>Cant.
                 </th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
-                    <i class="fas fa-dollar-sign mr-2"></i>Monto Total
+                <th class="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider">
+                    <i class="fas fa-dollar-sign mr-1"></i>Monto Total
                 </th>
             </tr>
         </thead>
@@ -38,13 +38,13 @@
 
             @forelse($prestamosPorRuta as $datos)
             <tr class="hover:bg-gray-50 transition-colors duration-200">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ $datos['ruta'] }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-500 text-center font-semibold">
                     {{ $datos['cantidad'] }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600 text-center">
+                <td class="px-2 py-2 whitespace-nowrap text-sm font-bold text-blue-600 text-center">
                     S/ {{ number_format($datos['monto_total'], 2) }}
                 </td>
             </tr>
@@ -60,11 +60,11 @@
         @if($prestamosPorRuta->count() > 0)
         <tfoot class="bg-gray-800">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">TOTAL</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-white">
+                <th class="px-3 py-2 text-left text-xs font-medium text-white uppercase">TOTAL</th>
+                <th class="px-2 py-2 text-center text-xs font-medium text-white font-bold">
                     {{ $prestamosPorRuta->sum('cantidad') }}
                 </th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-white">
+                <th class="px-2 py-2 text-center text-xs font-medium text-white font-bold">
                     S/ {{ number_format($prestamosPorRuta->sum('monto_total'), 2) }}
                 </th>
             </tr>

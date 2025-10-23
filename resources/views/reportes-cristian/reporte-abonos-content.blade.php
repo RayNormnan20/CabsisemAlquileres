@@ -83,22 +83,22 @@ $conceptosPorRuta[$conceptoNormalizado] += $monto;
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-600">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                    <i class="fas fa-tags mr-2"></i>Concepto
+                <th class="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    <i class="fas fa-tags mr-1"></i>Concepto
                 </th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
-                    <i class="fas fa-calculator mr-2"></i>Total
+                <th class="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider">
+                    <i class="fas fa-calculator mr-1"></i>Total
                 </th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($todosLosConceptos as $concepto)
             <tr class="hover:bg-gray-50 transition-colors duration-200">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ $concepto }}
                 </td>
                 <td
-                    class="px-6 py-4 whitespace-nowrap text-sm text-center {{ ($conceptosPorRuta[$concepto] ?? 0) > 0 ? 'font-bold text-green-600' : 'text-gray-400' }}">
+                    class="px-2 py-2 whitespace-nowrap text-sm text-center font-semibold {{ ($conceptosPorRuta[$concepto] ?? 0) > 0 ? 'text-green-600' : 'text-gray-400' }}">
                     {{ number_format($conceptosPorRuta[$concepto] ?? 0, 2) }}
                 </td>
             </tr>
@@ -112,10 +112,10 @@ $conceptosPorRuta[$conceptoNormalizado] += $monto;
         </tbody>
         <tfoot class="bg-gray-50">
             <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                    <i class="fas fa-calculator mr-2"></i>TOTAL GENERAL
+                <td class="px-3 py-2 whitespace-nowrap text-sm font-bold text-gray-900">
+                    <i class="fas fa-calculator mr-1"></i>TOTAL GENERAL
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-center text-red-600">
+                <td class="px-2 py-2 whitespace-nowrap text-sm font-bold text-center text-red-600">
                     {{ number_format(array_sum($conceptosPorRuta), 2) }}
                 </td>
             </tr>
