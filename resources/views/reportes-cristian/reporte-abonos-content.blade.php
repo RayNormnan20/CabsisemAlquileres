@@ -30,12 +30,16 @@ $conceptosEnBD = \App\Models\ConceptoAbono::distinct()
     ->toArray();
 
 // Combinar orden específico con conceptos adicionales de la BD
+/*
 $todosLosConceptos = [];
 foreach ($ordenEspecifico as $concepto) {
     if (in_array($concepto, $conceptosEnBD)) {
         $todosLosConceptos[] = $concepto;
     }
 }
+*/
+// Siempre incluir todos los del orden específico, aunque no existan en BD
+$todosLosConceptos = $ordenEspecifico;
 // Agregar conceptos de la BD que no están en el orden específico
 foreach ($conceptosEnBD as $concepto) {
     if (!in_array($concepto, $todosLosConceptos)) {

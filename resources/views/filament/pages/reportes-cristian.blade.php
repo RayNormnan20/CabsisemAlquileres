@@ -319,11 +319,13 @@
                         REPORTE DE ABONOS
                     </div>
                     @if($this->esAdministrador())
+                    <!--
                     <button wire:click="abrirModalRutas"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 flex items-center gap-2">
                         <i class="fas fa-cog"></i>
                         Configurar Rutas
                     </button>
+                    -->
                     @endif
                 </div>
                 <div class="report-table-content">
