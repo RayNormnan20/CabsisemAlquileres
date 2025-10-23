@@ -59,6 +59,7 @@ class ReportesCristian extends Page implements HasForms
     public $datosAbonos = [];
     public $conceptosSinAbono = []; // NUEVO: Conceptos sin id_abono
     public $records = [];
+    public $creditosRecords = [];
 
     // Modal de configuración de rutas
     public $mostrarModalRutas = false;
@@ -322,7 +323,7 @@ class ReportesCristian extends Page implements HasForms
 
         // Cargar datos de créditos para el reporte de préstamos entregados
         $creditosQuery = Creditos::query()
-            ->with(['cliente.ruta', 'tipoPago'])
+            ->with(['cliente.ruta', 'tipoPago', 'conceptosCredito'])
             ->whereDate('fecha_credito', '>=', $fechaInicio)
             ->whereDate('fecha_credito', '<=', $fechaFin);
 
@@ -334,6 +335,27 @@ class ReportesCristian extends Page implements HasForms
         }
 
         $this->datosCreditos = $creditosQuery->get();
+
+        // Construir registros detallados de créditos para modal de préstamos por ruta
+        $creditosRecords = [];
+        foreach ($this->datosCreditos as $credito) {
+            $creditosRecords[] = [
+                'monto' => (float) ($credito->valor_credito ?? 0),
+                'fecha' => $credito->fecha_credito ? $credito->fecha_credito->format('Y-m-d H:i') : null,
+                'fecha_ts' => $credito->fecha_credito ? $credito->fecha_credito->timestamp : null,
+                'cliente' => optional($credito->cliente)->nombreCompleto ?? null,
+                'ruta' => optional(optional($credito->cliente)->ruta)->nombre ?? null,
+                'ruta_id' => optional(optional($credito->cliente)->ruta)->id_ruta ?? null,
+                'tipo_pago' => optional($credito->tipoPago)->nombre ?? null,
+                // Conceptos registrados al crear el crédito (forma de entrega)
+                'conceptos' => ($credito->conceptosCredito ?? collect())
+                    ->map(fn($c) => [
+                        'tipo' => $c->tipo_concepto,
+                        'monto' => (float) $c->monto,
+                    ])->values()->toArray(),
+            ];
+        }
+        $this->creditosRecords = $creditosRecords;
 
         // Cargar datos de abonos para los reportes
         $this->datosAbonos = $query->with(['credito.cliente.ruta', 'conceptosabonos'])->get();

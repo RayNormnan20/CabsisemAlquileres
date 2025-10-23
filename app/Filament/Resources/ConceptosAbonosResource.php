@@ -65,26 +65,25 @@ class ConceptosAbonosResource extends Resource
                     ->searchable(),
             ])
             ->actions([
-                Action::make('edit') // Usando la clase importada directamente
-                        ->label('')
-                        ->icon('heroicon-o-pencil-alt')
-                        ->color('primary')
-                        ->size('lg')
-                        ->url(fn ($record): string => static::getUrl('edit', ['record' => $record]))
-                        ->extraAttributes([
-                            'title' => 'Editar',
-                            'class' => 'hover:bg-primary-50 rounded-full'
-                        ]),
+                // Usar EditAction para respetar la Policy 'update'
+                EditAction::make()
+                    ->label('')
+                    ->icon('heroicon-o-pencil-alt')
+                    ->color('primary')
+                    ->size('lg')
+                    ->extraAttributes([
+                        'title' => 'Editar',
+                        'class' => 'hover:bg-primary-50 rounded-full'
+                    ]),
 
-
-                        DeleteAction::make()
-                        ->label('')
-                        ->icon('heroicon-o-trash')
-                        ->color('danger')
-                        ->extraAttributes([
-                            'title' => 'Eliminar',
-                            'class' => 'hover:bg-danger-50 rounded-full'
-                        ])
+                DeleteAction::make()
+                    ->label('')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->extraAttributes([
+                        'title' => 'Eliminar',
+                        'class' => 'hover:bg-danger-50 rounded-full'
+                    ])
             ]);
     }
 
