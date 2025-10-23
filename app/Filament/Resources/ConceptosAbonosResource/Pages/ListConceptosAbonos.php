@@ -34,6 +34,12 @@ class ListConceptosAbonos extends ListRecords
         ];
     }
 
+    // Desactivar completamente acciones masivas y ocultar los checkboxes de selección
+    protected function getTableBulkActions(): array
+    {
+        return [];
+    }
+
     protected function getHeaderWidgets(): array
     {
         return [
