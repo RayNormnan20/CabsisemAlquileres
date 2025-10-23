@@ -263,9 +263,20 @@ class ReportesCristian extends Page implements HasForms
 
     protected function getFormSchema(): array
     {
-        // Obtener todas las rutas de la base de datos
+        // Opciones de rutas según el usuario (manteniendo 'todas' por defecto)
         $rutasOptions = ['todas' => 'Todas las Rutas'];
-        $rutas = \App\Models\Ruta::where('activa', true)->pluck('nombre', 'nombre');
+        $user = auth()->user();
+
+        if ($user && ($user->hasRole('Administrador') || $user->hasRole('Super Administrador'))) {
+            // Admin y Super Admin: todas las rutas activas
+            $rutas = \App\Models\Ruta::where('activa', true)->pluck('nombre', 'nombre');
+        } else {
+            // Otros roles: solo rutas asignadas al usuario
+            $rutas = $user
+                ? $user->rutas()->where('activa', true)->pluck('nombre', 'nombre')
+                : collect();
+        }
+
         $rutasOptions = array_merge($rutasOptions, $rutas->toArray());
 
         return [
