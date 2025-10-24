@@ -83,7 +83,10 @@ class Creditos extends Model
         });
 
         static::created(function ($credito) {
-            event(new CreditoCreated($credito));
+            if (app()->runningInConsole()) {
+                return;
+            }
+             event(new CreditoCreated($credito));
 
             // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
              $movimiento = new \App\Models\Movimiento();
@@ -108,7 +111,10 @@ class Creditos extends Model
         });
 
         static::updated(function ($credito) {
-            event(new CreditoUpdated($credito));
+            if (app()->runningInConsole()) {
+                return;
+            }
+             event(new CreditoUpdated($credito));
 
             // Disparar evento de movimiento para WebSocket de Ingresos y Gastos
              $movimiento = new \App\Models\Movimiento();

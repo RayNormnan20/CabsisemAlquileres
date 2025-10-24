@@ -21,10 +21,17 @@ class LogActividad extends Model
     }
 
     // Método para registrar una nueva actividad
-    public static function registrar($tipo, $mensaje, $metadata = null)
+    public static function registrar($tipo, $mensaje, $metadata = null, $userId = null)
     {
+        $resolvedUserId = $userId ?? auth()->id() ?? User::query()->orderBy('id')->value('id');
+
+        // Si no hay usuario disponible (p.ej., base sin usuarios), evitar romper el flujo
+        if (!$resolvedUserId) {
+            return null;
+        }
+
         return self::create([
-            'user_id' => auth()->id(),
+            'user_id' => $resolvedUserId,
             'tipo' => $tipo,
             'mensaje' => $mensaje,
             'metadata' => $metadata // Laravel se encargará de convertir el array a JSON aquí
