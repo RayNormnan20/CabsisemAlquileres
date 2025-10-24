@@ -38,7 +38,7 @@ class ConceptosAbonosResource extends Resource
                 ->required(),
 
             Forms\Components\TextInput::make('referencia')
-                ->label('Referencia'),
+                ->label('Observación'),
 
             DateTimePicker::make('fecha_concepto')
                 ->label('Fecha del Concepto')
