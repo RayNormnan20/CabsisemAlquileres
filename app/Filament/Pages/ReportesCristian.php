@@ -409,13 +409,14 @@ class ReportesCristian extends Page implements HasForms
             $records[] = [
                 'concepto' => $conceptoAbono->tipo_concepto,
                 'monto' => (float) $conceptoAbono->monto,
-                'fecha' => $conceptoAbono->created_at ? $conceptoAbono->created_at->format('Y-m-d H:i') : null,
+                'fecha' => $conceptoAbono->fecha_concepto ? $conceptoAbono->fecha_concepto->format('Y-m-d H:i') : ($conceptoAbono->created_at ? $conceptoAbono->created_at->format('Y-m-d H:i') : null),
                 'cliente' => null,
                 'usuario' => optional($conceptoAbono->usuario)->name ?? null,
                 'ruta' => optional($conceptoAbono->ruta)->nombre ?? ($conceptoAbono->id_ruta ?? null),
                 'ruta_id' => $conceptoAbono->id_ruta ?? optional($conceptoAbono->ruta)->id ?? null,
-                'fecha_ts' => $conceptoAbono->created_at ? $conceptoAbono->created_at->timestamp : null,
+                'fecha_ts' => $conceptoAbono->fecha_concepto ? $conceptoAbono->fecha_concepto->timestamp : ($conceptoAbono->created_at ? $conceptoAbono->created_at->timestamp : null),
                 'origen' => optional($conceptoAbono->concepto)->nombre ?? optional($conceptoAbono->concepto)->tipo ?? 'Abono',
+                'referencia' => $conceptoAbono->referencia ?? null,
                 // Movimientos independientes no son devolución
                 'es_devolucion' => false,
             ];

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ConceptosAbonosResource\Pages;
 use App\Models\ConceptoAbono;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\EditAction;
 use App\Models\User;
-
+use Filament\Forms\Components\DateTimePicker;
 
 class ConceptosAbonosResource extends Resource
 {
@@ -39,6 +40,15 @@ class ConceptosAbonosResource extends Resource
             Forms\Components\TextInput::make('referencia')
                 ->label('Referencia'),
 
+            DateTimePicker::make('fecha_concepto')
+                ->label('Fecha del Concepto')
+                ->default(now())
+                ->displayFormat('d/m/Y')
+                ->format('Y-m-d H:i:s')
+                ->withoutTime()
+                ->dehydrateStateUsing(fn ($state) => $state ? now()->format('Y-m-d H:i:s') : null)
+                ->required(),
+
             Forms\Components\TextInput::make('monto')
                 ->numeric()
                 ->required()
@@ -57,6 +67,12 @@ class ConceptosAbonosResource extends Resource
                     ->label('Usuario')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('fecha_concepto')
+                    ->label('Fecha')
+                    ->getStateUsing(fn ($record) => $record->fecha_concepto ?? $record->created_at)
+                    ->date('d/m/Y')
+                    ->sortable(),
+
             ])
             ->filters([
                 SelectFilter::make('usuario_id')

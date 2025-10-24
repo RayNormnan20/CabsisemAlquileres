@@ -19,7 +19,13 @@ class ConceptoAbono extends Model
         'monto',
         'foto_comprobante',
         'referencia',
+        'fecha_concepto',
         'id_caja'
+    ];
+
+    protected $casts = [
+        'fecha_concepto' => 'datetime',
+        'monto' => 'decimal:2',
     ];
 
     public function abono()
@@ -46,6 +52,11 @@ class ConceptoAbono extends Model
             // Asignar id_usuario automáticamente para todos los tipos de concepto
             if (!$conceptoAbono->id_usuario) {
                 $conceptoAbono->id_usuario = auth()->id();
+            }
+            
+            // Asignar fecha_concepto automáticamente si no se especifica
+            if (!$conceptoAbono->fecha_concepto) {
+                $conceptoAbono->fecha_concepto = now();
             }
             
             // Si no tiene ruta asignada, obtener la ruta de la sesión
