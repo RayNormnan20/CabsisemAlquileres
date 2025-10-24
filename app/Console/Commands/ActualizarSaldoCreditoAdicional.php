@@ -149,15 +149,7 @@ class ActualizarSaldoCreditoAdicional extends Command
 
 
 
-        LogActividad::registrar(
-            'Créditos Adicionales',
-            "Proceso finalizado.",
-            [
-                'creditos_procesados' => $creditos->count(),
-                'ids_creditos' => $creditos->pluck('id_credito')->all(),
-                'fecha' => $hoy->toDateString(),
-            ]
-        );
+        $this->info("Proceso finalizado.");
         return Command::SUCCESS;
     }
 
