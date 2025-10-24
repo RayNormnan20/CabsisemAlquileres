@@ -169,7 +169,7 @@ if (isset($conceptosSinAbono)) {
     </table>
 
     <!-- Modal de detalle por concepto -->
-    <div x-show="open" x-transition @keydown.window.escape="open=false" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div x-teleport="body" wire:ignore x-show="open" x-transition @keydown.window.escape="open=false" class="fixed inset-0 z-[99999] flex items-center justify-center p-4"
         style="display: none;">
         <!-- Fondo -->
         <div class="absolute inset-0 bg-black bg-opacity-40" @click="open=false"></div>
