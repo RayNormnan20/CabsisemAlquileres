@@ -42,6 +42,22 @@
     .time {
         font-weight: 700;
     }
+
+    .btn {
+        display: inline-block;
+        background: #3b82f6;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        margin-top: 16px;
+        transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+        background: #2563eb;
+    }
     </style>
 </head>
 
@@ -51,6 +67,7 @@
         <p>El panel está disponible solo entre <span class="time">{{ sprintf('%02d:00', $start) }}</span> y <span
                 class="time">{{ sprintf('%02d:00', $end) }}</span>.</p>
         <p>Contacte al administrador si necesita ampliar su horario.</p>
+        <a href="{{ route('filament.auth.login') }}" class="btn">Ir al Login</a>
     </div>
 </body>
 
