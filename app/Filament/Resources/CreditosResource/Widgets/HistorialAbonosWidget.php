@@ -249,7 +249,7 @@ class HistorialAbonosWidget extends BaseWidget
                     }
                     return null;
                 })
-                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0),
+                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0 && auth()->user()->can('Actualizar Abonos')),
 
             Tables\Actions\Action::make('delete')
                 ->label('')
@@ -319,7 +319,7 @@ class HistorialAbonosWidget extends BaseWidget
                     'title' => 'Eliminar',
                     'class' => 'hover:bg-danger-50 rounded-full'
                 ])
-                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0),
+                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0 && auth()->user()->can('Eliminar Abonos')),
         ];
     }
 

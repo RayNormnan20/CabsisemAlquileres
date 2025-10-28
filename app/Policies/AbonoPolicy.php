@@ -74,7 +74,7 @@ class AbonoPolicy
      */
     public function delete(User $user, Abonos $abono)
     {
-        return $user->can('Eliminar Abono')
+        return $user->can('Eliminar Abonos')
             ? Response::allow()
             : Response::deny('No tienes permiso para eliminar este abono.');
     }

@@ -680,6 +680,7 @@ public static function table(Table $table): Table
                     ->color('primary')
                     ->size('lg')
                     ->url(fn ($record): string => static::getUrl('edit', ['record' => $record]))
+                    ->visible(fn ($record) => auth()->user()->can('update', $record))
                     ->extraAttributes([
                         'title' => 'Editar',
                         'class' => 'hover:bg-primary-50 rounded-full'
@@ -889,6 +890,7 @@ public static function table(Table $table): Table
                         ->modalHeading('Eliminar Abono')
                         ->modalSubheading('¿Está seguro que desea eliminar este abono? Esta acción no se puede deshacer.')
                         ->modalButton('Sí, eliminar')
+                        ->visible(fn ($record) => auth()->user()->can('delete', $record))
                         ->action(function ($record) {
                             DB::transaction(function () use ($record) {
                                 // Obtener datos para el log antes de eliminar
