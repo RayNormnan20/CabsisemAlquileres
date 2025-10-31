@@ -52,6 +52,9 @@ Route::post('/mobile-logout', function () {
     // Preservar la ruta seleccionada antes del logout
     $selectedRutaId = request()->session()->get('selected_ruta_id');
     $selectedRutaName = request()->session()->get('selected_ruta_name');
+    // Preservar cliente seleccionado en pantallas de créditos/abonos
+    $creditosClienteId = request()->session()->get('creditos_cliente_id');
+    $abonosClienteId = request()->session()->get('abonos_cliente_id');
     
     Auth::logout();
     request()->session()->invalidate();
@@ -67,6 +70,14 @@ Route::post('/mobile-logout', function () {
     if (!is_null($selectedRutaId)) {
         request()->session()->put('selected_ruta_id', $selectedRutaId);
         request()->session()->put('selected_ruta_name', $selectedRutaName ?? 'Ruta');
+    }
+
+    // Restaurar cliente seleccionado
+    if (!is_null($creditosClienteId)) {
+        request()->session()->put('creditos_cliente_id', (int) $creditosClienteId);
+    }
+    if (!is_null($abonosClienteId)) {
+        request()->session()->put('abonos_cliente_id', (int) $abonosClienteId);
     }
 
     return response()->json([
@@ -83,6 +94,9 @@ Route::post('/filament/logout', function () {
     // Preservar la ruta seleccionada antes del logout
     $selectedRutaId = request()->session()->get('selected_ruta_id');
     $selectedRutaName = request()->session()->get('selected_ruta_name');
+    // Preservar cliente seleccionado en pantallas de créditos/abonos
+    $creditosClienteId = request()->session()->get('creditos_cliente_id');
+    $abonosClienteId = request()->session()->get('abonos_cliente_id');
     
     Auth::logout();
     request()->session()->invalidate();
@@ -98,6 +112,14 @@ Route::post('/filament/logout', function () {
     if (!is_null($selectedRutaId)) {
         request()->session()->put('selected_ruta_id', $selectedRutaId);
         request()->session()->put('selected_ruta_name', $selectedRutaName ?? 'Ruta');
+    }
+
+    // Restaurar cliente seleccionado
+    if (!is_null($creditosClienteId)) {
+        request()->session()->put('creditos_cliente_id', (int) $creditosClienteId);
+    }
+    if (!is_null($abonosClienteId)) {
+        request()->session()->put('abonos_cliente_id', (int) $abonosClienteId);
     }
 
     // Capturar la última URL para volver tras el login

@@ -16,6 +16,8 @@ use Illuminate\Contracts\View\View;
 use Carbon\Carbon;
 use Livewire\Component as LivewireComponent;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 
 class ListAbonos extends ListRecords
 {
@@ -45,6 +47,7 @@ class ListAbonos extends ListRecords
         'goToActionRecord',
         'refreshComponent' => '$refresh',
         'refreshAbonosTable' => '$refresh',
+        'globalRouteChanged' => 'applyRouteFilter',
         '$refresh'
     ];
 
@@ -52,11 +55,19 @@ class ListAbonos extends ListRecords
     {
         parent::mount();
 
-        // Restaurar el cliente seleccionado desde sesión si existe
-        // Se usa pull para que sea TEMPORAL: solo al regresar desde Historial
+        // Restaurar el cliente seleccionado desde sesión si existe Y pertenece a la ruta actual
         $persistedClienteId = session()->pull('abonos_cliente_id');
-        if ($persistedClienteId && empty($this->clienteId)) {
-            $this->clienteId = $persistedClienteId;
+        $currentRutaId = session('selected_ruta_id');
+        
+        if ($persistedClienteId && empty($this->clienteId) && $currentRutaId) {
+            // Verificar que el cliente pertenezca a la ruta actual
+            $cliente = \App\Models\Clientes::where('id_cliente', $persistedClienteId)
+                ->where('id_ruta', $currentRutaId)
+                ->first();
+                
+            if ($cliente) {
+                $this->clienteId = $persistedClienteId;
+            }
         }
 
         // Mostrar créditos automáticamente al volver desde Historial (una sola vez)
@@ -325,12 +336,40 @@ public function updated($name)
     public function updatedClienteId($value): void
     {
         $this->mostrarCreditos = false;
+        // Persistir la selección de cliente para restaurarla al reingresar
+        if ($this->clienteId) {
+            Session::put('abonos_cliente_id', $this->clienteId);
+        } else {
+            Session::forget('abonos_cliente_id');
+        }
         $this->emit('filter-abonos', [
             'clienteId' => $this->clienteId,
             'fechaDesde' => $this->fechaDesde,
             'fechaHasta' => $this->fechaHasta,
             'tipoConcepto' => $this->tipoConcepto
         ]);
+    }
+
+    // Limpiar selección de cliente al cambiar ruta para evitar datos de otra ruta
+    public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
+    {
+        Log::info('ListAbonos: applyRouteFilter ejecutado', [
+            'rutaId' => $rutaId,
+            'rutaName' => $rutaName,
+            'clienteId_antes' => $this->clienteId
+        ]);
+
+        // Al cambiar de ruta, limpiar el cliente seleccionado y su persistencia
+        if ($this->clienteId !== null) {
+            $this->clienteId = null;
+        }
+        Session::forget('abonos_cliente_id');
+
+        Log::info('ListAbonos: Cliente limpiado', [
+            'clienteId_despues' => $this->clienteId
+        ]);
+
+        $this->resetPage();
     }
 
     public function updatedFechaDesde($value): void

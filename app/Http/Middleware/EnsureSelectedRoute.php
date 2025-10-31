@@ -60,8 +60,18 @@ class EnsureSelectedRoute
         $currentSelected = Session::get('selected_ruta_id');
         $persistedSelected = !empty($user->last_selected_ruta_id) ? (int) $user->last_selected_ruta_id : null;
 
+        // Si hay una ruta en sesión que el usuario no puede acceder, forzar reinicialización
+        $currentSelectedInvalid = false;
+        if ($currentSelected) {
+            if ($user->hasAnyRole(['Super Admin', 'Administrador'])) {
+                $currentSelectedInvalid = false;
+            } else {
+                $currentSelectedInvalid = !$user->rutas()->where('ruta.id_ruta', $currentSelected)->exists();
+            }
+        }
+
         // Inicializar si nunca se hizo o si la sesión no coincide con lo persistido
-        if (!$alreadyInitialized || $currentSelected !== $persistedSelected) {
+        if (!$alreadyInitialized || $currentSelected !== $persistedSelected || $currentSelectedInvalid) {
             $ruta = null;
 
             // 1) Priorizar la ruta persistida en el usuario

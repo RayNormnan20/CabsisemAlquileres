@@ -33,6 +33,8 @@ class ViewHistorialCliente extends Page
         if ($this->record && $this->record->id_cliente) {
             session()->put('abonos_cliente_id', $this->record->id_cliente);
             session()->put('abonos_mostrar_creditos', true);
+            // También preservar para la lista de Créditos
+            session()->put('creditos_cliente_id', $this->record->id_cliente);
         }
     }
 

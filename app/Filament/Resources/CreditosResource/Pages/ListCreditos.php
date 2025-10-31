@@ -14,6 +14,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\CreditosExcelExport;
 use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ListCreditos extends ListRecords
 {
@@ -44,7 +45,69 @@ class ListCreditos extends ListRecords
             $this->currentRutaName = Session::get('selected_ruta_name');
         } else {
             $this->currentRutaId = null;
-            $this->currentRutaName = 'Todas las Rutas';
+            $this->currentRutaName = 'Ruta';
+        }
+
+        // Validar que la ruta en sesión pertenezca al usuario actual
+        $user = auth()->user();
+        if ($user && $this->currentRutaId) {
+            $hasAccess = false;
+            if ($user->hasAnyRole(['Super Admin', 'Administrador'])) {
+                $hasAccess = true;
+            } else {
+                $hasAccess = $user->rutas()->where('ruta.id_ruta', $this->currentRutaId)->exists();
+            }
+
+            if (!$hasAccess) {
+                // Limpiar sesión y estado local si la ruta no es accesible
+                Session::put('selected_ruta_id', null);
+                Session::put('selected_ruta_name', 'Ruta');
+                $this->currentRutaId = null;
+                $this->currentRutaName = 'Ruta';
+
+                // Fallback a la última ruta seleccionada por el usuario si es válida
+                $fallbackRuta = null;
+                if (!empty($user->last_selected_ruta_id)) {
+                    $candidate = \App\Models\Ruta::find($user->last_selected_ruta_id);
+                    if ($candidate) {
+                        if ($user->hasAnyRole(['Super Admin', 'Administrador'])) {
+                            $fallbackRuta = $candidate;
+                        } else {
+                            $hasUserAccess = $user->rutas()->where('ruta.id_ruta', $candidate->id_ruta)->exists();
+                            if ($hasUserAccess) {
+                                $fallbackRuta = $candidate;
+                            }
+                        }
+                    }
+                }
+
+                if ($fallbackRuta) {
+                    Session::put('selected_ruta_id', $fallbackRuta->id_ruta);
+                    Session::put('selected_ruta_name', $fallbackRuta->nombre_completo ?? $fallbackRuta->nombre);
+                    $this->currentRutaId = $fallbackRuta->id_ruta;
+                    $this->currentRutaName = $fallbackRuta->nombre_completo ?? $fallbackRuta->nombre;
+                    // Reiniciar la paginación para reflejar el cambio
+                    $this->resetPage();
+                }
+            }
+        }
+
+        // Restaurar el cliente seleccionado desde sesión si existe (una sola vez)
+        $persistedClienteId = Session::pull('creditos_cliente_id');
+        if ($persistedClienteId && empty($this->clienteId)) {
+            // Verificar que el cliente pertenezca a la ruta actual antes de restaurarlo
+            if ($this->currentRutaId) {
+                $cliente = \App\Models\Clientes::where('id_cliente', $persistedClienteId)
+                    ->where('id_ruta', $this->currentRutaId)
+                    ->first();
+                
+                if ($cliente) {
+                    $this->clienteId = (int) $persistedClienteId;
+                    // Al tener cliente, mostrar todos los créditos (no solo activos)
+                    $this->mostrarSoloActivos = false;
+                    Session::put('creditos_mostrar_solo_activos', false);
+                }
+            }
         }
 
         // Cambiar el comportamiento: cuando hay un cliente seleccionado, mostrar todos los créditos por defecto
@@ -99,13 +162,30 @@ class ListCreditos extends ListRecords
         $this->fechaHasta = null;
         $this->fechaPeriodo = 'hoy';
         $this->clienteId = null; // Limpiar también la selección del cliente
+        \Illuminate\Support\Facades\Session::forget('creditos_cliente_id');
         $this->aplicarPeriodoFecha('hoy');
     }
 
     public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
     {
+        Log::info('ListCreditos: applyRouteFilter ejecutado', [
+            'rutaId' => $rutaId,
+            'rutaName' => $rutaName,
+            'clienteId_antes' => $this->clienteId
+        ]);
+
         $this->currentRutaId = $rutaId;
         $this->currentRutaName = $rutaName ?? 'Todas las Rutas';
+
+        // Al cambiar de ruta, limpiar la selección de cliente para evitar mostrar datos de otra ruta
+        if ($this->clienteId !== null) {
+            $this->clienteId = null;
+        }
+        Session::forget('creditos_cliente_id');
+
+        Log::info('ListCreditos: Cliente limpiado', [
+            'clienteId_despues' => $this->clienteId
+        ]);
 
         $this->resetPage();
     }
@@ -232,6 +312,10 @@ class ListCreditos extends ListRecords
             if ($this->clienteId) {
                 $this->mostrarSoloActivos = false;
                 Session::put('creditos_mostrar_solo_activos', false);
+                // Persistir selección del cliente para restaurarla al reingresar
+                Session::put('creditos_cliente_id', $this->clienteId);
+            } else {
+                Session::forget('creditos_cliente_id');
             }
             $this->resetPage();
         }
@@ -287,6 +371,9 @@ class ListCreditos extends ListRecords
             $this->notify('danger', 'Cliente no encontrado.');
             return;
         }
+
+        // Persistir temporalmente el cliente seleccionado para restaurarlo al volver
+        Session::put('creditos_cliente_id', $this->clienteId);
 
         // Usar el método de navegación de Livewire
         $this->redirect(url("/creditos/historial-cliente/{$this->clienteId}"));

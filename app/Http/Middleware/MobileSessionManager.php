@@ -46,6 +46,11 @@ class MobileSessionManager
                 $selectedRutaId = $request->session()->get('selected_ruta_id');
                 $selectedRutaName = $request->session()->get('selected_ruta_name');
 
+                // Preservar el cliente seleccionado en Créditos
+                $selectedCreditosClienteId = $request->session()->get('creditos_cliente_id');
+                // Preservar el cliente seleccionado en Abonos
+                $selectedAbonosClienteId = $request->session()->get('abonos_cliente_id');
+
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -56,10 +61,17 @@ class MobileSessionManager
                     $request->session()->put('daily_login_date', $dailyLoginDate);
                 }
 
-                // Restaurar la ruta seleccionada para que quede preseleccionada tras reingreso
-                if (!is_null($selectedRutaId)) {
-                    $request->session()->put('selected_ruta_id', $selectedRutaId);
-                    $request->session()->put('selected_ruta_name', $selectedRutaName ?? 'Ruta');
+                // No restaurar la ruta seleccionada tras reingreso.
+                // La ruta inicial debe sincronizarse según el usuario autenticado
+                // en el middleware EnsureSelectedRoute para evitar filtraciones entre usuarios.
+
+                // Restaurar el cliente seleccionado en Créditos tras reingreso
+                if (!is_null($selectedCreditosClienteId)) {
+                    $request->session()->put('creditos_cliente_id', $selectedCreditosClienteId);
+                }
+                // Restaurar el cliente seleccionado en Abonos tras reingreso
+                if (!is_null($selectedAbonosClienteId)) {
+                    $request->session()->put('abonos_cliente_id', $selectedAbonosClienteId);
                 }
 
                 Log::info('Mobile logout executed (preserving daily login)', [
@@ -68,8 +80,10 @@ class MobileSessionManager
                     'timestamp' => now(),
                     'preserved_phone' => $dailyLoginPhone ?? null,
                     'preserved_date' => $dailyLoginDate ?? null,
-                    'preserved_ruta_id' => $selectedRutaId ?? null,
-                    'preserved_ruta_name' => $selectedRutaName ?? null,
+                    'preserved_ruta_id' => null,
+                    'preserved_ruta_name' => null,
+                    'preserved_creditos_cliente_id' => $selectedCreditosClienteId ?? null,
+                    'preserved_abonos_cliente_id' => $selectedAbonosClienteId ?? null,
                 ]);
 
                 return response()->json([
