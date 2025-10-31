@@ -187,6 +187,33 @@
                         opacity: 0.9;
                     }
 
+                    /* Totales completos dentro del card en modo móvil */
+                    .resumen-total-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 0.5rem;
+                        margin-top: 0.5rem;
+                    }
+
+                    .resumen-total-item {
+                        background: rgba(255, 255, 255, 0.12);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 8px;
+                        padding: 0.5rem;
+                        text-align: center;
+                    }
+
+                    .resumen-total-label {
+                        font-size: 0.8rem;
+                        opacity: 0.95;
+                        margin-bottom: 0.25rem;
+                    }
+
+                    .resumen-total-value {
+                        font-size: 1rem;
+                        font-weight: 700;
+                    }
+
                     .empty-state-resumen {
                         text-align: center;
                         padding: 2rem;
@@ -248,8 +275,21 @@
 
                             @if(count($this->pagosMensuales) > 0)
                                 <div class="resumen-total-card">
-                                    <div class="resumen-total-title">TOTAL ABONOS</div>
-                                    <div class="resumen-total-amount">S/ {{ number_format($this->totalAbonos, 2) }}</div>
+                                    <div class="resumen-total-title">RESUMEN</div>
+                                    <div class="resumen-total-grid">
+                                        <div class="resumen-total-item">
+                                            <div class="resumen-total-label">Total</div>
+                                            <div class="resumen-total-value">S/ {{ number_format($this->totalGenerado, 2) }}</div>
+                                        </div>
+                                        <div class="resumen-total-item">
+                                            <div class="resumen-total-label">Abonado</div>
+                                            <div class="resumen-total-value">S/ {{ number_format($this->totalAbonos, 2) }}</div>
+                                        </div>
+                                        <div class="resumen-total-item">
+                                            <div class="resumen-total-label">Deuda</div>
+                                            <div class="resumen-total-value">S/ {{ number_format(max($this->totalGenerado - $this->totalAbonos, 0), 2) }}</div>
+                                        </div>
+                                    </div>
                                     <div class="resumen-total-stats">
                                         {{ count(array_filter($this->pagosMensuales, fn($p) => $p['estado'] === 'CANCELADO')) }}
                                         de {{ count($this->pagosMensuales) }} pagos completados
