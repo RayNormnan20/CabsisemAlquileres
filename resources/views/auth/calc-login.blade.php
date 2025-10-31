@@ -157,7 +157,7 @@
             <div class="screen">
                 <div class="label" id="stepLabel">
                     @if($needsPhone)
-                    Ingrese su celular
+                    Ingrese su Usuario
                     @else
                     Ingrese su contraseña
                     @endif
@@ -248,9 +248,9 @@
 
         const updateStepLabel = () => {
             if (step === 1) {
-                stepLabel.textContent = 'Ingrese su celular';
+                stepLabel.textContent = '';
             } else {
-                stepLabel.textContent = 'Ingrese su contraseña';
+                stepLabel.textContent = '';
             }
         };
 
