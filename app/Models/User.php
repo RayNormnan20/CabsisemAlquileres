@@ -54,7 +54,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'comision',
         'perfil',
         'id_oficina',
-        'id_ruta' // Mantener para compatibilidad
+        'id_ruta', // Mantener para compatibilidad
+        'last_phone_login'
     ];
 
     /**
@@ -81,6 +82,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'fecha_ingreso' => 'datetime',
         'fecha_egreso' => 'datetime',
         'comision' => 'decimal:2',
+        'last_phone_login' => 'datetime',
     ];
 
     public static function boot()

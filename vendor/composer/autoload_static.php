@@ -1088,6 +1088,7 @@ class ComposerStaticInit10792816e5e2dda5bd11767ecd0bbbfc
         'App\\Filament\\Resources\\PagosAlquilerResource\\Pages\\CreatePagosAlquiler' => __DIR__ . '/../..' . '/app/Filament/Resources/PagosAlquilerResource/Pages/CreatePagosAlquiler.php',
         'App\\Filament\\Resources\\PagosAlquilerResource\\Pages\\EditPagosAlquiler' => __DIR__ . '/../..' . '/app/Filament/Resources/PagosAlquilerResource/Pages/EditPagosAlquiler.php',
         'App\\Filament\\Resources\\PagosAlquilerResource\\Pages\\ListPagosAlquilers' => __DIR__ . '/../..' . '/app/Filament/Resources/PagosAlquilerResource/Pages/ListPagosAlquilers.php',
+        'App\\Filament\\Resources\\PagosAlquilerResource\\Widgets\\PagosAlquilerTotalesWidget' => __DIR__ . '/../..' . '/app/Filament/Resources/PagosAlquilerResource/Widgets/PagosAlquilerTotalesWidget.php',
         'App\\Filament\\Resources\\PermissionResource' => __DIR__ . '/../..' . '/app/Filament/Resources/PermissionResource.php',
         'App\\Filament\\Resources\\PermissionResource\\Pages\\CreatePermission' => __DIR__ . '/../..' . '/app/Filament/Resources/PermissionResource/Pages/CreatePermission.php',
         'App\\Filament\\Resources\\PermissionResource\\Pages\\EditPermission' => __DIR__ . '/../..' . '/app/Filament/Resources/PermissionResource/Pages/EditPermission.php',

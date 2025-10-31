@@ -30,9 +30,9 @@ Route::get('/validate-account/{user:creation_token}', function (User $user) {
 
 
 // Login calculadora (GET muestra la vista, POST autentica)
-Route::get('/login', function () {
-    return view('auth.calc-login');
-})->middleware(['web'])->name('login');
+Route::get('/login', [CalcLoginController::class, 'showLoginForm'])
+    ->middleware(['web'])
+    ->name('login');
 
 // Alias de ruta para compatibilidad con Filament al cerrar sesión
 Route::get('/filament/login', function () {
@@ -45,15 +45,44 @@ Route::post('/login', [CalcLoginController::class, 'authenticate'])
 
 // Mobile logout route
 Route::post('/mobile-logout', function () {
+    // Preservar los datos de login diario antes del logout
+    $dailyLoginPhone = request()->session()->get('daily_login_phone');
+    $dailyLoginDate = request()->session()->get('daily_login_date');
+    
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
+    
+    // Restaurar los datos de login diario después del logout
+    if ($dailyLoginPhone && $dailyLoginDate) {
+        request()->session()->put('daily_login_phone', $dailyLoginPhone);
+        request()->session()->put('daily_login_date', $dailyLoginDate);
+    }
 
     return response()->json([
         'success' => true,
         'message' => 'Sesión cerrada exitosamente desde dispositivo móvil'
     ]);
 })->middleware(['web'])->name('mobile.logout');
+
+// Filament logout route (preserva datos de login diario)
+Route::post('/filament/logout', function () {
+    // Preservar los datos de login diario antes del logout
+    $dailyLoginPhone = request()->session()->get('daily_login_phone');
+    $dailyLoginDate = request()->session()->get('daily_login_date');
+    
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    
+    // Restaurar los datos de login diario después del logout
+    if ($dailyLoginPhone && $dailyLoginDate) {
+        request()->session()->put('daily_login_phone', $dailyLoginPhone);
+        request()->session()->put('daily_login_date', $dailyLoginDate);
+    }
+
+    return redirect()->route('login');
+})->middleware(['web'])->name('filament.auth.logout');
 
 // Road map JSON data
 Route::get('road-map/data/{project}', [DataController::class, 'data'])
@@ -66,7 +95,6 @@ Route::name('oidc.')
         Route::get('redirect', [OidcAuthController::class, 'redirect'])->name('redirect');
         Route::get('callback', [OidcAuthController::class, 'callback'])->name('callback');
     });
-
 
 Route::middleware(['auth', 'check.ruta.access'])->group(function () {
     Route::get('/rutas/{ruta}', [RutaController::class, 'show'])->name('rutas.show');

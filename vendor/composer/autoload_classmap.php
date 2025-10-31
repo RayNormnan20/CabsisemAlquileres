@@ -139,6 +139,7 @@ return array(
     'App\\Filament\\Resources\\PagosAlquilerResource\\Pages\\CreatePagosAlquiler' => $baseDir . '/app/Filament/Resources/PagosAlquilerResource/Pages/CreatePagosAlquiler.php',
     'App\\Filament\\Resources\\PagosAlquilerResource\\Pages\\EditPagosAlquiler' => $baseDir . '/app/Filament/Resources/PagosAlquilerResource/Pages/EditPagosAlquiler.php',
     'App\\Filament\\Resources\\PagosAlquilerResource\\Pages\\ListPagosAlquilers' => $baseDir . '/app/Filament/Resources/PagosAlquilerResource/Pages/ListPagosAlquilers.php',
+    'App\\Filament\\Resources\\PagosAlquilerResource\\Widgets\\PagosAlquilerTotalesWidget' => $baseDir . '/app/Filament/Resources/PagosAlquilerResource/Widgets/PagosAlquilerTotalesWidget.php',
     'App\\Filament\\Resources\\PermissionResource' => $baseDir . '/app/Filament/Resources/PermissionResource.php',
     'App\\Filament\\Resources\\PermissionResource\\Pages\\CreatePermission' => $baseDir . '/app/Filament/Resources/PermissionResource/Pages/CreatePermission.php',
     'App\\Filament\\Resources\\PermissionResource\\Pages\\EditPermission' => $baseDir . '/app/Filament/Resources/PermissionResource/Pages/EditPermission.php',
