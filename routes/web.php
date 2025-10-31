@@ -46,6 +46,16 @@ Route::post('/login', [CalcLoginController::class, 'authenticate'])
 
 // Mobile logout route
 Route::post('/mobile-logout', function () {
+    // Capturar la última vista para retorno post-login
+    $returnTo = request()->input('return_to');
+    if (!$returnTo) {
+        $referer = request()->header('referer');
+        $refererPath = $referer ? parse_url($referer, PHP_URL_PATH) : null;
+        if ($refererPath && \Illuminate\Support\Str::startsWith($refererPath, '/')) {
+            $returnTo = $refererPath;
+        }
+    }
+
     // Preservar los datos de login diario antes del logout
     $dailyLoginPhone = request()->session()->get('daily_login_phone');
     $dailyLoginDate = request()->session()->get('daily_login_date');
@@ -78,6 +88,11 @@ Route::post('/mobile-logout', function () {
     }
     if (!is_null($abonosClienteId)) {
         request()->session()->put('abonos_cliente_id', (int) $abonosClienteId);
+    }
+
+    // Guardar retorno deseado para la próxima sesión de login
+    if ($returnTo) {
+        request()->session()->put('return_to', $returnTo);
     }
 
     return response()->json([
@@ -88,6 +103,15 @@ Route::post('/mobile-logout', function () {
 
 // Filament logout route (preserva datos de login diario)
 Route::post('/filament/logout', function () {
+    // Capturar la última vista para retorno post-login
+    $returnTo = request()->input('return_to');
+    if (!$returnTo) {
+        $referer = request()->header('referer');
+        $refererPath = $referer ? parse_url($referer, PHP_URL_PATH) : null;
+        if ($refererPath && \Illuminate\Support\Str::startsWith($refererPath, '/')) {
+            $returnTo = $refererPath;
+        }
+    }
     // Preservar los datos de login diario antes del logout
     $dailyLoginPhone = request()->session()->get('daily_login_phone');
     $dailyLoginDate = request()->session()->get('daily_login_date');
@@ -120,6 +144,11 @@ Route::post('/filament/logout', function () {
     }
     if (!is_null($abonosClienteId)) {
         request()->session()->put('abonos_cliente_id', (int) $abonosClienteId);
+    }
+
+    // Guardar retorno deseado para la próxima sesión de login
+    if ($returnTo) {
+        request()->session()->put('return_to', $returnTo);
     }
 
     // Capturar la última URL para volver tras el login

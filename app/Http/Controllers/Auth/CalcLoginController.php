@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ruta;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,8 +48,14 @@ class CalcLoginController extends Controller
 
                 $request->session()->regenerate();
 
+                // Inicializar ruta seleccionada en sesión tras autenticación
+                $this->initializeSelectedRouteForUser($request, $user);
+
                 // Redirigir a la última URL si viene en return_to
                 $returnTo = $request->input('return_to');
+                if (!$returnTo) {
+                    $returnTo = $request->session()->pull('return_to');
+                }
                 if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
                     return redirect($returnTo);
                 }
@@ -74,8 +81,14 @@ class CalcLoginController extends Controller
                 Auth::login($user);
                 $request->session()->regenerate();
 
+                // Inicializar ruta seleccionada en sesión tras autenticación
+                $this->initializeSelectedRouteForUser($request, $user);
+
                 // Redirigir a la última URL si viene en return_to
                 $returnTo = $request->input('return_to');
+                if (!$returnTo) {
+                    $returnTo = $request->session()->pull('return_to');
+                }
                 if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
                     return redirect($returnTo);
                 }
@@ -152,11 +165,44 @@ class CalcLoginController extends Controller
     {
         $needsPhone = $this->needsPhoneValidation($request);
         $returnTo = $request->query('return_to');
+        if (!$returnTo) {
+            $returnTo = $request->session()->get('return_to');
+        }
 
         return view('auth.calc-login', [
             'needsPhone' => $needsPhone,
             'storedPhone' => $request->session()->get('daily_login_phone'),
             'returnTo' => $returnTo,
         ]);
+    }
+
+    /**
+     * Inicializa la ruta seleccionada en sesión para el usuario autenticado.
+     */
+    private function initializeSelectedRouteForUser(Request $request, User $user): void
+    {
+        // Evitar reusar rutas de sesiones anteriores; establecer según el usuario actual
+        $ruta = null;
+
+        if (!empty($user->last_selected_ruta_id)) {
+            $ruta = Ruta::where('id_ruta', $user->last_selected_ruta_id)->first();
+        }
+
+        if (!$ruta) {
+            $ruta = $user->rutas()->where('activa', true)->first();
+        }
+
+        if (!$ruta) {
+            $ruta = Ruta::where('activa', true)->first();
+        }
+
+        $rutaId = $ruta ? (int) $ruta->id_ruta : null;
+        $rutaName = $ruta ? ($ruta->nombre_completo ?? $ruta->nombre ?? 'Ruta') : 'Ruta';
+
+        $request->session()->put('selected_ruta_id', $rutaId);
+        $request->session()->put('selected_ruta_name', $rutaName);
+
+        // Opcional: marcar inicialización para coherencia con EnsureSelectedRoute
+        $request->session()->put('selected_route_initialized_for_user', $user->id);
     }
 }
