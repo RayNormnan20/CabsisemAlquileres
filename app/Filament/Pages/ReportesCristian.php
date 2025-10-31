@@ -18,10 +18,12 @@ use Filament\Forms\Components\Grid;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Livewire\Traits\RouteValidation;
 
 class ReportesCristian extends Page implements HasForms
 {
     use InteractsWithForms;
+    use RouteValidation;
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
     protected static ?string $navigationLabel = 'Reportes Cristian';
@@ -84,6 +86,8 @@ class ReportesCristian extends Page implements HasForms
 
     public function mount()
     {
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
         $this->fechaInicio = Carbon::today()->format('Y-m-d');
         $this->fechaFin = Carbon::today()->format('Y-m-d');
         $this->rutaSeleccionada = 'todas'; // Establecer valor por defecto

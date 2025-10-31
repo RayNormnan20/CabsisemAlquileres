@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ResumenAlquilerResource\Pages;
 
 use App\Filament\Resources\ResumenAlquilerResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use App\Models\Alquiler;
 use App\Models\PagoAlquiler;
 use App\Models\Edificio;
@@ -19,6 +20,7 @@ use Filament\Pages\Actions;
 
 class ListResumenAlquiler extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = ResumenAlquilerResource::class;
     protected static string $view = 'filament.pages.list-resumen-alquiler';
 
@@ -40,6 +42,7 @@ class ListResumenAlquiler extends ListRecords
 
     public function mount(): void
     {
+        $this->validateAndCorrectSelectedRoute();
         parent::mount();
         $this->loadData();
     }

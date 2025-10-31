@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\VistaMovimientoResource\Pages;
 
 use App\Filament\Resources\VistaMovimientoResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use App\Filament\Widgets\IngresosGastosWebSocketWidget;
 use Carbon\Carbon;
 use Filament\Pages\Actions;
@@ -14,6 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class ListVistaMovimientos extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = VistaMovimientoResource::class;
 
     public ?string $fechaDesde = null;
@@ -33,6 +35,8 @@ class ListVistaMovimientos extends ListRecords
     public function mount(): void
     {
         parent::mount();
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
         
         // Inicializar filtro de ruta desde la sesión
         if (Session::has('selected_ruta_id')) {

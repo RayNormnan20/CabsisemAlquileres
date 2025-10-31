@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PagosAlquilerResource\Pages;
 use App\Filament\Resources\PagosAlquilerResource;
 use App\Filament\Widgets\PagosAlquilerWebSocketWidget;
 use App\Filament\Widgets\PagosAlquilerFiltroFechaWidget;
+use App\Http\Livewire\Traits\RouteValidation;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 
 class ListPagosAlquilers extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = PagosAlquilerResource::class;
 
     public $fechaDesde;
@@ -32,6 +34,7 @@ class ListPagosAlquilers extends ListRecords
 
     public function mount(): void
     {
+        $this->validateAndCorrectSelectedRoute();
         parent::mount();
 
         // Inicializar filtro de fecha por defecto (hoy)

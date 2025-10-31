@@ -18,9 +18,12 @@ use Livewire\Component as LivewireComponent;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+use App\Http\Livewire\Traits\RouteValidation;
 
 class ListAbonos extends ListRecords
 {
+    use RouteValidation;
+    
     protected static string $resource = AbonosResource::class;
 
     public int|string|null $clienteId = null;
@@ -54,6 +57,9 @@ class ListAbonos extends ListRecords
     public function mount(): void
     {
         parent::mount();
+
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
 
         // Restaurar el cliente seleccionado desde sesión si existe Y pertenece a la ruta actual
         $persistedClienteId = session()->pull('abonos_cliente_id');

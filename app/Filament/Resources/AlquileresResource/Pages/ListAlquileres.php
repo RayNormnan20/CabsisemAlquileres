@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AlquileresResource\Pages;
 
 use App\Filament\Resources\AlquileresResource;
 use App\Filament\Widgets\AlquileresWebSocketWidget;
+use App\Http\Livewire\Traits\RouteValidation;
 use App\Models\Edificio;
 use App\Models\Departamento;
 use App\Models\Alquiler;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Session;
 
 class ListAlquileres extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = AlquileresResource::class;
 
     protected $listeners = [
@@ -44,6 +46,7 @@ class ListAlquileres extends ListRecords
 
     public function mount(): void
     {
+        $this->validateAndCorrectSelectedRoute();
         parent::mount();
 
         if (Session::has('selected_ruta_id')) {

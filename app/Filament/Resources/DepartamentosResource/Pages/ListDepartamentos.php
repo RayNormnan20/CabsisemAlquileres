@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DepartamentosResource\Pages;
 
 use App\Filament\Resources\DepartamentosResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use App\Filament\Widgets\DepartamentosWebSocketWidget;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Session;
 
 class ListDepartamentos extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = DepartamentosResource::class;
 
     protected $listeners = [
@@ -33,6 +35,8 @@ class ListDepartamentos extends ListRecords
     public function mount(): void
     {
         parent::mount();
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
 
         if (Session::has('selected_ruta_id')) {
             $this->currentRutaId = Session::get('selected_ruta_id');

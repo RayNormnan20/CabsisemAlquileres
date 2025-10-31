@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\YapeClienteResource\Pages;
 
 use App\Filament\Resources\YapeClienteResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -10,7 +11,14 @@ use Illuminate\Support\Facades\Session;
 
 class ListYapeClientes extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = YapeClienteResource::class;
+
+    public function mount(): void
+    {
+        $this->validateAndCorrectSelectedRoute();
+        parent::mount();
+    }
 
     protected function getTableQuery(): Builder
     {

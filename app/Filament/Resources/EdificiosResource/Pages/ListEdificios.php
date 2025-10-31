@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EdificiosResource\Pages;
 
 use App\Filament\Resources\EdificiosResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use App\Filament\Widgets\EdificiosWebSocketWidget;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Session;
 
 class ListEdificios extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = EdificiosResource::class;
     
     protected $listeners = [
@@ -33,6 +35,8 @@ class ListEdificios extends ListRecords
     public function mount(): void
     {
         parent::mount();
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
 
         if (Session::has('selected_ruta_id')) {
             $this->currentRutaId = Session::get('selected_ruta_id');

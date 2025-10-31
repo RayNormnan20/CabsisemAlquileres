@@ -19,6 +19,7 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use App\Http\Livewire\Traits\RouteValidation;
 use Filament\Notifications\Notification;
 use Filament\Pages\Actions\Action;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,7 @@ use Illuminate\Support\Facades\Session;
 class TrasladarClientes extends Page implements HasForms
 {
     use InteractsWithForms;
+    use RouteValidation;
 
     protected static ?string $navigationIcon = 'heroicon-o-switch-horizontal';
     protected static ?string $navigationLabel = 'Trasladar Clientes';
@@ -54,6 +56,8 @@ class TrasladarClientes extends Page implements HasForms
 
      public function mount(): void
     {
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
         $this->clientesSeleccionados = [];
         $this->clientesDisponibles = [];
         $this->clientesConDatos = [];

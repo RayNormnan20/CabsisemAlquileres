@@ -6,6 +6,7 @@ use App\Exports\ClienteCreditosAbonosExport;
 use App\Filament\Widgets\ClienteCreditosAbonosWidget;
 use App\Models\User;
 use App\Models\Ruta;
+use App\Http\Livewire\Traits\RouteValidation;
 use Filament\Forms\Components\Actions\Modal\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
@@ -17,6 +18,7 @@ use Illuminate\Support\Carbon;
 
 class ClienteCreditosAbonos extends Page
 {
+    use RouteValidation;
     protected static ?string $navigationIcon = 'heroicon-o-document-report';
     protected static ?string $navigationLabel = 'Liquidaciones';
     protected static ?string $title = 'Liquidaciones por Ruta';
@@ -46,6 +48,9 @@ class ClienteCreditosAbonos extends Page
     
     public function mount(): void
     {
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
+
         // Cargar rutas que tienen usuarios asignados
         $this->rutas = Ruta::whereHas('usuarios')
             ->orderBy('nombre')
@@ -59,6 +64,12 @@ class ClienteCreditosAbonos extends Page
             })
             ->pluck('nombre', 'id')
             ->toArray();
+        
+        // Sincronizar la ruta inicial desde la sesión (si existe)
+        $this->rutaId = Session::get('selected_ruta_id');
+        if ($this->rutaId) {
+            $this->actualizarRuta();
+        }
             
         // Aplicar período por defecto
         $this->aplicarPeriodo();

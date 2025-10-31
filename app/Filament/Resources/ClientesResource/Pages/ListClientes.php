@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ClientesResource\Pages;
 
 use App\Filament\Resources\ClientesResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Session;
 
 class ListClientes extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = ClientesResource::class;
 
     public ?int $currentRutaId = null;
@@ -25,6 +27,8 @@ class ListClientes extends ListRecords
     public function mount(): void
     {
         parent::mount();
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
 
         if (Session::has('selected_ruta_id')) {
             $this->currentRutaId = Session::get('selected_ruta_id');

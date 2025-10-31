@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ConceptosAbonosResource\Pages;
 
 use App\Filament\Resources\ConceptosAbonosResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use App\Models\ConceptoAbono;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -13,7 +14,29 @@ use Illuminate\Support\Facades\Session;
 
 class ListConceptosAbonos extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = ConceptosAbonosResource::class;
+
+    protected $listeners = [
+        'globalRouteChanged' => 'applyRouteFilter',
+        'refreshComponent' => '$refresh',
+        '$refresh',
+    ];
+
+    public function mount(): void
+    {
+        parent::mount();
+        // Validar/corregir la ruta en sesión antes de construir la consulta
+        $this->validateAndCorrectSelectedRoute();
+    }
+
+    public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
+    {
+        // Al cambiar la ruta, reiniciar la paginación para reflejar el nuevo filtro
+        if (method_exists($this, 'resetPage')) {
+            $this->resetPage();
+        }
+    }
 
     protected function getTableQuery(): Builder
     {

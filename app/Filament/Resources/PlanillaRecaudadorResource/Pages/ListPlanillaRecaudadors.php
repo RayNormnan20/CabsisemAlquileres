@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PlanillaRecaudadorResource\Pages;
 
 use App\Filament\Resources\PlanillaRecaudadorResource;
+use App\Http\Livewire\Traits\RouteValidation;
 use App\Models\Ruta;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -17,6 +18,7 @@ use Carbon\Carbon;
 
 class ListPlanillaRecaudadors extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = PlanillaRecaudadorResource::class;
 
     public ?string $ordenarPor = 'ruta';
@@ -27,6 +29,8 @@ class ListPlanillaRecaudadors extends ListRecords
     public function mount(): void
     {
         parent::mount();
+        // Validar y corregir la ruta seleccionada usando el trait
+        $this->validateAndCorrectSelectedRoute();
         
         // Verificar si hay una ruta seleccionada en la sesión
         if (!Session::has('selected_ruta_id')) {

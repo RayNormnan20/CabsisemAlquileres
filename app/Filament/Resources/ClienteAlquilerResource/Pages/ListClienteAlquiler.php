@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ClienteAlquilerResource\Pages;
 
 use App\Filament\Resources\ClienteAlquilerResource;
 use App\Filament\Widgets\ClienteAlquilerWebSocketWidget;
+use App\Http\Livewire\Traits\RouteValidation;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Session;
 
 class ListClienteAlquiler extends ListRecords
 {
+    use RouteValidation;
     protected static string $resource = ClienteAlquilerResource::class;
     
     protected $listeners = [
@@ -32,6 +34,7 @@ class ListClienteAlquiler extends ListRecords
 
     public function mount(): void
     {
+        $this->validateAndCorrectSelectedRoute();
         parent::mount();
 
         if (Session::has('selected_ruta_id')) {
