@@ -132,8 +132,8 @@ if (isset($conceptosSinAbono)) {
             <tr class="hover:bg-gray-50 transition-colors duration-200">
                 <td class="px-3 py-2 whitespace-normal break-words text-sm font-medium text-gray-900">
                     <button type="button" class="text-blue-600 hover:text-blue-800 cursor-pointer relative group focus:outline-none"
-                        @click="selectedConcept='{{ addslashes($concepto) }}'; open=true" aria-label="Ver detalles de {{ addslashes($concepto) }}">
-                        <span>{{ $concepto }}</span>
+                        @click="selectedConcept='{{ addslashes(ucfirst(mb_strtolower($concepto, 'UTF-8'))) }}'; open=true" aria-label="Ver detalles de {{ addslashes(ucfirst(mb_strtolower($concepto, 'UTF-8'))) }}">
+                        <span>{{ ucfirst(mb_strtolower($concepto, 'UTF-8')) }}</span>
                         <span class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 group-focus:opacity-100">Ver detalles</span>
                     </button>
                 </td>

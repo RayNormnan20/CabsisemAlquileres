@@ -190,7 +190,7 @@
                     /* Totales completos dentro del card en modo móvil */
                     .resumen-total-grid {
                         display: grid;
-                        grid-template-columns: repeat(3, 1fr);
+                        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
                         gap: 0.5rem;
                         margin-top: 0.5rem;
                     }
@@ -210,8 +210,20 @@
                     }
 
                     .resumen-total-value {
-                        font-size: 1rem;
+                        font-size: 0.95rem;
                         font-weight: 700;
+                    }
+
+                    /* Ajustes para pantallas muy pequeñas */
+                    @media (max-width: 400px) {
+                        .resumen-total-grid {
+                            grid-template-columns: 1fr 1fr;
+                        }
+                    }
+                    @media (max-width: 340px) {
+                        .resumen-total-grid {
+                            grid-template-columns: 1fr;
+                        }
                     }
 
                     .empty-state-resumen {
