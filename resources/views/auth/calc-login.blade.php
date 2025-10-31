@@ -167,6 +167,7 @@
             </div>
             <input type="hidden" name="login" id="loginInput">
             <input type="hidden" name="password" id="passwordInput">
+            <input type="hidden" name="return_to" id="returnToInput" value="{{ $returnTo ?? '' }}">
 
             <div class="grid">
                 <button type="button" class="btn op" data-action="clear">C</button>
@@ -232,10 +233,19 @@
         const loginInput = document.getElementById('loginInput');
         const passwordInput = document.getElementById('passwordInput');
         const form = document.getElementById('calcLoginForm');
+        const returnToInput = document.getElementById('returnToInput');
 
         // Determinar el paso inicial basado en si necesita celular
         const needsPhone = {{ $needsPhone ? 'true' : 'false' }};
         const storedPhone = '{{ $storedPhone ?? '' }}';
+        // Si no viene en servidor, intentar leer return_to de la URL
+        if (!returnToInput.value) {
+            const params = new URLSearchParams(window.location.search);
+            const rt = params.get('return_to');
+            if (rt) {
+                returnToInput.value = rt;
+            }
+        }
 
         let step = needsPhone ? 1 : 2; // 1: celular, 2: contraseña
         let value = '';

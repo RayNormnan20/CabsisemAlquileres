@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class CalcLoginController extends Controller
@@ -45,6 +46,13 @@ class CalcLoginController extends Controller
                 }
 
                 $request->session()->regenerate();
+
+                // Redirigir a la última URL si viene en return_to
+                $returnTo = $request->input('return_to');
+                if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
+                    return redirect($returnTo);
+                }
+
                 return redirect()->intended('/');
             }
 
@@ -65,6 +73,13 @@ class CalcLoginController extends Controller
             if ($user) {
                 Auth::login($user);
                 $request->session()->regenerate();
+
+                // Redirigir a la última URL si viene en return_to
+                $returnTo = $request->input('return_to');
+                if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
+                    return redirect($returnTo);
+                }
+
                 return redirect()->intended('/');
             }
 
@@ -136,10 +151,12 @@ class CalcLoginController extends Controller
     public function showLoginForm(Request $request)
     {
         $needsPhone = $this->needsPhoneValidation($request);
+        $returnTo = $request->query('return_to');
 
         return view('auth.calc-login', [
             'needsPhone' => $needsPhone,
-            'storedPhone' => $request->session()->get('daily_login_phone')
+            'storedPhone' => $request->session()->get('daily_login_phone'),
+            'returnTo' => $returnTo,
         ]);
     }
 }

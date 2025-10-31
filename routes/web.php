@@ -12,6 +12,7 @@ use App\Http\Controllers\RutaController;
 use App\Http\Controllers\YapeClienteController;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Auth\CalcLoginController;
+use Illuminate\Support\Str;
 
 // Validate an account
 Route::get('/validate-account/{user:creation_token}', function (User $user) {
@@ -48,6 +49,9 @@ Route::post('/mobile-logout', function () {
     // Preservar los datos de login diario antes del logout
     $dailyLoginPhone = request()->session()->get('daily_login_phone');
     $dailyLoginDate = request()->session()->get('daily_login_date');
+    // Preservar la ruta seleccionada antes del logout
+    $selectedRutaId = request()->session()->get('selected_ruta_id');
+    $selectedRutaName = request()->session()->get('selected_ruta_name');
     
     Auth::logout();
     request()->session()->invalidate();
@@ -57,6 +61,12 @@ Route::post('/mobile-logout', function () {
     if ($dailyLoginPhone && $dailyLoginDate) {
         request()->session()->put('daily_login_phone', $dailyLoginPhone);
         request()->session()->put('daily_login_date', $dailyLoginDate);
+    }
+
+    // Restaurar la ruta seleccionada después del logout
+    if (!is_null($selectedRutaId)) {
+        request()->session()->put('selected_ruta_id', $selectedRutaId);
+        request()->session()->put('selected_ruta_name', $selectedRutaName ?? 'Ruta');
     }
 
     return response()->json([
@@ -70,6 +80,9 @@ Route::post('/filament/logout', function () {
     // Preservar los datos de login diario antes del logout
     $dailyLoginPhone = request()->session()->get('daily_login_phone');
     $dailyLoginDate = request()->session()->get('daily_login_date');
+    // Preservar la ruta seleccionada antes del logout
+    $selectedRutaId = request()->session()->get('selected_ruta_id');
+    $selectedRutaName = request()->session()->get('selected_ruta_name');
     
     Auth::logout();
     request()->session()->invalidate();
@@ -81,7 +94,28 @@ Route::post('/filament/logout', function () {
         request()->session()->put('daily_login_date', $dailyLoginDate);
     }
 
-    return redirect()->route('login');
+    // Restaurar la ruta seleccionada después del logout
+    if (!is_null($selectedRutaId)) {
+        request()->session()->put('selected_ruta_id', $selectedRutaId);
+        request()->session()->put('selected_ruta_name', $selectedRutaName ?? 'Ruta');
+    }
+
+    // Capturar la última URL para volver tras el login
+    $lastUrl = url()->previous();
+    $baseUrl = url('/');
+    $returnTo = '/';
+
+    if ($lastUrl && Str::startsWith($lastUrl, $baseUrl)) {
+        // Convertir a ruta relativa segura (sin protocolo/host)
+        $relative = Str::replaceFirst($baseUrl, '', $lastUrl);
+        $relative = '/' . ltrim($relative, '/');
+        // Evitar redirigir a la propia página de login
+        if (!Str::startsWith($relative, '/login')) {
+            $returnTo = $relative;
+        }
+    }
+
+    return redirect()->route('login', ['return_to' => $returnTo]);
 })->middleware(['web'])->name('filament.auth.logout');
 
 // Road map JSON data

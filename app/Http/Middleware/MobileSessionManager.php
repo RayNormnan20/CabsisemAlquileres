@@ -42,6 +42,9 @@ class MobileSessionManager
                 // Preservar datos de login diario antes de invalidar la sesión
                 $dailyLoginPhone = $request->session()->get('daily_login_phone');
                 $dailyLoginDate = $request->session()->get('daily_login_date');
+                // Preservar la ruta seleccionada antes de invalidar la sesión
+                $selectedRutaId = $request->session()->get('selected_ruta_id');
+                $selectedRutaName = $request->session()->get('selected_ruta_name');
 
                 Auth::logout();
                 $request->session()->invalidate();
@@ -53,12 +56,20 @@ class MobileSessionManager
                     $request->session()->put('daily_login_date', $dailyLoginDate);
                 }
 
+                // Restaurar la ruta seleccionada para que quede preseleccionada tras reingreso
+                if (!is_null($selectedRutaId)) {
+                    $request->session()->put('selected_ruta_id', $selectedRutaId);
+                    $request->session()->put('selected_ruta_name', $selectedRutaName ?? 'Ruta');
+                }
+
                 Log::info('Mobile logout executed (preserving daily login)', [
                     'user_agent' => $request->userAgent(),
                     'ip' => $request->ip(),
                     'timestamp' => now(),
                     'preserved_phone' => $dailyLoginPhone ?? null,
                     'preserved_date' => $dailyLoginDate ?? null,
+                    'preserved_ruta_id' => $selectedRutaId ?? null,
+                    'preserved_ruta_name' => $selectedRutaName ?? null,
                 ]);
 
                 return response()->json([

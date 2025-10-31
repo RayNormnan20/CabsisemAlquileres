@@ -571,15 +571,19 @@ class MobileSessionManager {
                 const data = await response.json();
                 console.log('Logout exitoso:', data.message);
 
-                // Redirigir a la página de login
-                window.location.href = '/login';
+                // Capturar última URL para volver al mismo lugar tras login
+                const lastUrl = window.location.pathname + window.location.search;
+                const loginUrl = '/login?return_to=' + encodeURIComponent(lastUrl);
+                window.location.href = loginUrl;
             } else {
                 console.error('Error en logout automático:', response.statusText);
             }
         } catch (error) {
             console.error('Error al realizar logout automático:', error);
-            // En caso de error, intentar redirigir a login de todas formas
-            window.location.href = '/login';
+            // En caso de error, intentar redirigir a login de todas formas con return_to
+            const lastUrl = window.location.pathname + window.location.search;
+            const loginUrl = '/login?return_to=' + encodeURIComponent(lastUrl);
+            window.location.href = loginUrl;
         }
     }
 
