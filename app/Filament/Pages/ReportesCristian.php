@@ -71,7 +71,7 @@ class ReportesCristian extends Page implements HasForms
     public function esAdministrador(): bool
     {
         $user = auth()->user();
-        return $user && ($user->hasRole('Administrador') || $user->hasRole('Super Administrador'));
+        return $user && ($user->hasRole('Administrador') || $user->hasRole('Super Administrador') || $user->hasRole('Administrador 2'));
     }
 
     /**
