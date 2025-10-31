@@ -6,6 +6,10 @@ use App\Models\Clientes;
 use App\Models\Creditos;
 use App\Models\Abonos;
 use App\Models\ConceptoAbono;
+use App\Models\Edificio;
+use App\Models\Departamento;
+use App\Models\Alquiler;
+use App\Models\PagoAlquiler;
 use App\Models\Ruta;
 use App\Helpers\RutaPermissionHelper;
 use Filament\Pages\Page;
@@ -62,6 +66,8 @@ class ReportesCristian extends Page implements HasForms
     public $conceptosSinAbono = []; // NUEVO: Conceptos sin id_abono
     public $records = [];
     public $creditosRecords = [];
+    // Deuda de alquiler por edificio
+    public $deudaAlquilerPorEdificio = [];
 
     // Modal de configuración de rutas
     public $mostrarModalRutas = false;
@@ -446,6 +452,9 @@ class ReportesCristian extends Page implements HasForms
             $q->whereDate('fecha_pago', '>=', $fechaInicio)
               ->whereDate('fecha_pago', '<=', $fechaFin);
         })->count();
+
+        // Cargar deudas de alquiler por edificio (siempre listar todos los edificios)
+        $this->cargarDeudaAlquilerPorEdificio();
     }
 
 
@@ -483,5 +492,108 @@ class ReportesCristian extends Page implements HasForms
         ];
 
         return $reportes[$this->reporteSeleccionado] ?? $reportes['dashboard'];
+    }
+
+    /**
+     * Calcular la deuda de alquiler por edificio sumando deudas por departamento y mes.
+     * Lista todos los edificios activos, con cantidad de departamentos y deuda total.
+     */
+    protected function cargarDeudaAlquilerPorEdificio(): void
+    {
+        try {
+            $edificios = Edificio::query()
+                ->where('activo', true)
+                ->with(['departamentos' => function($q){
+                    $q->where('activo', true);
+                }])
+                ->orderBy('nombre')
+                ->get();
+
+            $resultado = [];
+            foreach ($edificios as $edificio) {
+                $departamentos = $edificio->departamentos ?? collect();
+                $cantidadDepartamentos = $departamentos->count();
+
+                $totalDeudaEdificio = 0.0;
+                $detallePorMes = []; // key: YYYY-MM => ['label'=>..., 'monto'=>float]
+                $departamentosDetalle = [];
+
+                foreach ($departamentos as $departamento) {
+                    // Alquiler activo del departamento
+                    $alquiler = Alquiler::where('id_departamento', $departamento->id_departamento)
+                        ->where('estado_alquiler', 'activo')
+                        ->first();
+
+                    if (!$alquiler) {
+                        continue;
+                    }
+
+                    $precioMensual = (float) ($alquiler->precio_mensual ?? 0);
+                    $fechaInicio = $alquiler->fecha_inicio ? Carbon::parse($alquiler->fecha_inicio)->copy()->startOfMonth() : null;
+                    if (!$fechaInicio) {
+                        continue;
+                    }
+                    $fechaFinAlquiler = $alquiler->fecha_fin ? Carbon::parse($alquiler->fecha_fin)->copy()->startOfMonth() : null;
+                    $fechaLimite = $fechaFinAlquiler && $fechaFinAlquiler->lt(Carbon::now()->startOfMonth())
+                        ? $fechaFinAlquiler
+                        : Carbon::now()->startOfMonth();
+
+                    $cursorMes = $fechaInicio->copy();
+                    $detalleMesesDepto = [];
+                    while ($cursorMes->lte($fechaLimite)) {
+                        $year = (int) $cursorMes->year;
+                        $month = (int) $cursorMes->month;
+                        $key = $cursorMes->format('Y-m');
+                        $label = ucfirst($cursorMes->locale('es')->isoFormat('MMMM YYYY'));
+
+                        // Pagos del mes para este alquiler
+                        $pagadoMes = (float) PagoAlquiler::where('id_alquiler', $alquiler->id_alquiler)
+                            ->where('mes_correspondiente', $month)
+                            ->where('ano_correspondiente', $year)
+                            ->sum('monto_pagado');
+
+                        $deudaMes = max($precioMensual - $pagadoMes, 0);
+                        // Guardar detalle por departamento (incluye meses con deuda positiva)
+                        $detalleMesesDepto[] = [
+                            'label' => $label,
+                            'monto' => round($deudaMes, 2),
+                        ];
+
+                        if (!isset($detallePorMes[$key])) {
+                            $detallePorMes[$key] = [
+                                'label' => $label,
+                                'monto' => 0.0,
+                            ];
+                        }
+                        $detallePorMes[$key]['monto'] += $deudaMes;
+                        $totalDeudaEdificio += $deudaMes;
+
+                        $cursorMes->addMonth();
+                    }
+
+                    // Agregar entrada del departamento
+                    $departamentosDetalle[] = [
+                        'departamento_id' => $departamento->id_departamento,
+                        'departamento' => 'Depto. ' . ($departamento->numero_departamento ?? ''),
+                        'meses' => $detalleMesesDepto,
+                    ];
+                }
+
+                ksort($detallePorMes);
+                $resultado[] = [
+                    'edificio_id' => $edificio->id_edificio,
+                    'edificio' => $edificio->nombre,
+                    'cantidad' => $cantidadDepartamentos,
+                    'monto_total' => round($totalDeudaEdificio, 2),
+                    'detalle' => array_values($detallePorMes), // resumen mensual del edificio
+                    'departamentos_detalle' => $departamentosDetalle, // detalle por departamento
+                ];
+            }
+
+            $this->deudaAlquilerPorEdificio = $resultado;
+        } catch (\Throwable $e) {
+            // En caso de error, evitar romper la página
+            $this->deudaAlquilerPorEdificio = [];
+        }
     }
 }

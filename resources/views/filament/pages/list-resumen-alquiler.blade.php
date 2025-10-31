@@ -337,22 +337,22 @@
                                 @if(count($this->pagosMensuales) > 0)
                                 <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
-                                        TOTAL ABONOS
+                                        TOTAL
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                                        S/ {{ number_format($this->totalGenerado, 2) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                         S/ {{ number_format($this->totalAbonos, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-bold text-gray-900 dark:text-white">
-                                            {{ count(array_filter($this->pagosMensuales, fn($p) => $p['estado'] === 'CANCELADO')) }}
-                                            de {{ count($this->pagosMensuales) }} pagos
-                                        </span>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-700 dark:text-red-300">
+                                        DEUDA: S/ {{ number_format(max($this->totalGenerado - $this->totalAbonos, 0), 2) }}
                                     </td>
                                 </tr>
                                 @endif
                                 @else
                                 <tr>
-                                    <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                         Selecciona un edificio y departamento para ver los datos
                                     </td>
                                 </tr>

@@ -309,6 +309,19 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tabla: Deuda de Alquiler por Edificio -->
+            <div class="report-table">
+                <div class="report-table-header">
+                    <i class="fas fa-building mr-2"></i>
+                    DEUDA DE ALQUILER POR EDIFICIO
+                </div>
+                <div class="report-table-content">
+                    <div class="table-container">
+                        @include('reportes-cristian.deudas-alquileres-content')
+                    </div>
+                </div>
+            </div>
             @endif
 
             <!-- Tabla 4: Reporte de Abonos -->

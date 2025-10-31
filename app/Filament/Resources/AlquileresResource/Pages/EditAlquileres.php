@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\AlquileresResource\Pages;
 
 use App\Filament\Resources\AlquileresResource;
+use App\Models\EstadoDepartamento;
+use App\Models\Departamento;
 use App\Models\LogActividad;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -48,6 +50,19 @@ class EditAlquileres extends EditRecord
                 $this->record->update([
                     'fecha_proximo_pago' => $fechaInicio->copy()->addMonth()
                 ]);
+            }
+
+            // Al finalizar el alquiler, cambiar el estado del departamento a 'Disponible'
+            $estadoDisponible = EstadoDepartamento::where('nombre', 'Disponible')
+                ->where('activo', true)
+                ->first();
+
+            if ($estadoDisponible) {
+                $departamento = $this->record->departamento;
+                if ($departamento) {
+                    $departamento->id_estado_departamento = $estadoDisponible->id_estado_departamento;
+                    $departamento->save();
+                }
             }
         }
 

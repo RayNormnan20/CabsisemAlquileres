@@ -29,6 +29,7 @@ class ListResumenAlquiler extends ListRecords
     public $pagosMensuales = [];
     public $detallesPagos = [];
     public $totalAbonos = 0;
+    public $totalGenerado = 0; // Suma de los montos totales por mes
 
     protected function getTitle(): string
     {
@@ -107,6 +108,7 @@ class ListResumenAlquiler extends ListRecords
         $fechaFin = $alquiler->fecha_fin ? Carbon::parse($alquiler->fecha_fin) : null;
         $pagosMensuales = [];
         $totalAbonos = 0;
+        $totalGenerado = 0;
 
         // Determinar la fecha límite (fecha fin del alquiler o fecha actual, lo que sea menor)
         $fechaLimite = $fechaFin && $fechaFin->lt($fechaActual) ? $fechaFin : $fechaActual;
@@ -148,11 +150,15 @@ class ListResumenAlquiler extends ListRecords
                 'fecha' => $fechaMes->copy()
             ];
 
+            // Acumular el total programado por mes
+            $totalGenerado += (float) $alquiler->precio_mensual;
+
             $fechaMes->addMonth();
         }
 
         $this->pagosMensuales = $pagosMensuales;
         $this->totalAbonos = $totalAbonos;
+        $this->totalGenerado = $totalGenerado;
     }
 
     private function loadDetallesPagos($alquiler)
