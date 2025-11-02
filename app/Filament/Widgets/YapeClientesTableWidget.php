@@ -302,6 +302,25 @@ class YapeClientesTableWidget extends BaseWidget
                             $html .= '</thead>';
                             $html .= '<tbody class="bg-white divide-y divide-gray-200">';
 
+                            // Construir una sola vez la lista de abonos con imágenes para evitar duplicar JSON en cada modal
+                            $abonosConImagenesGlobal = $abonos->filter(function($a) {
+                                return $a->conceptosabonos->where('foto_comprobante', '!=', null)->count() > 0;
+                            })->map(function($a) {
+                                return [
+                                    'id' => $a->id_abono,
+                                    'cliente' => $a->cliente ? $a->cliente->nombre_completo : 'Sin cliente',
+                                    'fecha' => $a->created_at->format('d/m/Y H:i'),
+                                    'monto' => $a->monto_abono,
+                                    'es_devolucion' => $a->es_devolucion,
+                                    'usuario' => $a->usuario ? $a->usuario->name : 'Sin usuario',
+                                    'metodos' => $a->conceptosabonos->pluck('tipo_concepto')->implode(', '),
+                                    'url' => optional($a->conceptosabonos->firstWhere('foto_comprobante', '!=', null))->foto_comprobante
+                                        ? asset('storage/' . $a->conceptosabonos->firstWhere('foto_comprobante', '!=', null)->foto_comprobante)
+                                        : null,
+                                ];
+                            })->values();
+                            $itemsJsonGlobal = $abonosConImagenesGlobal->toJson(JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
                             if ($abonos->count() > 0) {
                                 foreach ($abonos as $abono) {
                                     $clienteNombre = $abono->cliente ? $abono->cliente->nombre_completo : 'Sin cliente';
@@ -327,26 +346,9 @@ class YapeClientesTableWidget extends BaseWidget
                                     $html .= '<td class="px-2 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">';
 
                                     if ($tieneComprobante) {
-                                        // Crear datos para el modal de imágenes usando la misma estructura que AbonosResource
-                                        $abonosConImagenes = $abonos->filter(function($a) {
-                                            return $a->conceptosabonos->where('foto_comprobante', '!=', null)->count() > 0;
-                                        })->map(function($a) {
-                                            return [
-                                                'id' => $a->id_abono,
-                                                'cliente' => $a->cliente ? $a->cliente->nombre_completo : 'Sin cliente',
-                                                'fecha' => $a->created_at->format('d/m/Y H:i'),
-                                                'monto' => $a->monto_abono,
-                                                'es_devolucion' => $a->es_devolucion,
-                                                'usuario' => $a->usuario ? $a->usuario->name : 'Sin usuario',
-                                                'metodos' => $a->conceptosabonos->pluck('tipo_concepto')->implode(', '),
-                                                'url' => optional($a->conceptosabonos->firstWhere('foto_comprobante', '!=', null))->foto_comprobante
-                                                    ? asset('storage/' . $a->conceptosabonos->firstWhere('foto_comprobante', '!=', null)->foto_comprobante)
-                                                    : null,
-                                            ];
-                                        })->values();
-
-                                        $startIndex = $abonosConImagenes->search(fn($a) => $a['id'] == $abono->id_abono);
-                                        $jsonData = htmlspecialchars($abonosConImagenes->toJson(), ENT_QUOTES, 'UTF-8');
+                                        // Usar la lista global ya construida para evitar repetir 422 elementos en cada modal
+                                        $startIndex = $abonosConImagenesGlobal->search(fn($a) => $a['id'] == $abono->id_abono);
+                                        $startIndex = is_numeric($startIndex) ? $startIndex : 0;
 
                                         $html .= '<button onclick="event.stopPropagation(); event.preventDefault(); window.independentModalManager.openModal(\'modal' . $abono->id_abono . '\')" class="inline-flex items-center px-2 py-1 bg-blue-600 border border-transparent rounded text-xs text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">';
                                         $html .= '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
@@ -362,12 +364,12 @@ class YapeClientesTableWidget extends BaseWidget
                                         $html .= '<span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>';
                                         $html .= '<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full w-full max-w-sm sm:max-w-4xl mx-4 sm:mx-auto" onclick="event.stopPropagation()">';
 
-                                        $html .= '<div x-data="{';
-                                        $html .= 'items: ' . $jsonData . ',';
+                                        $html .= '<div x-data=\'{';
+                                        $html .= 'items: window.__yapeItems,';
                                         $html .= 'index: ' . $startIndex . ',';
-                                        $html .= 'prev() { if (this.index > 0) this.index--; },';
-                                        $html .= 'next() { if (this.index < this.items.length - 1) this.index++; }';
-                                        $html .= '}" class="space-y-3 p-3 sm:p-6 sm:space-y-4">';
+                                        $html .= 'prev() { if (this.index > 0) { this.index--; var img = this.$el.querySelector("img[data-src]"); if (img) { img.src = this.items[this.index].url; } } },';
+                                        $html .= 'next() { if (this.index < this.items.length - 1) { this.index++; var img = this.$el.querySelector("img[data-src]"); if (img) { img.src = this.items[this.index].url; } } }';
+                                        $html .= '}\' class="space-y-3 p-3 sm:p-6 sm:space-y-4">';
 
                                         // Header
                                         $html .= '<div class="flex justify-between items-center mb-3 sm:mb-4">';
@@ -381,7 +383,7 @@ class YapeClientesTableWidget extends BaseWidget
 
                                         // Navegación
                                         $html .= '<div class="flex justify-between items-center mb-3 sm:mb-4 bg-white p-2 sm:p-3 rounded-lg shadow">';
-                                        $html .= '<button type="button" @click="prev" :disabled="index === 0" class="flex items-center space-x-1 px-2 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
+                                        $html .= '<button type="button" @click="prev()" :disabled="index === 0" class="flex items-center space-x-1 px-2 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
                                         $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />';
                                         $html .= '</svg>';
@@ -392,7 +394,7 @@ class YapeClientesTableWidget extends BaseWidget
                                         $html .= '<span x-text="index+1"></span>/<span x-text="items.length"></span>';
                                         $html .= '</span>';
 
-                                        $html .= '<button type="button" @click="next" :disabled="index === items.length - 1" class="flex items-center space-x-1 px-2 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
+                                        $html .= '<button type="button" @click="next()" :disabled="index === items.length - 1" class="flex items-center space-x-1 px-2 py-1 sm:px-4 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition">';
                                         $html .= '<span class="hidden sm:inline">Siguiente</span>';
                                         $html .= '<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
                                         $html .= '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />';
@@ -429,7 +431,7 @@ class YapeClientesTableWidget extends BaseWidget
                                         // Imagen
                                         $html .= '<template x-if="items[index].url">';
                                         $html .= '<div class="flex justify-center bg-gray-100 rounded-lg p-2">';
-                                        $html .= '<img :src="items[index].url" class="rounded-lg max-h-[250px] sm:max-h-[350px] max-w-full object-contain cursor-pointer shadow-lg" @click="window.open(items[index].url, \'_blank\')" />';
+                                        $html .= '<img x-bind:data-src="items[index].url" x-init="if(items[index] && items[index].url){ $el.src = items[index].url }" x-effect="if(items[index] && items[index].url){ $el.src = items[index].url }" loading="lazy" decoding="async" fetchpriority="low" class="rounded-lg max-h-[250px] sm:max-h-[350px] max-w-full object-contain cursor-pointer shadow-lg" @click="window.open(items[index].url, \'_blank\')" />';
                                         $html .= '</div>';
                                         $html .= '</template>';
                                         $html .= '<template x-if="!items[index].url">';
@@ -520,7 +522,12 @@ class YapeClientesTableWidget extends BaseWidget
 
                             $html .= '</div>';
 
-                            // Agregar botón de descarga PDF
+                            // Inyectar una sola vez los items en window para que Alpine los comparta entre modales
+                            $html .= '<script type="text/javascript">';
+                            $html .= 'window.__yapeItems = ' . $itemsJsonGlobal . ';';
+                            $html .= '</script>';
+
+                           // Agregar botón de descarga PDF
                             $downloadUrl = route('yape-cliente.pdf', $record->id);
                             $html .= '<div class="mt-3 sm:mt-4 text-center">';
                             $html .= '<a href="' . $downloadUrl . '" target="_blank" class="inline-flex items-center justify-center w-full sm:w-auto px-3 py-2 sm:px-4 sm:py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">';
@@ -545,6 +552,11 @@ class YapeClientesTableWidget extends BaseWidget
                             $html .= '                if (this.openModals.length === 1) {';
                             $html .= '                    document.body.classList.add("overflow-hidden");';
                             $html .= '                }';
+                            $html .= '                var img = modal.querySelector("img[data-src]");';
+                            $html .= '                if (img && !img.getAttribute("src")) {';
+                            $html .= '                    var ds = img.getAttribute("data-src");';
+                            $html .= '                    if (ds) { img.setAttribute("src", ds); }';
+                            $html .= '                }';
                             $html .= '            }';
                             $html .= '        },';
                             $html .= '        closeModal: function(modalId) {';
@@ -557,6 +569,10 @@ class YapeClientesTableWidget extends BaseWidget
                             $html .= '                }';
                             $html .= '                if (this.openModals.length === 0) {';
                             $html .= '                    document.body.classList.remove("overflow-hidden");';
+                            $html .= '                }';
+                            $html .= '                var img = modal.querySelector("img[data-src]");';
+                            $html .= '                if (img) {';
+                            $html .= '                    img.removeAttribute("src");';
                             $html .= '                }';
                             $html .= '            }';
                             $html .= '        },';
