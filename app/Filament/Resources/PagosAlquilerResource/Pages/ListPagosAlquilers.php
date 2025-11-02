@@ -40,6 +40,8 @@ class ListPagosAlquilers extends ListRecords
         // Inicializar filtro de fecha por defecto (hoy)
         $this->fechaDesde = Carbon::today()->format('Y-m-d');
         $this->fechaHasta = Carbon::today()->format('Y-m-d');
+        // Emitir filtros iniciales al footer
+        $this->emitFooterFilters();
     }
 
     protected $listeners = [
@@ -67,6 +69,18 @@ class ListPagosAlquilers extends ListRecords
         return 1;
     }
 
+    protected function getFooterWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\PagosAlquilerResource\Widgets\PagosAlquilerFooter::class,
+        ];
+    }
+
+    protected function getFooterWidgetsColumns(): int|array
+    {
+        return 1; // Ocupa todo el ancho
+    }
+
     protected function getActions(): array
     {
         return [
@@ -81,6 +95,7 @@ class ListPagosAlquilers extends ListRecords
         $this->fechaDesde = $data['fechaDesde'] ?? null;
         $this->fechaHasta = $data['fechaHasta'] ?? null;
         $this->resetTable();
+        $this->emitFooterFilters();
     }
 
     public function limpiarFiltrosFecha()
@@ -88,6 +103,7 @@ class ListPagosAlquilers extends ListRecords
         $this->fechaDesde = null;
         $this->fechaHasta = null;
         $this->resetTable();
+        $this->emitFooterFilters();
     }
 
     public function getTableQuery(): Builder
@@ -96,10 +112,10 @@ class ListPagosAlquilers extends ListRecords
 
         // Aplicar filtros de fecha si están definidos (usando created_at)
         if ($this->fechaDesde) {
-            $query->whereDate('created_at', '>=', $this->fechaDesde);
+            $query->whereDate('pagos_alquiler.created_at', '>=', $this->fechaDesde);
         }
         if ($this->fechaHasta) {
-            $query->whereDate('created_at', '<=', $this->fechaHasta);
+            $query->whereDate('pagos_alquiler.created_at', '<=', $this->fechaHasta);
         }
 
         // Aplicar filtros de edificio y departamento
@@ -134,6 +150,7 @@ class ListPagosAlquilers extends ListRecords
         $this->fechaHasta = $filtros['fechaHasta'] ?? null;
         $this->periodoSeleccionado = $filtros['periodoSeleccionado'] ?? 'hoy';
         $this->resetPage();
+        $this->emitFooterFilters();
     }
 
     public function sincronizarFiltrosEdificio($filtros)
@@ -141,6 +158,17 @@ class ListPagosAlquilers extends ListRecords
         $this->edificioSeleccionado = $filtros['edificio'] ?? null;
         $this->departamentoSeleccionado = $filtros['departamento'] ?? null;
         $this->resetPage();
+        $this->emitFooterFilters();
+    }
+
+    protected function emitFooterFilters(): void
+    {
+        $this->emit('pagos-alquiler-footer-filters', [
+            'fechaDesde' => $this->fechaDesde,
+            'fechaHasta' => $this->fechaHasta,
+            'edificio' => $this->edificioSeleccionado ?? null,
+            'departamento' => $this->departamentoSeleccionado ?? null,
+        ]);
     }
 
     public function exportarPDF()
