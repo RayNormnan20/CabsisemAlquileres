@@ -151,7 +151,7 @@
                     </div>
                     <div class="actions">
                         @if($credito)
-                            <a class="btn btn-history" href="{{ route('filament.resources.creditos.historial-cliente', ['cliente' => $record->id_cliente]) }}">Historial</a>
+                            <a class="btn btn-history" href="{{ route('filament.resources.creditos.historial-cliente', ['cliente' => $record->id_cliente]) }}" wire:navigate>Historial</a>
                         @endif
 
                         @can('view', $record)
@@ -171,7 +171,7 @@
                         @endcan
 
                         @can('delete', $record)
-                            <button class="btn btn-danger" onclick="eliminarAbonoConfirm({{ $record->id_abono }})">Eliminar</button>
+                            <button class="btn btn-danger" type="button" wire:click="openDeleteModal({{ $record->id_abono }})">Eliminar</button>
                         @endcan
                     </div>
                 </div>
@@ -238,17 +238,21 @@
     </div>
     @endif
 
+    {{-- Modal de confirmación para eliminar (mismo flujo que Filament) --}}
+    @if($this->confirmDeleteOpen)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" wire:ignore.self>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-4">
+            <h2 class="text-lg font-semibold mb-2">Confirmar eliminación</h2>
+            <p class="text-sm text-gray-600 mb-4">¿Seguro que deseas eliminar este abono? Esta acción no se puede deshacer.</p>
+            <div class="flex justify-end gap-2">
+                <button class="px-3 py-2 bg-gray-200 rounded" wire:click="closeDeleteModal">Cancelar</button>
+                <button class="px-3 py-2 bg-red-600 text-white rounded" wire:click="confirmDelete">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <script>
-        function eliminarAbonoConfirm(abonoId) {
-            if (!abonoId) return;
-            if (confirm('¿Seguro que deseas eliminar este abono? Esta acción no se puede deshacer.')) {
-                const lw = window.Livewire || window.livewire;
-                if (lw && typeof lw.emit === 'function') {
-                    lw.emit('eliminarAbono', abonoId);
-                } else {
-                    alert('No se pudo comunicar con Livewire. Recarga la página e intenta nuevamente.');
-                }
-            }
-        }
+        // Reservado para utilidades de la vista responsive.
     </script>
 </x-filament::page>

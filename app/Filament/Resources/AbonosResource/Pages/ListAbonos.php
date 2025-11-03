@@ -45,6 +45,10 @@ class ListAbonos extends ListRecords
     public array $viewerItems = [];
     public int $viewerIndex = 0;
 
+    // Modal de confirmación de eliminación (responsive)
+    public bool $confirmDeleteOpen = false;
+    public ?int $confirmDeleteId = null;
+
     // Comentar o eliminar esta propiedad para que no aparezcan los parámetros en la URL
     /*
     protected $queryString = [
@@ -64,7 +68,6 @@ class ListAbonos extends ListRecords
         'refreshAbonosTable' => '$refresh',
         'globalRouteChanged' => 'applyRouteFilter',
         'eliminarAbono' => 'eliminarAbono',
-        '$refresh'
     ];
 
     public function mount(): void
@@ -75,7 +78,7 @@ class ListAbonos extends ListRecords
         $this->validateAndCorrectSelectedRoute();
 
         // Restaurar el cliente seleccionado desde sesión si existe Y pertenece a la ruta actual
-        $persistedClienteId = session()->pull('abonos_cliente_id');
+        $persistedClienteId = session()->get('abonos_cliente_id');
         $currentRutaId = session('selected_ruta_id');
         
         if ($persistedClienteId && empty($this->clienteId) && $currentRutaId) {
@@ -89,14 +92,25 @@ class ListAbonos extends ListRecords
             }
         }
 
-        // Mostrar créditos automáticamente al volver desde Historial (una sola vez)
-        $mostrarCreditosOnce = session()->pull('abonos_mostrar_creditos', false);
-        if ($mostrarCreditosOnce) {
-            $this->mostrarCreditos = true;
+        // Al volver desde Historial, solo restaurar el cliente; no forzar mostrar créditos
+        session()->forget('abonos_mostrar_creditos');
+
+        // Restaurar filtros adicionales desde sesión si existen
+        if (empty($this->tipoConcepto) && session()->has('abonos_tipo_concepto')) {
+            $this->tipoConcepto = session('abonos_tipo_concepto');
+        }
+        if (empty($this->fechaDesde) && session()->has('abonos_fecha_desde')) {
+            $this->fechaDesde = session('abonos_fecha_desde');
+        }
+        if (empty($this->fechaHasta) && session()->has('abonos_fecha_hasta')) {
+            $this->fechaHasta = session('abonos_fecha_hasta');
+        }
+        if (session()->has('abonos_periodo')) {
+            $this->periodoSeleccionado = session('abonos_periodo');
         }
 
-        // Establecer fechas del día actual si no hay filtros aplicados
-        if (is_null($this->fechaDesde)) {
+        // Establecer fechas del día actual si no hay filtros aplicados ni valores en sesión
+        if (is_null($this->fechaDesde) && is_null($this->fechaHasta)) {
             $this->aplicarPeriodo(); // Esto establecerá automáticamente el rango del día actual
         }
     }
@@ -170,6 +184,11 @@ class ListAbonos extends ListRecords
                 $this->fechaHasta = $hoy->copy()->subMonth()->endOfMonth()->format('Y-m-d');
                 break;
         }
+
+        // Persistir en sesión
+        Session::put('abonos_periodo', $this->periodoSeleccionado);
+        Session::put('abonos_fecha_desde', $this->fechaDesde);
+        Session::put('abonos_fecha_hasta', $this->fechaHasta);
 
         $this->aplicarFiltroFecha();
 
@@ -486,6 +505,7 @@ public function updated($name)
     public function updatedFechaDesde($value): void
     {
         $this->mostrarCreditos = false;
+        Session::put('abonos_fecha_desde', $this->fechaDesde);
         $this->emit('filter-abonos', [
             'clienteId' => $this->clienteId,
             'fechaDesde' => $this->fechaDesde,
@@ -497,6 +517,7 @@ public function updated($name)
     public function updatedFechaHasta($value): void
     {
         $this->mostrarCreditos = false;
+        Session::put('abonos_fecha_hasta', $this->fechaHasta);
         $this->emit('filter-abonos', [
             'clienteId' => $this->clienteId,
             'fechaDesde' => $this->fechaDesde,
@@ -508,12 +529,38 @@ public function updated($name)
     public function updatedTipoConcepto($value): void
     {
         $this->mostrarCreditos = false;
+        if ($this->tipoConcepto) {
+            Session::put('abonos_tipo_concepto', $this->tipoConcepto);
+        } else {
+            Session::forget('abonos_tipo_concepto');
+        }
         $this->emit('filter-abonos', [
             'clienteId' => $this->clienteId,
             'fechaDesde' => $this->fechaDesde,
             'fechaHasta' => $this->fechaHasta,
             'tipoConcepto' => $this->tipoConcepto
         ]);
+    }
+
+    // --- Modal de confirmación de eliminación (responsive) ---
+    public function openDeleteModal(int $abonoId): void
+    {
+        $this->confirmDeleteId = $abonoId;
+        $this->confirmDeleteOpen = true;
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->confirmDeleteOpen = false;
+        $this->confirmDeleteId = null;
+    }
+
+    public function confirmDelete(): void
+    {
+        if ($this->confirmDeleteId) {
+            $this->eliminarAbono($this->confirmDeleteId);
+        }
+        $this->closeDeleteModal();
     }
 
     public function updatedPeriodoSeleccionado($value): void
@@ -567,12 +614,21 @@ public function updated($name)
                 ->success()
                 ->send();
 
-            $this->dispatch('refresh');
-            $this->resetPage();
+            // Refrescar el componente mediante un listener dedicado
+            try {
+                $this->dispatch('refreshAbonosTable');
+                $this->resetPage();
+            } catch (\Throwable $e) {
+                Log::warning('Post-delete refresh failed in ListAbonos', [
+                    'error' => $e->getMessage(),
+                ]);
+                // Silenciar errores de refresco para no mostrar falsa alarma al usuario
+            }
         } catch (\Throwable $e) {
+            Log::error('Eliminar abono falló', ['error' => $e->getMessage()]);
             Notification::make()
                 ->title('Error al eliminar')
-                ->body($e->getMessage())
+                ->body('Ocurrió un problema al eliminar. Inténtalo nuevamente.')
                 ->danger()
                 ->send();
         }
