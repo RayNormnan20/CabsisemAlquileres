@@ -297,6 +297,22 @@
                 </p>
             </div>
         </div>
+
+        <!-- Acciones rápidas: solo visibles en vista responsive (móvil) -->
+        <div class="mt-3 flex items-center gap-3 md:hidden">
+            <button type="button"
+                wire:click="exportExcel"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">
+                Exportar
+            </button>
+
+            <button type="button"
+                wire:click="toggleCreditos"
+                @if(!($clienteId ?? null)) disabled @endif
+                class="inline-flex items-center px-4 py-2 rounded-md text-sm {{ ($clienteId ?? null) ? 'bg-primary-600 hover:bg-primary-700 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed' }}">
+                Créditos
+            </button>
+        </div>
     </div>
     @else
     @endif
@@ -304,19 +320,17 @@
 
     {{-- Vista de Créditos integrada dentro de Abonos (solo en pantallas móviles) --}}
     @if(($mostrarCreditos ?? false) && ($clienteId ?? null))
-        <!-- Oculta la tabla de Filament SOLO en móvil mientras se muestran los créditos -->
+        <!-- Oculta la tabla de Filament en cualquier tamaño mientras se muestran los créditos -->
         <style>
-            @media (max-width: 767px) {
-                .filament-tables-container,
-                .fi-ta,
-                .fi-ta-header,
-                .fi-ta-toolbar,
-                .fi-ta-content,
-                .fi-ta-table,
-                .fi-ta-footer,
-                .fi-ta-pagination {
-                    display: none !important;
-                }
+            .filament-tables-container,
+            .fi-ta,
+            .fi-ta-header,
+            .fi-ta-toolbar,
+            .fi-ta-content,
+            .fi-ta-table,
+            .fi-ta-footer,
+            .fi-ta-pagination {
+                display: none !important;
             }
         </style>
 
@@ -332,8 +346,8 @@
 
       
 
-        {{-- Listado de créditos integrado (visible solo en móvil) --}}
-        <div class="mt-3 md:hidden">
+        {{-- Listado de créditos integrado --}}
+        <div class="mt-3">
             @if($creditosRecords->count() > 0)
                 <div class="space-y-3">
                     @foreach($creditosRecords as $record)

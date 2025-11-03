@@ -30,6 +30,7 @@
         .btn-primary { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
         .btn-danger { background: #dc2626; color: #fff; border-color: #dc2626; }
         .btn-info { background: #0ea5e9; color: #fff; border-color: #0ea5e9; }
+        .btn-history { background: #6b7280; color: #fff; border-color: #6b7280; }
         .conceptos { margin-top: .5rem; }
         .concepto-item { display: flex; justify-content: space-between; font-size: .875rem; padding: .25rem 0; border-bottom: 1px dashed #e5e7eb; }
         .concepto-item:last-child { border-bottom: none; }
@@ -54,6 +55,7 @@
         }
     </style>
 
+    @if(!($this->mostrarCreditos ?? false))
     <div class="responsive-abonos">
         @php
             $user = auth()->user();
@@ -132,8 +134,6 @@
                                     {{ $detalleTipos }}
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
                             <div class="col">
                                 <div class="label">Monto</div>
                                 <div class="value">
@@ -147,23 +147,11 @@
                             </div>
                         </div>
 
-                        <div class="conceptos">
-                            <div class="label">Detalle</div>
-                            @if($conceptos && $conceptos->count())
-                                @foreach($conceptos as $c)
-                                    <div class="concepto-item">
-                                        <span>{{ $c->tipo_concepto }}</span>
-                                        <span>S/ {{ number_format($c->monto ?? 0, 2) }}</span>
-                                    </div>
-                                @endforeach
-                            @else
-                                <div class="empty">Sin conceptos</div>
-                            @endif
-                        </div>
+                        {{-- Se elimina el listado por concepto para evitar duplicidad visual --}}
                     </div>
                     <div class="actions">
                         @if($credito)
-                            <a class="btn" href="{{ route('filament.resources.creditos.historial-cliente', ['cliente' => $record->id_cliente]) }}">Ver crédito</a>
+                            <a class="btn btn-history" href="{{ route('filament.resources.creditos.historial-cliente', ['cliente' => $record->id_cliente]) }}">Historial</a>
                         @endif
 
                         @can('view', $record)
@@ -174,7 +162,7 @@
                                 }
                             @endphp
                             @if($comprobante)
-                                <button class="btn btn-info" type="button" wire:click="openComprobanteModal({{ $record->getKey() }})">Ver comprobante</button>
+                                <button class="btn btn-info" type="button" wire:click="openComprobanteModal({{ $record->getKey() }})">Fotos</button>
                             @endif
                         @endcan
 
@@ -192,6 +180,7 @@
             <div class="empty">No hay abonos para mostrar.</div>
         @endif
     </div>
+    @endif
 
     <!-- Diseño para PC - Tabla original de Filament -->
     <div class="desktop-abonos-table">
