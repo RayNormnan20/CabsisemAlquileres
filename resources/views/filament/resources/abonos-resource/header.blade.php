@@ -302,19 +302,21 @@
     @endif
     @endif
 
-    {{-- Vista de Créditos integrada dentro de Abonos (responsive) --}}
+    {{-- Vista de Créditos integrada dentro de Abonos (solo en pantallas móviles) --}}
     @if(($mostrarCreditos ?? false) && ($clienteId ?? null))
-        <!-- Oculta completamente la tabla de Filament mientras se muestran los créditos -->
+        <!-- Oculta la tabla de Filament SOLO en móvil mientras se muestran los créditos -->
         <style>
-            .filament-tables-container,
-            .fi-ta,
-            .fi-ta-header,
-            .fi-ta-toolbar,
-            .fi-ta-content,
-            .fi-ta-table,
-            .fi-ta-footer,
-            .fi-ta-pagination {
-                display: none !important;
+            @media (max-width: 767px) {
+                .filament-tables-container,
+                .fi-ta,
+                .fi-ta-header,
+                .fi-ta-toolbar,
+                .fi-ta-content,
+                .fi-ta-table,
+                .fi-ta-footer,
+                .fi-ta-pagination {
+                    display: none !important;
+                }
             }
         </style>
 
@@ -330,8 +332,8 @@
 
       
 
-        {{-- Listado de créditos integrado (fallback robusto) --}}
-        <div class="mt-3">
+        {{-- Listado de créditos integrado (visible solo en móvil) --}}
+        <div class="mt-3 md:hidden">
             @if($creditosRecords->count() > 0)
                 <div class="space-y-3">
                     @foreach($creditosRecords as $record)

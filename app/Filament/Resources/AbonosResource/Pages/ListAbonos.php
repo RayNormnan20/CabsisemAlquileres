@@ -19,6 +19,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use App\Http\Livewire\Traits\RouteValidation;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 class ListAbonos extends ListRecords
 {
@@ -26,12 +28,22 @@ class ListAbonos extends ListRecords
     
     protected static string $resource = AbonosResource::class;
 
+    /**
+     * Vista Blade responsive para el listado en móviles
+     */
+    protected static string $view = 'filament.resources.abonos-resource.list-abonos-responsive';
+
     public int|string|null $clienteId = null;
     public int|string|null $rutaId = null;
     public ?string $fechaDesde = null;
     public ?string $fechaHasta = null;
     public string $periodoSeleccionado = 'hoy'; // Cambiado a 'hoy' por defecto
     public ?string $tipoConcepto = null;
+
+    // Viewer modal state for responsive "Ver comprobante"
+    public bool $viewerOpen = false;
+    public array $viewerItems = [];
+    public int $viewerIndex = 0;
 
     // Comentar o eliminar esta propiedad para que no aparezcan los parámetros en la URL
     /*
@@ -51,6 +63,7 @@ class ListAbonos extends ListRecords
         'refreshComponent' => '$refresh',
         'refreshAbonosTable' => '$refresh',
         'globalRouteChanged' => 'applyRouteFilter',
+        'eliminarAbono' => 'eliminarAbono',
         '$refresh'
     ];
 
@@ -244,6 +257,98 @@ class ListAbonos extends ListRecords
         ]);
     }
 
+    /**
+     * Datos para la vista responsive (tarjetas móviles)
+     */
+    protected function getViewData(): array
+    {
+        return [
+            'records' => method_exists($this, 'getTableRecords') ? $this->getTableRecords() : $this->getTableQuery()->get(),
+        ];
+    }
+
+    /**
+     * Abre un modal propio (responsive) para ver comprobantes con navegación,
+     * replicando la lógica del action "view" de la tabla.
+     */
+    public function openComprobanteModal(int $recordId): void
+    {
+        // Filtros actuales de la página
+        $clienteId = $this->clienteId;
+        $fechaDesde = $this->fechaDesde;
+        $fechaHasta = $this->fechaHasta;
+        $tipoConcepto = $this->tipoConcepto;
+        $rutaId = \Illuminate\Support\Facades\Session::get('selected_ruta_id');
+
+        $abonosQuery = Abonos::query()
+            ->with(['cliente', 'usuario', 'conceptosabonos'])
+            ->whereHas('conceptosabonos', function ($q) use ($tipoConcepto) {
+                $q->where('foto_comprobante', '!=', null);
+                if ($tipoConcepto) {
+                    $q->where('tipo_concepto', $tipoConcepto);
+                }
+            });
+
+        if ($clienteId) {
+            $abonosQuery->where('id_cliente', $clienteId);
+        }
+        if ($rutaId) {
+            $abonosQuery->whereHas('cliente', function ($q) use ($rutaId) {
+                $q->where('id_ruta', $rutaId);
+            });
+        }
+        if ($fechaDesde) {
+            $abonosQuery->whereDate('fecha_pago', '>=', $fechaDesde);
+        }
+        if ($fechaHasta) {
+            $abonosQuery->whereDate('fecha_pago', '<=', $fechaHasta);
+        } else {
+            $abonosQuery->whereDate('fecha_pago', \Carbon\Carbon::today()->format('Y-m-d'));
+        }
+
+        $abonosQuery->orderBy('fecha_pago', 'desc');
+
+        $abonos = $abonosQuery->get()->map(function ($abono) {
+            // Determinar nombre Yape
+            $yapeNombre = null;
+            if ($abono->id_yape_cliente) {
+                $yapeNombre = optional($abono->yapeCliente)->nombre;
+            }
+            if (!$yapeNombre && $abono->nombre_yape) {
+                $yapeNombre = $abono->nombre_yape;
+            }
+            if (!$yapeNombre) {
+                $yapeNombre = 'Sin nombre Yape';
+            }
+
+            $first = $abono->conceptosabonos->firstWhere('foto_comprobante', '!=', null);
+            $url = $first ? asset('storage/' . $first->foto_comprobante) : null;
+
+            return [
+                'id' => $abono->id_abono,
+                'cliente' => optional($abono->cliente)->nombre_completo,
+                'yape_nombre' => $yapeNombre,
+                'fecha' => optional($abono->fecha_pago)->format('d/m/Y H:i'),
+                'monto' => $abono->monto_abono,
+                'usuario' => optional($abono->usuario)->name,
+                'metodos' => $abono->conceptosabonos->pluck('tipo_concepto')->implode(', '),
+                'url' => $url,
+            ];
+        })->values()->toArray();
+
+        $this->viewerItems = $abonos;
+        // Índice inicial
+        $this->viewerIndex = collect($abonos)->search(fn ($a) => $a['id'] === $recordId) ?? 0;
+        if ($this->viewerIndex < 0) { $this->viewerIndex = 0; }
+
+        $this->viewerOpen = true;
+    }
+
+    public function closeComprobanteModal(): void
+    {
+        $this->viewerOpen = false;
+    }
+
     protected function getFooterWidgets(): array
     {
         // Ocultar el footer cuando se está mostrando la vista de créditos integrada
@@ -422,4 +527,54 @@ public function updated($name)
         return [];
     }
 
+    /**
+     * Eliminar abono desde la vista responsive con permisos y notificaciones
+     */
+    public function eliminarAbono($abonoId): void
+    {
+        try {
+            $abono = Abonos::with(['credito'])->findOrFail((int) $abonoId);
+
+            if (!auth()->user() || !auth()->user()->can('delete', $abono)) {
+                Notification::make()
+                    ->title('No autorizado')
+                    ->body('No tienes permiso para eliminar abonos.')
+                    ->danger()
+                    ->send();
+                return;
+            }
+
+            DB::transaction(function () use ($abono) {
+                $credito = $abono->credito;
+                if ($credito) {
+                    $credito->saldo_actual = ($credito->saldo_actual ?? 0) + ($abono->monto ?? 0);
+                    $credito->save();
+                }
+
+                if (function_exists('activity')) {
+                    activity()
+                        ->causedBy(auth()->user())
+                        ->performedOn($abono)
+                        ->event('deleted')
+                        ->log('Abono eliminado desde vista responsive');
+                }
+
+                $abono->delete();
+            });
+
+            Notification::make()
+                ->title('Abono eliminado')
+                ->success()
+                ->send();
+
+            $this->dispatch('refresh');
+            $this->resetPage();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('Error al eliminar')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
 }
