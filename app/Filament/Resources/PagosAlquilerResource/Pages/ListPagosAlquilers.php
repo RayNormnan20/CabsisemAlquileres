@@ -169,6 +169,7 @@ class ListPagosAlquilers extends ListRecords
         $this->emit('pagos-alquiler-footer-filters', [
             'fechaDesde' => $this->fechaDesde,
             'fechaHasta' => $this->fechaHasta,
+            'tipoFecha' => $this->tipoFecha,
             'edificio' => $this->edificioSeleccionado ?? null,
             'departamento' => $this->departamentoSeleccionado ?? null,
         ]);

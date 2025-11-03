@@ -15,6 +15,7 @@ class PagosAlquilerFooter extends Widget
     // Filtros sincronizados con la página/listado
     public $fechaDesde;
     public $fechaHasta;
+    public $tipoFecha = 'created_at';
     public $edificioSeleccionado;
     public $departamentoSeleccionado;
 
@@ -31,6 +32,7 @@ class PagosAlquilerFooter extends Widget
     {
         $this->fechaDesde = $filters['fechaDesde'] ?? null;
         $this->fechaHasta = $filters['fechaHasta'] ?? null;
+        $this->tipoFecha = $filters['tipoFecha'] ?? $this->tipoFecha;
         $this->emit('$refresh');
     }
 
@@ -45,6 +47,7 @@ class PagosAlquilerFooter extends Widget
     {
         $this->fechaDesde = $filters['fechaDesde'] ?? null;
         $this->fechaHasta = $filters['fechaHasta'] ?? null;
+        $this->tipoFecha = $filters['tipoFecha'] ?? $this->tipoFecha;
         $this->edificioSeleccionado = $filters['edificio'] ?? null;
         $this->departamentoSeleccionado = $filters['departamento'] ?? null;
         $this->emit('$refresh');
@@ -54,17 +57,20 @@ class PagosAlquilerFooter extends Widget
     {
         $query = PagoAlquiler::query();
 
-        // Filtros de fecha basados en la fecha real de pago
+        // Determinar columna de fecha según selección
+        $columnaFecha = $this->tipoFecha === 'fecha_pago' ? 'pagos_alquiler.fecha_pago' : 'pagos_alquiler.created_at';
+
+        // Filtros de fecha
         if ($this->fechaDesde) {
-            $query->whereDate('pagos_alquiler.fecha_pago', '>=', $this->fechaDesde);
+            $query->whereDate($columnaFecha, '>=', $this->fechaDesde);
         }
         if ($this->fechaHasta) {
-            $query->whereDate('pagos_alquiler.fecha_pago', '<=', $this->fechaHasta);
+            $query->whereDate($columnaFecha, '<=', $this->fechaHasta);
         }
-        // Si no hay filtros, usar fecha de pago de hoy
+        // Si no hay filtros, usar fecha del tipo seleccionado para hoy
         if (!$this->fechaDesde && !$this->fechaHasta) {
             $hoy = \Carbon\Carbon::today()->format('Y-m-d');
-            $query->whereDate('pagos_alquiler.fecha_pago', $hoy);
+            $query->whereDate($columnaFecha, $hoy);
         }
 
         // Filtros de edificio/departamento
