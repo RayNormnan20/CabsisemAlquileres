@@ -42,6 +42,15 @@
                      </select>
                 </div>
 
+                <div>
+                    <label class="block text-sm text-gray-600 dark:text-gray-200 mb-1">Tipo de fecha:</label>
+                    <select wire:model="tipoFecha"
+                        class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="created_at">Fecha de registro</option>
+                        <option value="fecha_pago">Fecha de pago</option>
+                    </select>
+                </div>
+
                 <div >
                     <label class="block text-sm text-gray-600 dark:text-gray-200 mb-1">Rango personalizado:</label>
                     <div class="grid grid-cols-2 gap-2">
@@ -61,7 +70,10 @@
                         Limpiar filtros
                     </button>
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Filtrar por fecha de pago
+                        Filtrar por
+                        <span class="font-medium">
+                            {{ $tipoFecha === 'fecha_pago' ? 'fecha de pago' : 'fecha de registro' }}
+                        </span>
                     </div>
                 </div>
             </div>

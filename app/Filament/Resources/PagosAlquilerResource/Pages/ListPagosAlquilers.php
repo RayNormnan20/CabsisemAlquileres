@@ -19,6 +19,7 @@ class ListPagosAlquilers extends ListRecords
     public $fechaDesde;
     public $fechaHasta;
     public $periodoSeleccionado = 'hoy';
+    public $tipoFecha = 'created_at';
     public $edificioSeleccionado = null;
     public $departamentoSeleccionado = null;
 
@@ -110,12 +111,13 @@ class ListPagosAlquilers extends ListRecords
     {
         $query = parent::getTableQuery();
 
-        // Aplicar filtros de fecha si están definidos (usando created_at)
+        // Aplicar filtros de fecha según tipo seleccionado
+        $columnaFecha = $this->tipoFecha === 'fecha_pago' ? 'pagos_alquiler.fecha_pago' : 'pagos_alquiler.created_at';
         if ($this->fechaDesde) {
-            $query->whereDate('pagos_alquiler.created_at', '>=', $this->fechaDesde);
+            $query->whereDate($columnaFecha, '>=', $this->fechaDesde);
         }
         if ($this->fechaHasta) {
-            $query->whereDate('pagos_alquiler.created_at', '<=', $this->fechaHasta);
+            $query->whereDate($columnaFecha, '<=', $this->fechaHasta);
         }
 
         // Aplicar filtros de edificio y departamento
@@ -136,7 +138,7 @@ class ListPagosAlquilers extends ListRecords
 
     public function updated($name)
     {
-        if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
+        if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado', 'tipoFecha'])) {
             if ($name === 'periodoSeleccionado') {
                 // El widget se encarga de aplicar el período
             }
@@ -149,6 +151,7 @@ class ListPagosAlquilers extends ListRecords
         $this->fechaDesde = $filtros['fechaDesde'] ?? null;
         $this->fechaHasta = $filtros['fechaHasta'] ?? null;
         $this->periodoSeleccionado = $filtros['periodoSeleccionado'] ?? 'hoy';
+        $this->tipoFecha = $filtros['tipoFecha'] ?? 'created_at';
         $this->resetPage();
         $this->emitFooterFilters();
     }

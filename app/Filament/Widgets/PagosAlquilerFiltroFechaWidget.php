@@ -24,6 +24,8 @@ class PagosAlquilerFiltroFechaWidget extends Widget implements HasForms
     public $fechaDesde;
     public $fechaHasta;
     public bool $fechasValidas = true;
+    // Tipo de fecha para filtrar: created_at o fecha_pago
+    public $tipoFecha = 'created_at';
     
     // Propiedades para filtros de búsqueda
     public $edificioSeleccionado = null;
@@ -42,7 +44,7 @@ class PagosAlquilerFiltroFechaWidget extends Widget implements HasForms
     
     public function updated($name): void
     {
-        if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado'])) {
+        if (in_array($name, ['fechaDesde', 'fechaHasta', 'periodoSeleccionado', 'tipoFecha'])) {
             if ($name === 'periodoSeleccionado') {
                 $this->aplicarPeriodo();
             } else {
@@ -53,7 +55,8 @@ class PagosAlquilerFiltroFechaWidget extends Widget implements HasForms
             $this->emit('filtros-actualizados', [
                 'fechaDesde' => $this->fechaDesde,
                 'fechaHasta' => $this->fechaHasta,
-                'periodoSeleccionado' => $this->periodoSeleccionado
+                'periodoSeleccionado' => $this->periodoSeleccionado,
+                'tipoFecha' => $this->tipoFecha,
             ]);
         }
     }
@@ -177,6 +180,7 @@ class PagosAlquilerFiltroFechaWidget extends Widget implements HasForms
         $this->fechaDesde = null;
         $this->fechaHasta = null;
         $this->periodoSeleccionado = 'hoy';
+        $this->tipoFecha = 'created_at';
         $this->aplicarPeriodo();
         $this->fechasValidas = true;
         
@@ -184,7 +188,8 @@ class PagosAlquilerFiltroFechaWidget extends Widget implements HasForms
         $this->emit('filtros-actualizados', [
             'fechaDesde' => $this->fechaDesde,
             'fechaHasta' => $this->fechaHasta,
-            'periodoSeleccionado' => $this->periodoSeleccionado
+            'periodoSeleccionado' => $this->periodoSeleccionado,
+            'tipoFecha' => $this->tipoFecha,
         ]);
     }
     
