@@ -23,6 +23,8 @@
         .card-body { padding: .75rem 1rem; }
         .row { display: flex; flex-wrap: wrap; gap: .75rem; }
         .col { flex: 1 1 45%; min-width: 45%; }
+        /* Columna derecha: alinear contenido al borde derecho */
+        .col-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
         .label { font-size: .75rem; color: #6b7280; }
         .value { font-weight: 600; color: #111827; }
         .actions { padding: .75rem 1rem; border-top: 1px solid #e5e7eb; display: flex; gap: .5rem; flex-wrap: wrap; }
@@ -85,7 +87,7 @@
                                         \Carbon\Carbon::parse($record->fecha_pago)->format('d/m/Y H:i') : '-' ) 
                                 }}</div>
                             </div>
-                            <div class="col">
+                            <div class="col col-right">
                                 <div class="label">Usuario</div>
                                 <div class="value">{{ optional($record->usuario)->name ?? '-' }}</div>
                             </div>
@@ -107,7 +109,7 @@
                                 <div class="label">Forma de Pago</div>
                                 <div class="value">{{ optional($record->credito?->tipoPago)->nombre ?? 'Diario' }}</div>
                             </div>
-                            <div class="col">
+                            <div class="col col-right">
                                 <div class="label">Cantidad</div>
                                 <div class="value">S/ {{ number_format($record->monto_abono ?? 0, 2) }}</div>
                             </div>
@@ -134,7 +136,7 @@
                                     {{ $detalleTipos }}
                                 </div>
                             </div>
-                            <div class="col">
+                            <div class="col col-right">
                                 <div class="label">Monto</div>
                                 <div class="value">
                                     @php
