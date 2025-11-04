@@ -255,7 +255,22 @@
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO DE DESCUENTO']) }}"
                             class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
-                            ABONO DE DESCUENTO
+                            Abono de Descuento
+                        </a>
+                    </div>
+                    <!-- Nueva opción: Entrega E. -->
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ENTREGA E.']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
+                            Entrega E.
+                        </a>
+                    </div>
+
+                    <!-- Nueva opción: Abono no Reg. -->
+                    <div class="py-1" role="none">
+                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO NO REGISTRADO']) }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
+                            Abono no Registrado
                         </a>
                     </div>
 

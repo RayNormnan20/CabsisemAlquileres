@@ -23,7 +23,9 @@ $ordenEspecifico = [
     'Cancelado',
     // Agregar categorías específicas para devoluciones al final
     'Devolucion (Yape)',
-    'Devolucion (Efectivo)'
+    'Devolucion (Efectivo)',
+    'ENTREGA E.',
+    'ABONO NO REGISTRADO',
 ];
 
 // Obtener todos los conceptos únicos de la base de datos
@@ -97,7 +99,7 @@ if (isset($conceptosSinAbono)) {
 @endphp
 
 <!-- Tabla de Resultados (interactiva) -->
-<div x-data="{ open:false, selectedConcept:null, selectedRutaId: null, selectedRutaName: @entangle('rutaSeleccionada'), periodo: @entangle('periodoSeleccionado'), dateStartRaw: @entangle('fechaDesde'), dateEndRaw: @entangle('fechaHasta'), records: $wire.records, fmtDate(ms){ return ms ? new Date(ms).toLocaleDateString('es-PE') : null; }, parseDateMs(v){ if(!v) return null; const sRaw = String(v).trim(); const s = sRaw.toLowerCase().replace(',', '').replace(/\./g,''); const hasTime = /\d{2}:\d{2}/.test(sRaw) || /t\d{2}:\d{2}/.test(sRaw); if (hasTime) { const d = Date.parse(sRaw); if(!isNaN(d)) return d; } let m = s.match(/^(\d{2})[\\\/\-](\d{2})[\\\/\-](\d{4})$/); if(m){ const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yy = parseInt(m[3],10); return new Date(yy, mm, dd).getTime(); } m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m){ const yy = parseInt(m[1],10), mm = parseInt(m[2],10)-1, dd = parseInt(m[3],10); return new Date(yy, mm, dd).getTime(); } const d2 = Date.parse(sRaw); return isNaN(d2) ? null : d2; }, toMoney(v){ const n = Number(v||0); return new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN' }).format(n); }, rangeFromPeriodo(p){ const today = new Date(); let start = new Date(today.getFullYear(), today.getMonth(), today.getDate()); let end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23,59,59,999); const id = String(p||'').toLowerCase(); if(id==='hoy'){ /* start/end ya seteados */ } else if(id==='ayer'){ start.setDate(start.getDate()-1); end.setDate(end.getDate()-1); } else if(id==='esta_semana'){ const dow = start.getDay(); const diff = (dow===0?6:(dow-1)); start.setDate(start.getDate()-diff); end = new Date(start); end.setDate(start.getDate()+6); end.setHours(23,59,59,999); } else if(id==='semana_pasada'){ const dow = start.getDay(); const diff = (dow===0?6:(dow-1)); const startOfThisWeek = new Date(start); startOfThisWeek.setDate(startOfThisWeek.getDate()-diff); start = new Date(startOfThisWeek); start.setDate(startOfThisWeek.getDate()-7); end = new Date(startOfThisWeek); end.setDate(end.getDate()-1); end.setHours(23,59,59,999); } else if(id==='este_mes'){ start.setDate(1); end = new Date(start.getFullYear(), start.getMonth()+1, 0, 23,59,59,999); } else if(id==='mes_pasado'){ start = new Date(start.getFullYear(), start.getMonth()-1, 1); end = new Date(start.getFullYear(), start.getMonth(), 0, 23,59,59,999); } return { startMs: start.getTime(), endMs: end.getTime() }; }, appliedRange(){ const sRaw = this.dateStartRaw; const eRaw = this.dateEndRaw; let startMs = this.parseDateMs(sRaw); let endBase = this.parseDateMs(eRaw); if(!startMs || !endBase){ const r = this.rangeFromPeriodo(this.periodo); if(!startMs) startMs = r.startMs; if(!endBase) endBase = r.endMs; } const endMs = endBase ? (endBase + 86399999) : null; const startFmt = this.fmtDate(startMs); const endFmt = this.fmtDate(endMs); return { startMs, endMs, startFmt, endFmt }; }, filtered(){ const selectedRaw = (this.selectedConcept||'').trim(); const selected = selectedRaw.toLowerCase(); const norm = (s)=>String(s||'').trim().toLowerCase(); const selRuta = (this.selectedRutaName && this.selectedRutaName !== 'todas') ? norm(this.selectedRutaName) : null; const { startMs, endMs } = this.appliedRange(); const isDevSel = selected.startsWith('devolucion (') && selected.endsWith(')'); const baseSel = isDevSel ? selected.replace(/^devolucion \((.+)\)$/,'$1') : selected; const res = (this.records||[]).filter(it=>{ const tSec = Number(it.fecha_ts||0); const t = tSec ? (tSec*1000) : null; const inRange = t ? (t>=startMs && t<=endMs) : true; let matchesConcept = true; if (selected) { if (isDevSel) { matchesConcept = norm(it.concepto)===baseSel && !!it.es_devolucion; } else { matchesConcept = norm(it.concepto)===selected && !it.es_devolucion; } } const matchesRuta = selRuta ? (norm(it.ruta)===selRuta) : true; return inRange && matchesConcept && matchesRuta; }); return res; } }" x-effect="records = $wire.records">
+<div x-data="{ open:false, selectedConcept:null, selectedRutaId: null, selectedRutaName: @entangle('rutaSeleccionada'), periodo: @entangle('periodoSeleccionado'), dateStartRaw: @entangle('fechaDesde'), dateEndRaw: @entangle('fechaHasta'), records: $wire.records, fmtDate(ms){ return ms ? new Date(ms).toLocaleDateString('es-PE') : null; }, parseDateMs(v){ if(!v) return null; const sRaw = String(v).trim(); const s = sRaw.toLowerCase().replace(',', '').replace(/\./g,''); const hasTime = /\d{2}:\d{2}/.test(sRaw) || /t\d{2}:\d{2}/.test(sRaw); if (hasTime) { const d = Date.parse(sRaw); if(!isNaN(d)) return d; } let m = s.match(/^(\d{2})[\\\/\-](\d{2})[\\\/\-](\d{4})$/); if(m){ const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yy = parseInt(m[3],10); return new Date(yy, mm, dd).getTime(); } m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m){ const yy = parseInt(m[1],10), mm = parseInt(m[2],10)-1, dd = parseInt(m[3],10); return new Date(yy, mm, dd).getTime(); } const d2 = Date.parse(sRaw); return isNaN(d2) ? null : d2; }, toMoney(v){ const n = Number(v||0); return new Intl.NumberFormat('es-PE', { style:'currency', currency:'PEN' }).format(n); }, rangeFromPeriodo(p){ const today = new Date(); let start = new Date(today.getFullYear(), today.getMonth(), today.getDate()); let end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23,59,59,999); const id = String(p||'').toLowerCase(); if(id==='hoy'){ /* start/end ya seteados */ } else if(id==='ayer'){ start.setDate(start.getDate()-1); end.setDate(end.getDate()-1); } else if(id==='esta_semana'){ const dow = start.getDay(); const diff = (dow===0?6:(dow-1)); start.setDate(start.getDate()-diff); end = new Date(start); end.setDate(start.getDate()+6); end.setHours(23,59,59,999); } else if(id==='semana_pasada'){ const dow = start.getDay(); const diff = (dow===0?6:(dow-1)); const startOfThisWeek = new Date(start); startOfThisWeek.setDate(startOfThisWeek.getDate()-diff); start = new Date(startOfThisWeek); start.setDate(startOfThisWeek.getDate()-7); end = new Date(startOfThisWeek); end.setDate(end.getDate()-1); end.setHours(23,59,59,999); } else if(id==='este_mes'){ start.setDate(1); end = new Date(start.getFullYear(), start.getMonth()+1, 0, 23,59,59,999); } else if(id==='mes_pasado'){ start = new Date(start.getFullYear(), start.getMonth()-1, 1); end = new Date(start.getFullYear(), start.getMonth(), 0, 23,59,59,999); } return { startMs: start.getTime(), endMs: end.getTime() }; }, appliedRange(){ const sRaw = this.dateStartRaw; const eRaw = this.dateEndRaw; let startMs = this.parseDateMs(sRaw); let endBase = this.parseDateMs(eRaw); if(!startMs || !endBase){ const r = this.rangeFromPeriodo(this.periodo); if(!startMs) startMs = r.startMs; if(!endBase) endBase = r.endMs; } const endMs = endBase ? (endBase + 86399999) : null; const startFmt = this.fmtDate(startMs); const endFmt = this.fmtDate(endMs); return { startMs, endMs, startFmt, endFmt }; }, filtered(){ const selectedRaw = (this.selectedConcept||'').trim(); const selected = selectedRaw.toLowerCase(); const norm = (s)=>String(s||'').trim().toLowerCase(); const selRuta = (this.selectedRutaName && this.selectedRutaName !== 'todas') ? norm(this.selectedRutaName) : null; const { startMs, endMs } = this.appliedRange(); const isDevSel = selected.startsWith('devolucion (') && selected.endsWith(')'); const baseSel = isDevSel ? selected.replace(/^devolucion \((.+)\)$/,'$1') : selected; const res = (this.records||[]).filter(it=>{ const tSec = Number(it.fecha_ts||0); const t = tSec ? (tSec*1000) : null; const inRange = t ? (t>=startMs && t<=endMs) : true; let matchesConcept = true; if (selected) { if (isDevSel) { matchesConcept = norm(it.concepto)===baseSel && !!it.es_devolucion; } else { matchesConcept = norm(it.concepto)===selected && !it.es_devolucion; } } const matchesRuta = selRuta ? (norm(it.ruta)===selRuta) : true; return inRange && matchesConcept && matchesRuta; }); return res; }, abonosNoRegistrados(){ const norm=(s)=>String(s||'').trim().toLowerCase(); const selRuta=(this.selectedRutaName && this.selectedRutaName!=='todas')?norm(this.selectedRutaName):null; const {startMs,endMs}=this.appliedRange(); return (this.records||[]).filter(it=>{ const tSec=Number(it.fecha_ts||0); const t=tSec?(tSec*1000):null; const inRange=t?(t>=startMs && t<=endMs):true; const matchesConcept=norm(it.concepto)==='abono no registrado'; const matchesRuta=selRuta?(norm(it.ruta)===selRuta):true; return inRange && matchesConcept && !it.es_devolucion; }); }, totalAbonosSobrante(){ return this.filtered().reduce((total,item)=> total + parseFloat(item.monto||0),0); }, totalAbonosNoRegistrados(){ return this.abonosNoRegistrados().reduce((total,item)=> total + parseFloat(item.monto||0),0); }, diferenciaSobrante(){ return this.totalAbonosSobrante() - this.totalAbonosNoRegistrados(); } }" x-effect="records = $wire.records">
   <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-3 py-2 border-b">
     <div class="text-sm text-gray-700">
       <span class="font-medium">Rango:</span>
@@ -183,40 +185,135 @@ if (isset($conceptosSinAbono)) {
                     <span class="block leading-none text-2xl">&times;</span>
                 </button>
             </div>
-            <div class="max-h-[70vh] sm:max-h-[75vh] overflow-y-auto overscroll-contain p-4">
-                <template x-if="filtered().length === 0">
-                    <p class="text-sm text-gray-500">No hay registros para este concepto en el período.</p>
-                </template>
-                <div class="space-y-3" x-data="{ toMoney(v){ try { return 'S/ ' + Number(v||0).toFixed(2); } catch(e){ return 'S/ 0.00'; } } }">
-                    <template x-for="(item, idx) in filtered()" :key="idx">
-                        <div class="rounded-lg p-3 bg-gray-50 hover:bg-gray-100 transition">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="text-lg font-semibold text-gray-900" x-text="toMoney(item.monto)"></div>
-                                    <div class="mt-1 flex flex-wrap gap-2 text-xs">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" x-show="item.origen" x-text="item.es_devolucion ? 'Devolución' : item.origen"></span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-gray-700" x-show="item.ruta">Ruta: <span class="ml-1" x-text="item.ruta"></span></span>
-                                    </div>
+            <div class="max-h-[70vh] sm:max-h-[75vh] overflow-y-auto overscroll-contain p-4" x-data="{ toMoney(v){ try { return 'S/ ' + Number(v||0).toFixed(2); } catch(e){ return 'S/ 0.00'; } } }">
+                <!-- Bloque extra SOLO para 'Abono sobrante cob' -->
+                <template x-if="selectedConcept && selectedConcept.toLowerCase().trim() === 'abono sobrante cob'">
+                    <div class="space-y-4 mb-4">
+                        <div class="bg-gray-100 p-3 rounded-lg">
+                            <h4 class="text-md font-semibold mb-2">Cálculo de Sobrante</h4>
+                            <dl class="grid grid-cols-1 gap-1 text-sm">
+                                <div class="flex justify-between">
+                                    <dt>Total Abono Sobrante COB:</dt>
+                                    <dd class="font-medium text-green-600" x-text="toMoney(totalAbonosSobrante())"></dd>
                                 </div>
-                                <div class="text-right text-sm text-gray-600">
-                                    <div class="flex items-center gap-1">
-                                        <i class="far fa-clock"></i>
-                                        <span x-text="item.fecha"></span>
-                                    </div>
+                                <div class="flex justify-between">
+                                    <dt>Total Abono no Registrado:</dt>
+                                    <dd class="font-medium text-red-600" x-text="toMoney(totalAbonosNoRegistrados())"></dd>
                                 </div>
-                            </div>
-                            <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
-                                <template x-if="item.cliente">
-                                    <div>Cliente: <span class="font-medium" x-text="item.cliente"></span></div>
-                                </template>
-                                <template x-if="item.usuario">
-                                    <div>Usuario: <span class="font-medium" x-text="item.usuario"></span></div>
-                                </template>
-                            </div>
-                            <div class="mt-1 text-sm text-gray-500" x-show="item.referencia">Detalles: <span x-text="item.referencia"></span></div>
+                                <div class="flex justify-between border-t pt-1 mt-1">
+                                    <dt class="font-bold">Diferencia:</dt>
+                                    <dd class="font-bold text-blue-600" x-text="toMoney(diferenciaSobrante())"></dd>
+                                </div>
+                            </dl>
                         </div>
-                    </template>
-                </div>
+
+                        <div class="border-t border-gray-200"></div>
+
+                        <!-- Sección: Detalle Abono Sobrante COB -->
+                        <div>
+                            <h4 class="text-md font-semibold mt-2 mb-2">Detalle: Abono sobrante cob (<span x-text="filtered().length"></span>)</h4>
+                            <div class="space-y-3">
+                                <template x-if="filtered().length === 0"><p class="text-sm text-gray-500">No hay registros.</p></template>
+                                <template x-for="(item, idx) in filtered()" :key="'sobrante-' + idx">
+                                    <div class="rounded-lg p-3 bg-gray-50 hover:bg-gray-100 transition">
+                                        <div class="flex items-start justify-between">
+                                            <div>
+                                                <div class="text-lg font-semibold text-gray-900" x-text="toMoney(item.monto)"></div>
+                                                <div class="mt-1 flex flex-wrap gap-2 text-xs">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" x-show="item.origen" x-text="item.es_devolucion ? 'Devolución' : item.origen"></span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-gray-700" x-show="item.ruta">Ruta: <span class="ml-1" x-text="item.ruta"></span></span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right text-sm text-gray-600">
+                                                <div class="flex items-center gap-1">
+                                                    <i class="far fa-clock"></i>
+                                                    <span x-text="item.fecha"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500" x-show="item.referencia">Detalles: <span x-text="item.referencia"></span></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-200"></div>
+
+                        <div>
+                            <h4 class="text-md font-semibold mt-4 mb-2">Detalle: Abono no Registrado (<span x-text="abonosNoRegistrados().length"></span>)</h4>
+                            <div class="space-y-3">
+                                <template x-if="abonosNoRegistrados().length === 0"><p class="text-sm text-gray-500">No hay registros.</p></template>
+                                <template x-for="(item, idx) in abonosNoRegistrados()" :key="'no-reg-' + idx">
+                                    <div class="rounded-lg p-3 bg-gray-50 hover:bg-gray-100 transition">
+                                        <div class="flex items-start justify-between">
+                                            <div>
+                                                <div class="text-lg font-semibold text-gray-900" x-text="toMoney(item.monto)"></div>
+                                                <div class="mt-1 flex flex-wrap gap-2 text-xs">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" x-show="item.origen" x-text="item.es_devolucion ? 'Devolución' : item.origen"></span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-gray-700" x-show="item.ruta">Ruta: <span class="ml-1" x-text="item.ruta"></span></span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right text-sm text-gray-600">
+                                                <div class="flex items-center gap-1">
+                                                    <i class="far fa-clock"></i>
+                                                    <span x-text="item.fecha"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                                            <template x-if="item.cliente">
+                                                <div>Cliente: <span class="font-medium" x-text="item.cliente"></span></div>
+                                            </template>
+                                            <template x-if="item.usuario">
+                                                <div>Usuario: <span class="font-medium" x-text="item.usuario"></span></div>
+                                            </template>
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-500" x-show="item.referencia">Detalles: <span x-text="item.referencia"></span></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Contenido GENÉRICO: se mantiene la lógica anterior para todos los conceptos -->
+                <template x-if="!selectedConcept || selectedConcept.toLowerCase().trim() !== 'abono sobrante cob'">
+                    <div>
+                        <template x-if="filtered().length === 0">
+                            <p class="text-sm text-gray-500">No hay registros para este concepto en el período.</p>
+                        </template>
+                        <div class="space-y-3">
+                            <template x-for="(item, idx) in filtered()" :key="idx">
+                                <div class="rounded-lg p-3 bg-gray-50 hover:bg-gray-100 transition">
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <div class="text-lg font-semibold text-gray-900" x-text="toMoney(item.monto)"></div>
+                                            <div class="mt-1 flex flex-wrap gap-2 text-xs">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" x-show="item.origen" x-text="item.es_devolucion ? 'Devolución' : item.origen"></span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-gray-700" x-show="item.ruta">Ruta: <span class="ml-1" x-text="item.ruta"></span></span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right text-sm text-gray-600">
+                                            <div class="flex items-center gap-1">
+                                                <i class="far fa-clock"></i>
+                                                <span x-text="item.fecha"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                                        <template x-if="item.cliente">
+                                            <div>Cliente: <span class="font-medium" x-text="item.cliente"></span></div>
+                                        </template>
+                                        <template x-if="item.usuario">
+                                            <div>Usuario: <span class="font-medium" x-text="item.usuario"></span></div>
+                                        </template>
+                                    </div>
+                                    <div class="mt-1 text-sm text-gray-500" x-show="item.referencia">Detalles: <span x-text="item.referencia"></span></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
             </div>
             <div class="px-4 py-3 border-t flex justify-end">
                 <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm" @click="open=false">Cerrar</button>

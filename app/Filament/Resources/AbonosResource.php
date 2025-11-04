@@ -400,6 +400,8 @@ class AbonosResource extends Resource
                                         'Efectivo CLi. No Regis.' => 'Efectivo CLi. No Regis.',
                                         'Entrega Caja COBRADOR' => 'Entrega Caja COBRADOR',
                                         'Abono de Descuento' => 'Abono de Descuento',
+                                        'ENTREGA E.',
+                                        'ABONO NO REGISTRADO'
                                     ];
                                 })
                                 ->required()
