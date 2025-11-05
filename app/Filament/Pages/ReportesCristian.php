@@ -552,7 +552,18 @@ class ReportesCristian extends Page implements HasForms
                             ->where('ano_correspondiente', $year)
                             ->sum('monto_pagado');
 
-                        $deudaMes = max($precioMensual - $pagadoMes, 0);
+                        // Total programado del mes: prorratear el mes actual sobre 30 días
+                        $totalDelMes = (float) $precioMensual;
+                        if ($cursorMes->isSameMonth(Carbon::now())) {
+                            $diasBase = 30; // Requerimiento: dividir entre 30 días del mes
+                            $diasTranscurridos = Carbon::now()->day; // día actual (1..31)
+                            $totalDelMes = round(($precioMensual / $diasBase) * $diasTranscurridos, 2);
+                        }
+                        // Asegurar que nunca supere el precio mensual
+                        $totalDelMes = min($totalDelMes, (float) $precioMensual);
+
+                        // Deuda del mes considerando el prorrateo del mes actual
+                        $deudaMes = max($totalDelMes - $pagadoMes, 0);
                         // Guardar detalle por departamento (incluye meses con deuda positiva)
                         $detalleMesesDepto[] = [
                             'label' => $label,
