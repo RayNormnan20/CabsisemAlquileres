@@ -89,6 +89,8 @@ class ListAbonos extends ListRecords
                 
             if ($cliente) {
                 $this->clienteId = $persistedClienteId;
+                // Uso único: limpiar la sesión después de restaurar
+                session()->forget('abonos_cliente_id');
             }
         }
 

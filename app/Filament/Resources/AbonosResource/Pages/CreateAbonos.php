@@ -229,6 +229,9 @@ class CreateAbonos extends CreateRecord
                 'id_yape_cliente' => $this->record->id_yape_cliente,
             ]
         );
+
+        // Limpiar la selección de cliente en Abonos tras crear
+        Session::forget('abonos_cliente_id');
     }
 
 
