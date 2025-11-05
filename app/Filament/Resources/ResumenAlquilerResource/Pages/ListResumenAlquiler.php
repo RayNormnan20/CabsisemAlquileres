@@ -142,16 +142,27 @@ class ListResumenAlquiler extends ListRecords
                 $estado = 'DEUDA PENDIENTE';
             }
 
+            // Calcular el total del mes. Para el mes actual se prorratea
+            // según los días transcurridos del mes (sobre una base de 30 días).
+            $totalDelMes = (float) $alquiler->precio_mensual;
+            if ($fechaMes->isSameMonth(Carbon::now())) {
+                $diasBase = 30; // Requerimiento: dividir entre 30 días del mes
+                $diasTranscurridos = Carbon::now()->day; // día actual (1..31)
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasTranscurridos, 2);
+            }
+            // Asegurar que nunca supere el precio mensual
+            $totalDelMes = min($totalDelMes, (float) $alquiler->precio_mensual);
+
             $pagosMensuales[] = [
                 'mes' => ucfirst($nombreMes),
-                'total' => $alquiler->precio_mensual,
+                'total' => $totalDelMes,
                 'pagado' => $abonosDelMes,
                 'estado' => $estado,
                 'fecha' => $fechaMes->copy()
             ];
 
-            // Acumular el total programado por mes
-            $totalGenerado += (float) $alquiler->precio_mensual;
+            // Acumular el total programado por mes (prorrateado para el mes actual)
+            $totalGenerado += (float) $totalDelMes;
 
             $fechaMes->addMonth();
         }

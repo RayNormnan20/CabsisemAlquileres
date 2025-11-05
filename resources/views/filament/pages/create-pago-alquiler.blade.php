@@ -241,18 +241,17 @@
                                             @if(count($pagosMensuales) > 0)
                                             <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
-                                                    TOTAL ABONOS
+                                                    TOTAL
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                                                    S/ {{ number_format($totalGenerado ?? 0, 2) }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                                     S/ {{ number_format($totalAbonos, 2) }}
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="text-sm font-bold text-gray-900 dark:text-white">
-                                                        {{ count(array_filter($pagosMensuales, fn($p) => $p['estado'] === 'CANCELADO')) }}
-                                                        de {{ count($pagosMensuales) }} pagos
-                                                    </span>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-700 dark:text-red-300">
+                                                    DEUDA: S/ {{ number_format(max(($totalGenerado ?? 0) - $totalAbonos, 0), 2) }}
                                                 </td>
-                                                <td></td>
                                             </tr>
                                             @endif
                                         </tbody>
@@ -509,6 +508,26 @@
                         </tr>
                     `;
                 });
+
+                // Agregar fila de TOTAL en la tabla (PC)
+                if (data.pagosMensuales && data.pagosMensuales.length > 0) {
+                    const totalGenerado = (data.totalGenerado !== undefined && data.totalGenerado !== null)
+                        ? parseFloat(data.totalGenerado)
+                        : data.pagosMensuales.reduce((sum, p) => sum + (parseFloat(p.total || 0) || 0), 0);
+                    const totalAbonosTabla = (data.totalAbonos !== undefined && data.totalAbonos !== null)
+                        ? parseFloat(data.totalAbonos)
+                        : data.pagosMensuales.reduce((sum, p) => sum + (parseFloat(p.pagado || 0) || 0), 0);
+                    const deudaTotal = Math.max(totalGenerado - totalAbonosTabla, 0);
+
+                    pagosMensualesHTML += `
+                        <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">TOTAL</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">S/ ${totalGenerado.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">S/ ${totalAbonosTabla.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-700 dark:text-red-300">DEUDA: S/ ${deudaTotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
                 
                 // Array de nombres de meses en español
                 const mesesNombres = [
@@ -561,8 +580,8 @@
                 
                 // Generar HTML para cards móviles de resumen
                 let resumenCardsHTML = '';
-                if (pagosMensuales && pagosMensuales.length > 0) {
-                    resumenCardsHTML = pagosMensuales.map(pago => {
+                if (data.pagosMensuales && data.pagosMensuales.length > 0) {
+                    resumenCardsHTML = data.pagosMensuales.map(pago => {
                         let estadoClass = '';
                         if (pago.estado === 'CANCELADO') {
                             estadoClass = 'bg-green-100 text-green-800';
@@ -597,15 +616,34 @@
                     }).join('');
                     
                     // Calcular total de abonos
-                    const totalAbonos = pagosMensuales.reduce((sum, pago) => sum + parseFloat(pago.pagado || 0), 0);
-                    const pagosCompletados = pagosMensuales.filter(p => p.estado === 'CANCELADO').length;
-                    
+                    const totalGeneradoCards = (data.totalGenerado !== undefined && data.totalGenerado !== null)
+                        ? parseFloat(data.totalGenerado)
+                        : data.pagosMensuales.reduce((sum, p) => sum + (parseFloat(p.total || 0) || 0), 0);
+                    const totalAbonos = (data.totalAbonos !== undefined && data.totalAbonos !== null)
+                        ? parseFloat(data.totalAbonos)
+                        : data.pagosMensuales.reduce((sum, pago) => sum + parseFloat(pago.pagado || 0), 0);
+                    const deudaTotalCards = Math.max(totalGeneradoCards - totalAbonos, 0);
+                    const pagosCompletados = data.pagosMensuales.filter(p => p.estado === 'CANCELADO').length;
+
                     resumenCardsHTML += `
-                        <div class="total-abonos-card">
-                            <div class="total-abonos-amount">S/ ${totalAbonos.toFixed(2)}</div>
-                            <div class="total-abonos-text">
-                                Total de Abonos<br>
-                                ${pagosCompletados} de ${pagosMensuales.length} pagos completados
+                        <div class="resumen-total-card">
+                            <div class="resumen-total-title">RESUMEN</div>
+                            <div class="resumen-total-grid">
+                                <div class="resumen-total-item">
+                                    <div class="resumen-total-label">Total</div>
+                                    <div class="resumen-total-value">S/ ${totalGeneradoCards.toFixed(2)}</div>
+                                </div>
+                                <div class="resumen-total-item">
+                                    <div class="resumen-total-label">Abonado</div>
+                                    <div class="resumen-total-value">S/ ${totalAbonos.toFixed(2)}</div>
+                                </div>
+                                <div class="resumen-total-item">
+                                    <div class="resumen-total-label">Deuda</div>
+                                    <div class="resumen-total-value">S/ ${deudaTotalCards.toFixed(2)}</div>
+                                </div>
+                            </div>
+                            <div class="resumen-total-stats">
+                                ${pagosCompletados} de ${data.pagosMensuales.length} pagos completados
                             </div>
                         </div>
                     `;
@@ -685,25 +723,29 @@
                             display: none;
                         }
 
-                        .total-abonos-card {
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            color: white;
-                            margin-top: 1rem;
+                        /* Tarjeta RESUMEN (móvil) igual al diseño de historial */
+                        .resumen-total-card {
+                            background: white;
                             border-radius: 12px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
                             padding: 1rem;
-                            text-align: center;
+                            margin-top: 1rem;
                         }
-
-                        .total-abonos-amount {
-                            font-size: 1.5rem;
+                        .resumen-total-title {
                             font-weight: 700;
+                            font-size: 0.95rem;
+                            color: #2c3e50;
                             margin-bottom: 0.5rem;
                         }
-
-                        .total-abonos-text {
-                            font-size: 0.9rem;
-                            opacity: 0.9;
+                        .resumen-total-grid {
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 0.75rem;
                         }
+                        .resumen-total-item { background: #f8f9fa; border-radius: 8px; padding: 0.75rem; }
+                        .resumen-total-label { color: #7f8c8d; font-weight: 600; font-size: 0.8rem; }
+                        .resumen-total-value { color: #2c3e50; font-weight: 700; font-size: 1rem; }
+                        .resumen-total-stats { margin-top: 0.75rem; font-size: 0.85rem; color: #7f8c8d; text-align: center; }
 
                         @media (min-width: 768px) {
                             .mobile-resumen-container {

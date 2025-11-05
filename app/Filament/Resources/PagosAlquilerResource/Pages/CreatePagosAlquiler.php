@@ -28,6 +28,7 @@ class CreatePagosAlquiler extends CreateRecord
     public array $pagosMensuales = [];
     public array $detallesPagos = [];
     public float $totalAbonos = 0;
+    public float $totalGenerado = 0;
 
     public function mount(): void
     {
@@ -182,6 +183,7 @@ class CreatePagosAlquiler extends CreateRecord
         $fechaFin = $alquiler->fecha_fin ? Carbon::parse($alquiler->fecha_fin) : null;
         $pagosMensuales = [];
         $totalAbonos = 0;
+        $totalGenerado = 0;
 
         $fechaLimite = $fechaFin && $fechaFin->lt($fechaActual) ? $fechaFin : $fechaActual;
         $fechaInicio = $fechaInicio->copy()->startOfMonth();
@@ -209,19 +211,30 @@ class CreatePagosAlquiler extends CreateRecord
                 }
             }
 
+            // Calcular total del mes con prorrateo para el mes actual (base 30 días) y tope
+            $totalDelMes = (float) $alquiler->precio_mensual;
+            if ($fechaMes->isSameMonth(Carbon::now())) {
+                $diasBase = 30;
+                $diasTranscurridos = Carbon::now()->day;
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasTranscurridos, 2);
+            }
+            $totalDelMes = min($totalDelMes, (float) $alquiler->precio_mensual);
+
             $pagosMensuales[] = [
                 'mes' => $nombreMes,
-                'total' => $alquiler->precio_mensual,
+                'total' => $totalDelMes,
                 'pagado' => $abonosDelMes,
                 'estado' => $estado
             ];
 
             $totalAbonos += $abonosDelMes;
+            $totalGenerado += (float) $totalDelMes;
             $fechaMes->addMonth();
         }
 
         $this->pagosMensuales = $pagosMensuales;
         $this->totalAbonos = $totalAbonos;
+        $this->totalGenerado = $totalGenerado;
     }
 
     private function loadDetallesPagos($alquiler)

@@ -237,6 +237,8 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
         $fechaActual = \Carbon\Carbon::now();
         $fechaFin = $alquiler->fecha_fin ? \Carbon\Carbon::parse($alquiler->fecha_fin) : null;
         $pagosMensuales = [];
+        $totalAbonos = 0;
+        $totalGenerado = 0;
         
         $fechaLimite = $fechaFin && $fechaFin->lt($fechaActual) ? $fechaFin : $fechaActual;
         $fechaInicio = $fechaInicio->copy()->startOfMonth();
@@ -263,13 +265,25 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
                 }
             }
             
+            // Prorrateo para mes actual (base 30 días) y tope por precio mensual
+            $totalDelMes = (float) $alquiler->precio_mensual;
+            if ($fechaMes->isSameMonth(\Carbon\Carbon::now())) {
+                $diasBase = 30;
+                $diasTranscurridos = \Carbon\Carbon::now()->day;
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasTranscurridos, 2);
+            }
+            $totalDelMes = min($totalDelMes, (float) $alquiler->precio_mensual);
+
             $pagosMensuales[] = [
                 'mes' => ucfirst($nombreMes),
-                'total' => $alquiler->precio_mensual,
+                'total' => $totalDelMes,
                 'pagado' => $abonosDelMes,
                 'estado' => $estado,
                 'fecha' => $fechaMes->copy()
             ];
+
+            $totalAbonos += (float) $abonosDelMes;
+            $totalGenerado += (float) $totalDelMes;
             
             $fechaMes->addMonth();
         }
@@ -296,7 +310,9 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
             'alquilerId' => $alquilerId,
             'pagosMensuales' => $pagosMensuales,
             'detallesPagos' => $detallesPagos,
-            'count' => count($pagosMensuales)
+            'count' => count($pagosMensuales),
+            'totalAbonos' => $totalAbonos,
+            'totalGenerado' => $totalGenerado
         ]);
         
     } catch (\Exception $e) {
