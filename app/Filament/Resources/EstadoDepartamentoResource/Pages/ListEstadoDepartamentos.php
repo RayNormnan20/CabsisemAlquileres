@@ -4,6 +4,8 @@ namespace App\Filament\Resources\EstadoDepartamentoResource\Pages;
 
 use App\Filament\Resources\EstadoDepartamentoResource;
 use App\Http\Livewire\Traits\RouteValidation;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Session;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -38,5 +40,17 @@ class ListEstadoDepartamentos extends ListRecords
         ];
     }
 
+    protected function getTableQuery(): Builder
+    {
+        $query = parent::getTableQuery();
+
+        // Filtrar por la ruta seleccionada en sesión
+        $rutaId = Session::get('selected_ruta_id');
+        if ($rutaId) {
+            $query->where('id_ruta', $rutaId);
+        }
+
+        return $query;
+    }
 }
 

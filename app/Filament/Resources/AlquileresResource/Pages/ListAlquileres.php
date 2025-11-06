@@ -115,7 +115,10 @@ class ListAlquileres extends ListRecords
     // Métodos para manejar filtros de edificio y departamento
     public function cargarEdificios()
     {
-        $this->edificios = Edificio::where('activo', true)
+        $rutaId = Session::get('selected_ruta_id');
+        $this->edificios = Edificio::query()
+            ->where('activo', true)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->orderBy('nombre')
             ->get()
             ->mapWithKeys(fn($e) => [$e->id_edificio => $e->nombre]);
@@ -157,7 +160,10 @@ class ListAlquileres extends ListRecords
 
     public function cargarDepartamentos($edificioId)
     {
-        $this->departamentos = Departamento::where('id_edificio', $edificioId)
+        $rutaId = Session::get('selected_ruta_id');
+        $this->departamentos = Departamento::query()
+            ->where('id_edificio', $edificioId)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->where('activo', true)
             ->orderBy('numero_departamento')
             ->get()

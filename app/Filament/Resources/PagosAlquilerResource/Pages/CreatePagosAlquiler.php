@@ -61,6 +61,13 @@ class CreatePagosAlquiler extends CreateRecord
         // Asignar el usuario que registra el pago automáticamente
         $data['id_usuario_registro'] = auth()->id();
 
+        // Asignar id_ruta SOLO desde la sesión, sin valor por defecto
+        $rutaId = Session::get('selected_ruta_id');
+        if (!$rutaId) {
+            throw new \Exception('Debe seleccionar una Ruta antes de registrar pagos de alquiler.');
+        }
+        $data['id_ruta'] = $rutaId;
+
         return $data;
     }
 

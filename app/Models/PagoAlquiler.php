@@ -16,6 +16,7 @@ class PagoAlquiler extends Model
 
     protected $fillable = [
         'id_alquiler',
+        'id_ruta',
         'fecha_pago',
         'monto_pagado',
         'mes_correspondiente',
@@ -41,6 +42,12 @@ class PagoAlquiler extends Model
     public function alquiler()
     {
         return $this->belongsTo(Alquiler::class, 'id_alquiler', 'id_alquiler');
+    }
+
+    // Relación con Ruta
+    public function ruta()
+    {
+        return $this->belongsTo(Ruta::class, 'id_ruta', 'id_ruta');
     }
 
     // Relación con usuario que registró el pago

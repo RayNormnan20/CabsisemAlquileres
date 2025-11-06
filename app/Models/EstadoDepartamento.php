@@ -18,7 +18,8 @@ class EstadoDepartamento extends Model
         'nombre',
         'descripcion',
         'color', // Para mostrar en la interfaz
-        'activo'
+        'activo',
+        'id_ruta'
     ];
 
     protected $casts = [
@@ -29,6 +30,12 @@ class EstadoDepartamento extends Model
     public function departamentos()
     {
         return $this->hasMany(Departamento::class, 'id_estado_departamento', 'id_estado_departamento');
+    }
+
+    // Relación con Ruta
+    public function ruta()
+    {
+        return $this->belongsTo(Ruta::class, 'id_ruta', 'id_ruta');
     }
 
     // Scope para estados activos

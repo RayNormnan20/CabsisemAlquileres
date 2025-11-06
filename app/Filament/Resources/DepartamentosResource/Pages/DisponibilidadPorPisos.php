@@ -6,12 +6,15 @@ use App\Filament\Resources\DepartamentosResource;
 use App\Models\Departamento;
 use App\Models\Edificio;
 use App\Models\EstadoDepartamento;
+use App\Http\Livewire\Traits\RouteValidation;
+use Illuminate\Support\Facades\Session;
 use Filament\Resources\Pages\Page;
 use Filament\Pages\Actions;
 use Livewire\Component;
 
 class DisponibilidadPorPisos extends Page
 {
+    use RouteValidation;
     protected static string $resource = DepartamentosResource::class;
     protected static string $view = 'filament.resources.departamentos-resource.pages.disponibilidad-por-pisos';
     
@@ -26,7 +29,15 @@ class DisponibilidadPorPisos extends Page
     
     public function mount(): void
     {
-        $this->edificios = Edificio::where('activo', true)
+        // Validar y corregir la ruta seleccionada en sesión
+        $this->validateAndCorrectSelectedRoute();
+
+        $rutaId = Session::get('selected_ruta_id');
+
+        // Cargar edificios activos filtrados por la ruta seleccionada
+        $this->edificios = Edificio::query()
+            ->where('activo', true)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->orderBy('nombre')
             ->get()
             ->pluck('nombre', 'id_edificio')
@@ -57,6 +68,7 @@ class DisponibilidadPorPisos extends Page
             $this->departamentosPorPiso = [];
             return;
         }
+        $rutaId = Session::get('selected_ruta_id');
         
         $departamentos = Departamento::with([
                 'estado', 
@@ -67,6 +79,7 @@ class DisponibilidadPorPisos extends Page
                 }
             ])
             ->where('id_edificio', $this->selectedEdificio)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->where('activo', true)
             ->orderBy('piso', 'desc')
             ->orderBy('numero_departamento')
@@ -102,9 +115,11 @@ class DisponibilidadPorPisos extends Page
             $this->todosDepartamentos = [];
             return;
         }
+        $rutaId = Session::get('selected_ruta_id');
         
         $this->todosDepartamentos = Departamento::with(['estado', 'edificio'])
             ->where('id_edificio', $this->selectedEdificio)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->where('activo', true)
             ->orderBy('numero_departamento')
             ->get()

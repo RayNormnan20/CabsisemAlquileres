@@ -4,12 +4,24 @@ namespace App\Filament\Resources\EstadoDepartamentoResource\Pages;
 
 use App\Filament\Resources\EstadoDepartamentoResource;
 use App\Models\LogActividad;
+use Illuminate\Support\Facades\Session;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateEstadoDepartamento extends CreateRecord
 {
     protected static string $resource = EstadoDepartamentoResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        // Asignar id_ruta desde la ruta seleccionada en sesión
+        $rutaId = Session::get('selected_ruta_id');
+        if (!$rutaId) {
+            throw new \Exception('Debe seleccionar una Ruta antes de crear un estado de departamento.');
+        }
+        $data['id_ruta'] = $rutaId;
+        return $data;
+    }
     protected function afterCreate(): void
     {
         // Registrar log de actividad
@@ -21,7 +33,8 @@ class CreateEstadoDepartamento extends CreateRecord
                 'nombre' => $this->record->nombre,
                 'descripcion' => $this->record->descripcion,
                 'color' => $this->record->color,
-                'activo' => $this->record->activo
+                'activo' => $this->record->activo,
+                'id_ruta' => $this->record->id_ruta
             ]
         );
     }

@@ -10,6 +10,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Widgets\Widget;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Illuminate\Support\Facades\Session;
 
 class PagosAlquilerFiltrosWidget extends Widget implements HasForms
 {
@@ -62,7 +63,10 @@ class PagosAlquilerFiltrosWidget extends Widget implements HasForms
 
     protected function getEdificios(): array
     {
-        return Edificio::where('activo', true)
+        $rutaId = Session::get('selected_ruta_id');
+        return Edificio::query()
+            ->where('activo', true)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->orderBy('nombre')
             ->pluck('nombre', 'id_edificio')
             ->toArray();
@@ -73,8 +77,10 @@ class PagosAlquilerFiltrosWidget extends Widget implements HasForms
         if (!$this->edificioSeleccionado) {
             return [];
         }
-
-        return Departamento::where('id_edificio', $this->edificioSeleccionado)
+        $rutaId = Session::get('selected_ruta_id');
+        return Departamento::query()
+            ->where('id_edificio', $this->edificioSeleccionado)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->where('activo', true)
             ->orderBy('numero_departamento')
             ->pluck('numero_departamento', 'id_departamento')

@@ -14,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Grid;
 use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Pages\Actions;
@@ -61,7 +62,12 @@ class ListResumenAlquiler extends ListRecords
 
     public function getEdificios()
     {
-        return Edificio::orderBy('nombre')->pluck('nombre', 'id_edificio')->toArray();
+        $rutaId = Session::get('selected_ruta_id');
+        return Edificio::query()
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id_edificio')
+            ->toArray();
     }
 
     public function getDepartamentos()
@@ -69,8 +75,10 @@ class ListResumenAlquiler extends ListRecords
         if (!$this->selectedEdificio) {
             return [];
         }
-
-        return Departamento::where('id_edificio', $this->selectedEdificio)
+        $rutaId = Session::get('selected_ruta_id');
+        return Departamento::query()
+            ->where('id_edificio', $this->selectedEdificio)
+            ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
             ->orderBy('numero_departamento')
             ->pluck('numero_departamento', 'id_departamento')
             ->toArray();

@@ -22,6 +22,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
 
 class PagosAlquilerResource extends Resource
@@ -365,6 +366,12 @@ HTML;
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['id_usuario_registro'] = Auth::id();
+        // Asignar id_ruta SOLO desde la sesión, sin valor por defecto
+        $rutaId = Session::get('selected_ruta_id');
+        if (!$rutaId) {
+            throw new \Exception('Debe seleccionar una Ruta antes de registrar pagos de alquiler.');
+        }
+        $data['id_ruta'] = $rutaId;
         return $data;
     }
     protected function getTableRecordsPerPageSelectOptions(): array
