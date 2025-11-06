@@ -22,6 +22,9 @@ class ListPagosAlquilers extends ListRecords
     public $tipoFecha = 'created_at';
     public $edificioSeleccionado = null;
     public $departamentoSeleccionado = null;
+    // Estado de la ruta seleccionada para filtrar automáticamente
+    public ?int $currentRutaId = null;
+    public ?string $currentRutaName = null;
 
     protected function getTableRecordsPerPageSelectOptions(): array
     {
@@ -41,6 +44,11 @@ class ListPagosAlquilers extends ListRecords
         // Inicializar filtro de fecha por defecto (hoy)
         $this->fechaDesde = Carbon::today()->format('Y-m-d');
         $this->fechaHasta = Carbon::today()->format('Y-m-d');
+        // Inicializar la ruta desde la sesión si existe
+        if (session()->has('selected_ruta_id')) {
+            $this->currentRutaId = session('selected_ruta_id');
+            $this->currentRutaName = session('selected_ruta_name');
+        }
         // Emitir filtros iniciales al footer
         $this->emitFooterFilters();
     }
@@ -111,6 +119,13 @@ class ListPagosAlquilers extends ListRecords
     {
         $query = parent::getTableQuery();
 
+        // Filtrar por ruta seleccionada en sesión (si existe)
+        if ($this->currentRutaId) {
+            $query->whereHas('alquiler.departamento', function ($q) {
+                $q->where('id_ruta', $this->currentRutaId);
+            });
+        }
+
         // Aplicar filtros de fecha según tipo seleccionado
         $columnaFecha = $this->tipoFecha === 'fecha_pago' ? 'pagos_alquiler.fecha_pago' : 'pagos_alquiler.created_at';
         if ($this->fechaDesde) {
@@ -164,6 +179,20 @@ class ListPagosAlquilers extends ListRecords
         $this->emitFooterFilters();
     }
 
+    // Aplicar el filtro cuando cambie la ruta global (SelectedRouteManager)
+    public function applyRouteFilter(?int $rutaId, ?string $rutaName): void
+    {
+        $this->currentRutaId = $rutaId;
+        $this->currentRutaName = $rutaName ?? 'Ruta';
+
+        // Al cambiar de ruta, limpiar selects dependientes para evitar datos cruzados
+        $this->edificioSeleccionado = null;
+        $this->departamentoSeleccionado = null;
+
+        $this->resetPage();
+        $this->emitFooterFilters();
+    }
+
     protected function emitFooterFilters(): void
     {
         $this->emit('pagos-alquiler-footer-filters', [
@@ -172,6 +201,7 @@ class ListPagosAlquilers extends ListRecords
             'tipoFecha' => $this->tipoFecha,
             'edificio' => $this->edificioSeleccionado ?? null,
             'departamento' => $this->departamentoSeleccionado ?? null,
+            'rutaId' => $this->currentRutaId,
         ]);
     }
 

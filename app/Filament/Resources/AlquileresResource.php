@@ -57,12 +57,14 @@ class AlquileresResource extends Resource
                             Select::make('id_departamento')
                                 ->label('Departamento')
                                 ->options(function () {
+                                    $rutaId = \Illuminate\Support\Facades\Session::get('selected_ruta_id');
                                     return Departamento::query()
                                         ->with(['edificio', 'estado'])
                                         ->whereHas('estado', function($q) {
                                             $q->where('nombre', 'Disponible');
                                         })
                                         ->where('activo', true)
+                                        ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
                                         ->get()
                                         ->mapWithKeys(fn($d) => [
                                             $d->id_departamento =>
@@ -76,7 +78,9 @@ class AlquileresResource extends Resource
                             Select::make('id_cliente_alquiler')
                                 ->label('Inquilino')
                                 ->options(function () {
+                                    $rutaId = \Illuminate\Support\Facades\Session::get('selected_ruta_id');
                                     return ClienteAlquiler::disponibles()
+                                        ->when($rutaId, fn($q) => $q->deRuta($rutaId))
                                         ->orderBy('nombre')
                                         ->get()
                                         ->mapWithKeys(fn($c) => [$c->id_cliente_alquiler => $c->nombre_completo]);

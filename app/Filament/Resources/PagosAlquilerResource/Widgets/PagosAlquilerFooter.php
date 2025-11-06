@@ -18,6 +18,7 @@ class PagosAlquilerFooter extends Widget
     public $tipoFecha = 'created_at';
     public $edificioSeleccionado;
     public $departamentoSeleccionado;
+    public ?int $currentRutaId = null;
 
     protected $listeners = [
         // Desde el widget de filtros
@@ -50,6 +51,7 @@ class PagosAlquilerFooter extends Widget
         $this->tipoFecha = $filters['tipoFecha'] ?? $this->tipoFecha;
         $this->edificioSeleccionado = $filters['edificio'] ?? null;
         $this->departamentoSeleccionado = $filters['departamento'] ?? null;
+        $this->currentRutaId = $filters['rutaId'] ?? $this->currentRutaId;
         $this->emit('$refresh');
     }
 
@@ -59,6 +61,13 @@ class PagosAlquilerFooter extends Widget
 
         // Determinar columna de fecha según selección
         $columnaFecha = $this->tipoFecha === 'fecha_pago' ? 'pagos_alquiler.fecha_pago' : 'pagos_alquiler.created_at';
+
+        // Filtro por ruta seleccionada
+        if ($this->currentRutaId) {
+            $query->whereHas('alquiler.departamento', function ($q) {
+                $q->where('id_ruta', $this->currentRutaId);
+            });
+        }
 
         // Filtros de fecha
         if ($this->fechaDesde) {

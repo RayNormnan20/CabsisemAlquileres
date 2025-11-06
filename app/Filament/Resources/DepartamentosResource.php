@@ -55,8 +55,10 @@ class DepartamentosResource extends Resource
                             Select::make('id_edificio')
                                 ->label('Edificio')
                                 ->options(function () {
+                                    $rutaId = \Illuminate\Support\Facades\Session::get('selected_ruta_id');
                                     return Edificio::query()
                                         ->where('activo', true)
+                                        ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
                                         ->orderBy('nombre')
                                         ->pluck('nombre', 'id_edificio');
                                 })
@@ -96,8 +98,10 @@ class DepartamentosResource extends Resource
                             Select::make('id_estado_departamento')
                                 ->label('Estado')
                                 ->options(function () {
+                                    $rutaId = \Illuminate\Support\Facades\Session::get('selected_ruta_id');
                                     return EstadoDepartamento::query()
                                         ->where('activo', true)
+                                        ->when($rutaId, fn($q) => $q->where('id_ruta', $rutaId))
                                         ->orderBy('nombre')
                                         ->pluck('nombre', 'id_estado_departamento');
                                 })

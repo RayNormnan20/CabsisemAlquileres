@@ -56,9 +56,15 @@ class PagosAlquilerResource extends Resource
                             Select::make('id_alquiler')
                                 ->label('Alquiler')
                                 ->options(function () {
+                                    $rutaId = \Illuminate\Support\Facades\Session::get('selected_ruta_id');
                                     return Alquiler::query()
                                         ->with(['departamento.edificio', 'inquilino'])
                                         ->where('estado_alquiler', 'activo')
+                                        ->when($rutaId, function ($query) use ($rutaId) {
+                                            $query->whereHas('departamento', function ($q) use ($rutaId) {
+                                                $q->where('id_ruta', $rutaId);
+                                            });
+                                        })
                                         ->get()
                                         ->mapWithKeys(fn($a) => [
                                             $a->id_alquiler =>
