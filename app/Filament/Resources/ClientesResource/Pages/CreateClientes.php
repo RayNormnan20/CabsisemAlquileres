@@ -15,6 +15,8 @@ class CreateClientes extends CreateRecord
 
     public bool $crearCredito = false;
 
+    public ?string $returnTo = null;
+
     public ?int $currentRutaId = null;
 
     public function mount(): void
@@ -22,6 +24,9 @@ class CreateClientes extends CreateRecord
         parent::mount();
 
         $this->currentRutaId = Session::get('selected_ruta_id');
+
+        // Recordar a dónde volver tras guardar (p.ej. 'yape-clientes-create')
+        $this->returnTo = request()->query('return_to');
 
     }
 
@@ -74,6 +79,13 @@ class CreateClientes extends CreateRecord
         if ($this->crearCredito) {
             return CreditosResource::getUrl('create', [
                 'cliente_id' => $this->record->id_cliente
+            ]);
+        }
+
+        // Si se indicó volver a Crear Yape Cliente, redirigir ahí
+        if ($this->returnTo === 'yape-clientes-create') {
+            return \App\Filament\Resources\YapeClienteResource::getUrl('create', [
+                'cliente_id' => $this->record->id_cliente,
             ]);
         }
 

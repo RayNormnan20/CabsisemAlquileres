@@ -136,7 +136,9 @@ class ClientesResource extends Resource
 
                             Toggle::make('crear_credito')
                                 ->label('Crear crédito después de guardar')
-                                ->default(true)
+                                ->default(fn () => request()->has('crear_credito')
+                                    ? filter_var(request()->query('crear_credito'), FILTER_VALIDATE_BOOLEAN)
+                                    : true)
                                 ->inline(false)
                                 ->visible(fn (string $context) => $context === 'create'),
 
