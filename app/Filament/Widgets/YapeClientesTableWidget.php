@@ -32,6 +32,14 @@ class YapeClientesTableWidget extends BaseWidget
     public ?string $fechaHasta = null;
     public string $periodoSeleccionado = 'desde_primer_registro';
     public bool $fechasValidas = true;
+    // Filtro de estado controlado desde el header
+    public string $estadoFiltro = 'pendientes';
+
+    public function updatedEstadoFiltro($value): void
+    {
+        // Reiniciar la paginación para evitar páginas vacías al cambiar el filtro
+        $this->resetPage();
+    }
 
     public function mount(): void
     {
@@ -175,45 +183,46 @@ class YapeClientesTableWidget extends BaseWidget
     protected function getTableFilters(): array
     {
         return [
-            // Filtro para mostrar solo pendientes y excesos (por defecto)
+            // Filtro para mostrar Pendientes, Con devolución (excesos) o Todos
             SelectFilter::make('estado_filtro')
                 ->label('Mostrar')
                 ->options([
-                    'pendientes_excesos' => 'Solo Pendientes y Excesos',
-                    'completados' => 'Solo Completados',
-                    'todos' => 'Todos los registros',
+                    'pendientes' => 'Pendientes',
+                    'devolucion' => 'Completado y con devoluciones',
+                    'todos' => 'Todos',
                 ])
-                ->default('pendientes_excesos')
+                ->default('pendientes')
                 ->query(function (Builder $query, array $data): Builder {
-                    $value = $data['value'] ?? 'pendientes_excesos';
+                    // Sincronizar con el select del header si está presente
+                    $value = $this->estadoFiltro ?? ($data['value'] ?? 'pendientes');
 
-                    if ($value === 'pendientes_excesos') {
-                        // Filtrar solo registros que no están completos (considerando devoluciones)
-                        return $query->whereHas('abonos', function($q) {
-                            // Tiene abonos pero no está completo
-                        }, '>=', 0)->where(function($subQuery) {
-                            $subQuery->whereRaw('(
-                                SELECT COALESCE(
-                                    SUM(CASE WHEN es_devolucion = 1 THEN -monto_abono ELSE monto_abono END), 0
-                                )
-                                FROM abonos
-                                WHERE abonos.id_yape_cliente = yape_clientes.id
-                            ) != yape_clientes.monto');
-                        });
-                    } elseif ($value === 'completados') {
-                        // Filtrar solo registros completados (considerando devoluciones)
-                        return $query->whereRaw('(
-                            SELECT COALESCE(
-                                SUM(CASE WHEN es_devolucion = 1 THEN -monto_abono ELSE monto_abono END), 0
-                            )
-                            FROM abonos
-                            WHERE abonos.id_yape_cliente = yape_clientes.id
-                        ) = yape_clientes.monto');
+                    // Subconsulta: suma de abonos considerando devoluciones (negativos)
+                    $subTotalAbonos = '(
+                        SELECT COALESCE(
+                            SUM(CASE WHEN es_devolucion = 1 THEN -monto_abono ELSE monto_abono END), 0
+                        )
+                        FROM abonos
+                        WHERE abonos.id_yape_cliente = yape_clientes.id
+                    )';
+
+                    if ($value === 'pendientes') {
+                        // No completados: suma (abonos - devoluciones) < monto
+                        return $query->whereRaw("$subTotalAbonos < yape_clientes.monto");
                     }
 
-                    return $query; // Mostrar todos
+                    if ($value === 'devolucion') {
+                        // Mostrar COMPLETOS y EXCESOS:
+                        // yapeado real >= monto (con tolerancia por decimales)
+                        $diff = "($subTotalAbonos - yape_clientes.monto)";
+                        return $query->whereRaw(
+                            "($subTotalAbonos > yape_clientes.monto) OR (ABS($diff) < 0.01)"
+                        );
+                    }
+
+                    return $query; // Todos
                 }),
 
+            /*
             // Filtro de rango de fechas personalizado
             Filter::make('fecha_rango')
                 ->form([
@@ -245,6 +254,7 @@ class YapeClientesTableWidget extends BaseWidget
                             fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                         );
                 }),
+                */
         ];
     }
 
