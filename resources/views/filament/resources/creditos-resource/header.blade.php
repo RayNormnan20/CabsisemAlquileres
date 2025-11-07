@@ -868,11 +868,13 @@ $cliente->loadMissing('creditos');
                     }
 
                 }" x-init="init()" class="flex items-center space-x-2">
-            {{-- Botón Editar Cliente --}}
+            {{-- Botón Editar Cliente protegido por policy --}}
+            @can('update', $cliente)
             <a href="{{ route('filament.resources.clientes.edit', ['record' => $cliente->id_cliente]) }}"
                 class="inline-flex items-center px-3 py-1 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 Editar Cliente
             </a>
+            @endcan
 
             {{-- Configurar Horario movido a Configuración > Horarios de acceso --}}
 
@@ -884,10 +886,12 @@ $cliente->loadMissing('creditos');
                 @endphp
 
                 @if($creditoActivo)
+                @can('update', $creditoActivo)
                 <a href="{{ route('filament.resources.creditos.edit', ['record' => $creditoActivo->id_credito]) }}"
                     class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     Editar Crédito
                 </a>
+                @endcan
 
                 <div class="relative inline-block text-left z-20">
                     <div>

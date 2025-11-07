@@ -95,6 +95,9 @@ class CreateCreditos extends CreateRecord
         // Primero ejecutar la validación de suma de conceptos
         $this->validateCreditSumBeforeCreate($data);
 
+        // Validación estricta de distribución Yape cuando hay múltiples nombres
+        $this->validateYapeDistributionStrict($data);
+
         $tipoCredito = $data['es_adicional'] ?? false;
 
         if ($tipoCredito) {
@@ -220,6 +223,50 @@ class CreateCreditos extends CreateRecord
         return $data;
     }
 
+    protected function validateYapeDistributionStrict(array $data): void
+    {
+        // Detectar nombres seleccionados según tipo de crédito
+        $nombresSeleccionados = [];
+        if (!empty($data['es_adicional'])) {
+            $nombresSeleccionados = $data['nombre_yape_adicional'] ?? [];
+        } else {
+            $nombresSeleccionados = $data['nombre_yape'] ?? [];
+        }
+        if (is_string($nombresSeleccionados)) {
+            $nombresSeleccionados = [$nombresSeleccionados];
+        }
+
+        // Buscar monto del concepto Yape
+        $conceptos = $data['conceptosCredito'] ?? $data['conceptos_credito'] ?? $data['conceptos'] ?? [];
+        $yapeMonto = 0.0;
+        foreach ($conceptos as $c) {
+            if (($c['tipo_concepto'] ?? '') === 'Yape') {
+                $yapeMonto = (float) ($c['monto'] ?? 0);
+                break;
+            }
+        }
+
+        // Si hay más de un nombre, exigir distribución y suma exacta
+        if (is_array($nombresSeleccionados) && count($nombresSeleccionados) > 1) {
+            $dist = $data['distribucion_yape'] ?? [];
+            $suma = 0.0;
+            if (is_array($dist)) {
+                foreach ($dist as $monto) {
+                    $suma += (float) $monto;
+                }
+            }
+            if (empty($dist) || abs($suma - $yapeMonto) > 0.01) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error de Distribución Yape')
+                    ->body('La suma asignada por Nombre Yape debe ser igual al monto del concepto Yape (S/ ' . number_format($yapeMonto, 2) . ').')
+                    ->danger()
+                    ->duration(5000)
+                    ->send();
+                $this->halt();
+            }
+        }
+    }
+
     protected function handleRecordCreation(array $data): Model
     {
         try {
@@ -293,48 +340,85 @@ class CreateCreditos extends CreateRecord
 
         foreach ($this->record->conceptosCredito as $concepto) {
             if ($concepto->tipo_concepto === 'Yape') {
-                // Determinar el nombre a usar según si es crédito adicional o normal
-                $nombreYape = '';
+                // Determinar los nombres a usar (múltiples) según si es crédito adicional o normal
+                $nombresSeleccionados = [];
                 if ($this->record->es_adicional) {
-                    // Para créditos adicionales, usar nombre_yape_adicional
-                    $nombreYape = !empty($this->data['nombre_yape_adicional'])
-                        ? $this->data['nombre_yape_adicional']
-                        : $this->record->cliente->nombre_completo;
+                    $nombresSeleccionados = $this->data['nombre_yape_adicional'] ?? [];
                 } else {
-                    // Para créditos normales, usar nombre_yape
-                    $nombreYape = !empty($this->data['nombre_yape'])
-                        ? $this->data['nombre_yape']
-                        : $this->record->cliente->nombre_completo;
+                    $nombresSeleccionados = $this->data['nombre_yape'] ?? [];
+                }
+                // Convertir en array si vino como string
+                if (is_string($nombresSeleccionados)) {
+                    $nombresSeleccionados = [$nombresSeleccionados];
+                }
+                // Si no hay nombres, usar el nombre completo del cliente
+                if (empty($nombresSeleccionados)) {
+                    $nombresSeleccionados = [$this->record->cliente->nombre_completo];
                 }
 
-                // Verificar si ya existe un YapeCliente con el mismo nombre y cliente sin id_credito
-                $yapeExistente = YapeCliente::where('id_cliente', $this->record->id_cliente)
-                    ->where('nombre', $nombreYape)
-                    ->whereNull('id_credito')
-                    ->first();
-
-                if ($yapeExistente) {
-                    // Actualizar el registro existente con el id_credito
-                    $yapeExistente->update([
-                        'id_credito' => $this->record->id_credito,
-                        'monto' => $concepto->monto,
-                        'valor' => $this->record->valor_credito,
-                        'entregar' => 0, // Inicializar en 0 para que aparezca en el filtro
-                        'user_id' => auth()->id(),
-                    ]);
-                } else {
-                    // Crear un nuevo registro
-                    YapeCliente::create([
-                        'id_cliente' => $this->record->id_cliente,
-                        'id_credito' => $this->record->id_credito,
-                        'nombre' => $nombreYape,
-                        'user_id' => auth()->id(),
-                        'monto' => $concepto->monto,
-                        'valor' => $this->record->valor_credito,
-                        'entregar' => 0, // Inicializar en 0 para que aparezca en el filtro
-                    ]);
+                // Mapear distribución si fue ingresada en el formulario (KeyValue: nombre => monto)
+                $distribucion = $this->data['distribucion_yape'] ?? [];
+                $mapeoDistribucion = [];
+                if (is_array($distribucion)) {
+                    foreach ($distribucion as $nombre => $monto) {
+                        if (is_string($nombre)) {
+                            $mapeoDistribucion[$nombre] = (float) $monto;
+                        }
+                    }
                 }
-                break; // Solo procesar un registro por crédito
+
+                // Validación suave de suma cuando hay distribución definida
+                if (!empty($mapeoDistribucion) && count($nombresSeleccionados) > 1) {
+                    $suma = array_sum($mapeoDistribucion);
+                    $montoYape = (float) ($concepto->monto ?? 0);
+                    if (abs($suma - $montoYape) > 0.01) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Advertencia de Distribución')
+                            ->body('La suma asignada en la distribución (S/ ' . number_format($suma, 2) . ') no coincide con el monto del concepto Yape (S/ ' . number_format($montoYape, 2) . '). Se guardará como está.')
+                            ->warning()
+                            ->send();
+                    }
+                }
+
+                // El primero será el principal con el monto del concepto; el resto se registran con monto 0
+                foreach ($nombresSeleccionados as $index => $nombreYape) {
+                    // Verificar si ya existe un YapeCliente con el mismo nombre y cliente sin id_credito
+                    $yapeExistente = YapeCliente::where('id_cliente', $this->record->id_cliente)
+                        ->where('nombre', $nombreYape)
+                        ->whereNull('id_credito')
+                        ->first();
+                    // Calcular monto asignado: si hay distribución usarla; si solo un nombre asignar todo; caso contrario primer nombre toma todo
+                    if (!empty($mapeoDistribucion) && count($nombresSeleccionados) > 1) {
+                        $montoAsignado = (float) ($mapeoDistribucion[$nombreYape] ?? 0);
+                    } else {
+                        $montoAsignado = (count($nombresSeleccionados) === 1)
+                            ? (float) ($concepto->monto ?? 0)
+                            : ($index === 0 ? (float) ($concepto->monto ?? 0) : 0);
+                    }
+
+                    if ($yapeExistente) {
+                        // Actualizar el registro existente con el id_credito
+                        $yapeExistente->update([
+                            'id_credito' => $this->record->id_credito,
+                            'monto' => $montoAsignado,
+                            'valor' => $this->record->valor_credito,
+                            'entregar' => 0,
+                            'user_id' => auth()->id(),
+                        ]);
+                    } else {
+                        // Crear un nuevo registro
+                        YapeCliente::create([
+                            'id_cliente' => $this->record->id_cliente,
+                            'id_credito' => $this->record->id_credito,
+                            'nombre' => $nombreYape,
+                            'user_id' => auth()->id(),
+                            'monto' => $montoAsignado,
+                            'valor' => $this->record->valor_credito,
+                            'entregar' => 0,
+                        ]);
+                    }
+                }
+                break; // Solo procesar una vez por crédito
             }
         }
 

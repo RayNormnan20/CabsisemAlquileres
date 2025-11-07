@@ -315,7 +315,7 @@ class CreditosResource extends Resource
                                             ])
                                             ->visible(fn (callable $get) => !$get('es_adicional')),
 
-                                        // Campo para nombre Yape - Select con opciones existentes y posibilidad de escribir
+                                        // Campo para nombre Yape - Select con opciones existentes y posibilidad de escribir (múltiple)
                                         Select::make('nombre_yape')
                                             ->label('Nombre Yape')
                                             ->required(function (callable $get) {
@@ -365,7 +365,9 @@ class CreditosResource extends Resource
                                             })
                                             ->searchable()
                                             ->allowHtml()
-                                            ->placeholder('Seleccionar nombre existente o escribir nuevo')
+                                           // ->placeholder('Seleccionar nombres existentes o escribir nuevos')
+                                            ->helperText('Puede seleccionar múltiples nombres Yape')
+                                            ->multiple()
                                             ->createOptionForm([
                                                 Forms\Components\TextInput::make('nombre')
                                                     ->label('Nuevo nombre Yape')
@@ -381,6 +383,36 @@ class CreditosResource extends Resource
                                                 'style' => 'background-color:rgb(114, 237, 241) !important; color:rgb(0, 0, 0) !important;'
                                             ])
                                             ->reactive()
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                $nombres = is_array($state) ? $state : (empty($state) ? [] : [$state]);
+                                                $conceptos = $get('conceptosCredito') ?? [];
+                                                $yapeMonto = 0;
+                                                foreach ($conceptos as $c) {
+                                                    if (($c['tipo_concepto'] ?? '') === 'Yape') {
+                                                        $yapeMonto = (float) ($c['monto'] ?? 0);
+                                                        break;
+                                                    }
+                                                }
+                                                $set('yape_monto_total', $yapeMonto);
+                                                $map = [];
+                                                if (count($nombres) === 1) {
+                                                    $map[$nombres[0]] = $yapeMonto;
+                                                } else {
+                                                    $count = count($nombres);
+                                                    $base = $count > 0 ? round($yapeMonto / $count, 2) : 0.0;
+                                                    $acumulado = 0.0;
+                                                    foreach ($nombres as $idx => $n) {
+                                                        if ($idx < $count - 1) {
+                                                            $map[$n] = $base;
+                                                            $acumulado += $base;
+                                                        } else {
+                                                            // Ajustar el último para que la suma sea exactamente igual al monto Yape
+                                                            $map[$n] = round($yapeMonto - $acumulado, 2);
+                                                        }
+                                                    }
+                                                }
+                                                $set('distribucion_yape', $map);
+                                            })
                                             ->afterStateHydrated(function (callable $get, callable $set, $livewire) {
                                                 // Solo preseleccionar durante la creación (no en edición)
                                                 if (isset($livewire->record)) {
@@ -412,12 +444,12 @@ class CreditosResource extends Resource
 
                                                     if ($yapeCliente) {
                                                         // Si hay YapeCliente registrado, usar su nombre
-                                                        $set('nombre_yape', $yapeCliente->nombre);
+                                                        $set('nombre_yape', [$yapeCliente->nombre]);
                                                     } else {
                                                         // Si no hay YapeCliente, usar nombre del cliente
                                                         $cliente = \App\Models\Clientes::find($clienteId);
                                                         if ($cliente) {
-                                                            $set('nombre_yape', $cliente->nombre_completo);
+                                                            $set('nombre_yape', [$cliente->nombre_completo]);
                                                         }
                                                     }
                                                 }
@@ -437,7 +469,46 @@ class CreditosResource extends Resource
                                                 return false;
                                             }),
 
-                                        // Campo para nombre Yape - CRÉDITOS ADICIONALES
+                                        // Distribución de monto para múltiples nombres Yape (KeyValue)
+                                        Forms\Components\Hidden::make('yape_monto_total')
+                                            ->reactive(),
+                                        Forms\Components\KeyValue::make('distribucion_yape')
+                                            ->label('Distribución por Nombre Yape')
+                                            ->keyLabel('Nombre Yape')
+                                            ->valueLabel('Monto')
+                                            ->disableAddingRows()
+                                            ->disableDeletingRows()
+                                            ->disableEditingKeys()
+                                            ->reactive()
+                                            ->helperText(function (callable $get) {
+                                                $yapeMonto = (float) ($get('yape_monto_total') ?? 0);
+                                                $dist = $get('distribucion_yape') ?? [];
+                                                $suma = 0.0;
+                                                if (is_array($dist)) {
+                                                    foreach ($dist as $monto) {
+                                                        $suma += (float) $monto;
+                                                    }
+                                                }
+                                                return 'Total Yape: S/ ' . number_format($yapeMonto, 2) . ' | Asignado: S/ ' . number_format($suma, 2);
+                                            })
+                                            ->visible(function (callable $get) {
+                                                // Visible solo si hay concepto Yape y más de un nombre seleccionado
+                                                $conceptos = $get('conceptosCredito') ?? [];
+                                                $tieneYape = false;
+                                                foreach ($conceptos as $concepto) {
+                                                    if (($concepto['tipo_concepto'] ?? '') === 'Yape') {
+                                                        $tieneYape = true;
+                                                        break;
+                                                    }
+                                                }
+                                                if (!$tieneYape) {
+                                                    return false;
+                                                }
+                                                $nombres = $get('es_adicional') ? ($get('nombre_yape_adicional') ?? []) : ($get('nombre_yape') ?? []);
+                                                return is_array($nombres) && count($nombres) > 1;
+                                            }),
+
+                                        // Campo para nombre Yape - CRÉDITOS ADICIONALES (múltiple)
                                         Select::make('nombre_yape_adicional')
                                             ->label('Nombre Yape')
                                             ->required(function (callable $get) {
@@ -487,7 +558,9 @@ class CreditosResource extends Resource
                                             })
                                             ->searchable()
                                             ->allowHtml()
-                                            ->placeholder('Seleccionar nombre existente o escribir nuevo')
+                                            ->placeholder('Seleccionar nombres existentes o escribir nuevos')
+                                            ->helperText('Puede seleccionar múltiples nombres Yape')
+                                            ->multiple()
                                             ->createOptionForm([
                                                 Forms\Components\TextInput::make('nombre')
                                                     ->label('Nuevo nombre Yape')
@@ -503,6 +576,35 @@ class CreditosResource extends Resource
                                                 'style' => 'background-color:rgb(114, 237, 241) !important; color:rgb(0, 0, 0) !important;'
                                             ])
                                             ->reactive()
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                $nombres = is_array($state) ? $state : (empty($state) ? [] : [$state]);
+                                                $conceptos = $get('conceptosCredito') ?? [];
+                                                $yapeMonto = 0;
+                                                foreach ($conceptos as $c) {
+                                                    if (($c['tipo_concepto'] ?? '') === 'Yape') {
+                                                        $yapeMonto = (float) ($c['monto'] ?? 0);
+                                                        break;
+                                                    }
+                                                }
+                                                $set('yape_monto_total', $yapeMonto);
+                                                $map = [];
+                                                if (count($nombres) === 1) {
+                                                    $map[$nombres[0]] = $yapeMonto;
+                                                } else {
+                                                    $count = count($nombres);
+                                                    $base = $count > 0 ? round($yapeMonto / $count, 2) : 0.0;
+                                                    $acumulado = 0.0;
+                                                    foreach ($nombres as $idx => $n) {
+                                                        if ($idx < $count - 1) {
+                                                            $map[$n] = $base;
+                                                            $acumulado += $base;
+                                                        } else {
+                                                            $map[$n] = round($yapeMonto - $acumulado, 2);
+                                                        }
+                                                    }
+                                                }
+                                                $set('distribucion_yape', $map);
+                                            })
                                             ->afterStateHydrated(function (callable $get, callable $set, $livewire) {
                                                 // Solo preseleccionar durante la creación (no en edición)
                                                 if (isset($livewire->record)) {
@@ -534,12 +636,12 @@ class CreditosResource extends Resource
 
                                                     if ($yapeCliente) {
                                                         // Si hay YapeCliente registrado, usar su nombre
-                                                        $set('nombre_yape_adicional', $yapeCliente->nombre);
+                                                        $set('nombre_yape_adicional', [$yapeCliente->nombre]);
                                                     } else {
                                                         // Si no hay YapeCliente, usar nombre del cliente
                                                         $cliente = \App\Models\Clientes::find($clienteId);
                                                         if ($cliente) {
-                                                            $set('nombre_yape_adicional', $cliente->nombre_completo);
+                                                            $set('nombre_yape_adicional', [$cliente->nombre_completo]);
                                                         }
                                                     }
                                                 }
@@ -614,13 +716,13 @@ class CreditosResource extends Resource
 
                                                                  if ($yapeCliente) {
                                                                      // Si hay YapeCliente registrado, usar su nombre y monto
-                                                                     $set('../../nombre_yape', $yapeCliente->nombre);
+                                                                     $set('../../nombre_yape', [$yapeCliente->nombre]);
                                                                      $set('monto', $yapeCliente->monto);
                                                                  } else {
                                                                      // Si no hay YapeCliente, usar nombre del cliente
                                                                      $cliente = \App\Models\Clientes::find($clienteId);
                                                                      if ($cliente) {
-                                                                         $set('../../nombre_yape', $cliente->nombre_completo);
+                                                                         $set('../../nombre_yape', [$cliente->nombre_completo]);
                                                                      }
                                                                  }
                                                              }
@@ -638,8 +740,37 @@ class CreditosResource extends Resource
                                                             return;
                                                         }
 
-                                                        $valorCredito = (float) ($livewire->data['valor_credito'] ?? 0);
-                                                        $conceptos = $livewire->data['conceptosCredito'] ?? [];
+                                                        // Si este concepto es Yape, recalcular la distribución por Nombre Yape
+                                                        if ($get('tipo_concepto') === 'Yape') {
+                                                            // Actualizar el monto total Yape para refrescar helperText
+                                                            $set('../../yape_monto_total', (float) $state);
+                                                            $nombres = $get('../../es_adicional') ? ($get('../../nombre_yape_adicional') ?? []) : ($get('../../nombre_yape') ?? []);
+                                                            if (is_string($nombres)) {
+                                                                $nombres = [$nombres];
+                                                            }
+                                                            $map = [];
+                                                            if (is_array($nombres) && count($nombres) > 0) {
+                                                                if (count($nombres) === 1) {
+                                                                    $map[$nombres[0]] = (float) $state;
+                                                                } else {
+                                                                    $count = count($nombres);
+                                                                    $base = $count > 0 ? round(((float) $state) / $count, 2) : 0.0;
+                                                                    $acumulado = 0.0;
+                                                                    foreach ($nombres as $idx => $n) {
+                                                                        if ($idx < $count - 1) {
+                                                                            $map[$n] = $base;
+                                                                            $acumulado += $base;
+                                                                        } else {
+                                                                            $map[$n] = round(((float) $state) - $acumulado, 2);
+                                                                        }
+                                                                    }
+                                                                }
+                                                                $set('../../distribucion_yape', $map);
+                                                            }
+                                                        }
+
+                                                        $valorCredito = (float) ($get('../../valor_credito') ?? 0);
+                                                        $conceptos = $get('../../conceptosCredito') ?? [];
 
                                                         $sumaTotal = 0;
                                                         foreach ($conceptos as $concepto) {
