@@ -35,6 +35,18 @@
                         <strong>Saldo Actual:</strong> S/ {{ number_format($record->saldo_actual, 2, '.', ',') }}
                     </p>
 
+                    @if($record->es_adicional ?? false)
+                    <p class="text-sm text-gray-600">
+                        <strong>Cuota diaria:</strong>
+                        <span class="text-primary-600 font-semibold">S/ {{ number_format($record->porcentaje_interes, 2, '.', ',') }}</span>
+                    </p>
+                    @else
+                    <p class="text-sm text-gray-600">
+                        <strong>Interés:</strong>
+                        <span class="text-primary-600 font-semibold">{{ number_format($record->porcentaje_interes, 2) }}%</span>
+                    </p>
+                    @endif
+
                     <p class="text-sm text-gray-600">
                         <strong>Estado:</strong>
                         <span class="font-semibold {{ $record->saldo_actual > 0 ? 'text-red-600' : 'text-green-600' }}">
