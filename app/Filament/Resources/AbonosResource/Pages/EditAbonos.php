@@ -108,4 +108,12 @@ class EditAbonos extends EditRecord
             
         }
     }
+
+    // Ocultar el botón de eliminar en la página de edición
+    protected function getActions(): array
+    {
+        return [
+            // Sin DeleteAction según solicitud. Se pueden agregar otras acciones si se necesitan.
+        ];
+    }
 }
