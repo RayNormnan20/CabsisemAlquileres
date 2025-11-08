@@ -20,6 +20,7 @@
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Cliente</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Teléfono</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Crédito</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Interés</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Abonos</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Saldo</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Cuota</th>
@@ -36,6 +37,7 @@
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300">{{ $credito->cliente_completo }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300">{{ $credito->telefono }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->valor_credito, 2) }}</td>
+                        <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">{{ number_format($credito->porcentaje_interes, 2) }}%</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->total_abonos, 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->saldo_actual, 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->valor_cuota, 2) }}</td>
@@ -74,6 +76,7 @@
                     <tr class="bg-yellow-100 dark:bg-yellow-900 font-bold">
                         <td colspan="5" class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">TOTALES:</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesRegulares['credito'], 2) }}</td>
+                        <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300"></td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesRegulares['abonos'], 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesRegulares['saldo'], 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesRegulares['cuota'], 2) }}</td>
@@ -102,6 +105,7 @@
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Cliente</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Teléfono</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Crédito</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Interés</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Abonos</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Saldo</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border border-gray-300">Cuota</th>
@@ -118,6 +122,7 @@
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300">{{ $credito->cliente_completo }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300">{{ $credito->telefono }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->valor_credito, 2) }}</td>
+                        <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->porcentaje_interes, 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->total_abonos, 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->saldo_actual, 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($credito->porcentaje_interes, 2) }}</td>
@@ -156,6 +161,7 @@
                     <tr class="bg-yellow-100 dark:bg-yellow-900 font-bold">
                         <td colspan="5" class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">TOTALES:</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesAdicionales['credito'], 2) }}</td>
+                        <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300"></td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesAdicionales['abonos'], 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesAdicionales['saldo'], 2) }}</td>
                         <td class="px-2 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 text-right">S/ {{ number_format($totalesAdicionales['cuota'] ?? 0, 2) }}</td>

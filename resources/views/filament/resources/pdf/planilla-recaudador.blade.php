@@ -74,6 +74,7 @@
                 <th>Cliente</th>
                 <th>Teléfono</th>
                 <th>Crédito</th>
+                <th>Interés</th>
                 <th>Abonos</th>
                 <th>Saldo</th>
                 <th>Cuota</th>
@@ -89,6 +90,7 @@
                 <td>{{ $record->cliente_completo }}</td>
                 <td>{{ $record->telefono }}</td>
                 <td class="text-right">S/ {{ number_format($record->valor_credito, 2) }}</td>
+                <td class="text-right">{{ number_format($record->porcentaje_interes, 2) }}%</td>
                 <td class="text-right">S/ {{ number_format($record->total_abonos, 2) }}</td>
                 <td class="text-right">S/ {{ number_format($record->saldo_actual, 2) }}</td>
                 <td class="text-right">S/ {{ number_format($record->valor_cuota, 2) }}</td>
@@ -98,6 +100,7 @@
             <tr style="background-color: #f59e0b; color: white; font-weight: bold;">
                 <td colspan="5">TOTALES</td>
                 <td class="text-right">S/ {{ number_format($creditosRegulares->sum('valor_credito'), 2) }}</td>
+                <td></td>
                 <td class="text-right">S/ {{ number_format($creditosRegulares->sum('total_abonos'), 2) }}</td>
                 <td class="text-right">S/ {{ number_format($creditosRegulares->sum('saldo_actual'), 2) }}</td>
                 <td class="text-right">S/ {{ number_format($creditosRegulares->sum('valor_cuota'), 2) }}</td>
@@ -120,6 +123,7 @@
                 <th>Cliente</th>
                 <th>Teléfono</th>
                 <th>Crédito</th>
+                <th>Interés</th>
                 <th>Abonos</th>
                 <th>Saldo</th>
                 <th>Cuota</th>
@@ -135,6 +139,7 @@
                 <td>{{ $record->cliente_completo }}</td>
                 <td>{{ $record->telefono }}</td>
                 <td class="text-right">S/ {{ number_format($record->valor_credito, 2) }}</td>
+                <td class="text-right">S/ {{ number_format($record->porcentaje_interes, 2) }}</td>
                 <td class="text-right">S/ {{ number_format($record->total_abonos, 2) }}</td>
                 <td class="text-right">S/ {{ number_format($record->saldo_actual, 2) }}</td>
                 <td class="text-right">S/ {{ number_format($record->cuota_real, 2) }}</td>
@@ -144,6 +149,7 @@
             <tr style="background-color: #10b981; color: white; font-weight: bold;">
                 <td colspan="5">TOTALES</td>
                 <td class="text-right">S/ {{ number_format($creditosAdicionales->sum('valor_credito'), 2) }}</td>
+                <td></td>
                 <td class="text-right">S/ {{ number_format($creditosAdicionales->sum('total_abonos'), 2) }}</td>
                 <td class="text-right">S/ {{ number_format($creditosAdicionales->sum('saldo_actual'), 2) }}</td>
                 <td class="text-right">S/ {{ number_format($creditosAdicionales->sum('cuota_real'), 2) }}</td>
