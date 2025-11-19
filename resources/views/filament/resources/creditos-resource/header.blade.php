@@ -1022,9 +1022,9 @@ $cliente->loadMissing('creditos');
                         x-transition:leave="ease-in duration-200"
                         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+                        class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all w-[95vw] sm:w-full sm:max-w-3xl max-h-[85vh] overflow-y-auto">
                         {{-- Aumentado el ancho a sm:max-w-3xl --}}
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="bg-white px-3 pt-4 pb-3 sm:p-6 sm:pb-4">
                             <div class="sm:flex sm:items-start">
                                 <div
                                     class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -1035,31 +1035,33 @@ $cliente->loadMissing('creditos');
                                     </svg>
                                 </div>
                                 <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                    <h2 class="text-lg font-semibold text-gray-900"
-                                        x-text="isRenewal ? 'Renovación de Crédito' : 'Bajo Cuenta'">
-                                    </h2>
-                                    <div class="mt-4 p-4 border border-gray-300 rounded-lg bg-blue-50">
-                                        <div
-                                            class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center font-semibold text-gray-800">
-                                            <div>
-                                                <span class="block text-sm text-gray-600">Fecha de Inicio</span>
-                                                <span x-text="fechaInicio" class="text-lg"></span>
-                                            </div>
-                                            <div>
-                                                <span class="block text-sm text-gray-600">Fecha Actual</span>
-                                                <span x-text="new Date().toISOString().split('T')[0]"
-                                                    class="text-lg"></span>
-                                            </div>
-                                            <div>
-                                                <span class="block text-sm text-gray-600">Días Transcurridos</span>
-                                                <span x-text="calcularDiasTranscurridos(fechaInicio)"
-                                                    class="text-lg text-indigo-700"></span>
+                                    <div class="sticky top-0 bg-white z-10 pt-2 pb-2 border-b border-gray-200">
+                                        <h2 class="text-lg font-semibold text-gray-900"
+                                            x-text="isRenewal ? 'Renovación de Crédito' : 'Bajo Cuenta'">
+                                        </h2>
+                                        <div class="mt-2 p-3 sm:p-4 border border-gray-300 rounded-lg bg-blue-50">
+                                            <div
+                                                class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-center font-semibold text-gray-800">
+                                                <div>
+                                                    <span class="block text-sm text-gray-600">Fecha de Inicio</span>
+                                                    <span x-text="fechaInicio" class="text-lg"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="block text-sm text-gray-600">Fecha Actual</span>
+                                                    <span x-text="new Date().toISOString().split('T')[0]"
+                                                        class="text-lg"></span>
+                                                </div>
+                                                <div class="col-span-2 sm:col-span-1">
+                                                    <span class="block text-sm text-gray-600">Días Transcurridos</span>
+                                                    <span x-text="calcularDiasTranscurridos(fechaInicio)"
+                                                        class="text-lg text-indigo-700"></span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div x-show="(!isRenewal && !isShowingBajoCuentaSteps) || (isRenewal && !isShowingRenovacionSteps)"
-                                        class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        class="mt-3 sm:mt-4 grid grid-cols-2 md:grid-cols-2 gap-3 sm:gap-4">
                                         {{-- Columna Izquierda: Datos del Crédito (Solo lectura) --}}
                                         <div>
                                             <h4 class="text-md font-semibold text-gray-800 mb-2">Datos Actuales</h4>
@@ -1516,7 +1518,7 @@ $cliente->loadMissing('creditos');
 
         <div x-show="open" x-transition
             class="mt-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="grid grid-cols-2 md:grid-cols-2 gap-4 text-sm">
                 <div class="text-gray-900 dark:text-gray-100"><span
                         class="font-medium text-gray-700 dark:text-gray-200">Documento:</span>
                     {{ $cliente->numero_documento }}</div>
