@@ -20,115 +20,40 @@ class HistorialAbonosWidget extends BaseWidget
 
     public function getTableQuery(): Builder
     {
-        $abonosQuery = DB::table('abonos')
+        // Obtener todos los registros ordenados por fecha
+        $query = Abonos::query()
             ->select([
                 'abonos.id_abono',
                 'abonos.fecha_pago',
                 'abonos.created_at',
-                DB::raw('conceptos.nombre as concepto_nombre'),
+                'conceptos.nombre as concepto_nombre',
                 'abonos.monto_abono',
                 'abonos.saldo_posterior',
-                DB::raw('abonos.id_usuario'),
-                DB::raw('abonos.es_devolucion'),
+                'abonos.id_usuario',
+                'abonos.es_devolucion',
                 DB::raw("'abono' as tipo_registro")
             ])
             ->join('conceptos', 'abonos.id_concepto', '=', 'conceptos.id')
-            ->where('abonos.id_credito', $this->record->id_credito);
-
-        $creditoQuery = DB::table('creditos')
-            ->select([
-                DB::raw('creditos.id_credito as id_abono'),
-                DB::raw('creditos.fecha_credito as fecha_pago'),
-                DB::raw('creditos.fecha_credito as created_at'),
-                DB::raw("'Desembolso' as concepto_nombre"),
-                DB::raw('creditos.valor_credito as monto_abono'),
-                DB::raw('(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior'),
-                DB::raw('NULL as id_usuario'),
-                DB::raw('false as es_devolucion'),
-                DB::raw("'credito' as tipo_registro")
-            ])
-            ->where('creditos.id_credito', $this->record->id_credito);
-
-        $union = $abonosQuery->unionAll($creditoQuery);
-
-        $tempModel = new class extends \Illuminate\Database\Eloquent\Model {
-            protected $table = 'historial_abonos_temp';
-            protected $primaryKey = 'id_abono';
-            public $timestamps = false;
-            protected $fillable = [
-                'id_abono', 'fecha_pago', 'created_at', 'concepto_nombre',
-                'monto_abono', 'saldo_posterior', 'id_usuario', 'es_devolucion',
-                'tipo_registro'
-            ];
-        };
-
-        return $tempModel->newQuery()
-            ->fromSub($union, 'historial')
+            ->where('abonos.id_credito', $this->record->id_credito)
+            ->union(
+                DB::table('creditos')
+                    ->select([
+                        'creditos.id_credito as id_abono',
+                        'creditos.fecha_credito as fecha_pago',
+                        'creditos.fecha_credito as created_at',
+                        DB::raw("'Desembolso' as concepto_nombre"),
+                        'creditos.valor_credito as monto_abono',
+                        DB::raw("(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior"),
+                        DB::raw("NULL as id_usuario"),
+                        DB::raw("false as es_devolucion"),
+                        DB::raw("'credito' as tipo_registro")
+                    ])
+                    ->where('creditos.id_credito', $this->record->id_credito)
+            )
             ->orderBy('fecha_pago', 'asc')
             ->orderBy('created_at', 'asc');
-    }
 
-    protected function paginateTableQuery(Builder $query): \Illuminate\Contracts\Pagination\Paginator
-    {
-        $perPage = $this->getTableRecordsPerPage();
-        $records = $query->paginate(
-            $perPage === 'all' ? $query->count() : $perPage,
-            ['*'],
-            $this->getTablePaginationPageName(),
-        );
-        return $records->onEachSide(2);
-    }
-
-    protected function getTablePaginationPageName(): string
-    {
-        return 'historial_abonos_page';
-    }
-
-    protected function getTableRecordsPerPageSelectOptions(): array
-    {
-        $total = $this->getHistorialCount();
-        return [10, 25, 50, 100, $total];
-    }
-
-    protected function getDefaultTableRecordsPerPageSelectOption(): int
-    {
-        return $this->getHistorialCount();
-    }
-
-    private function getHistorialCount(): int
-    {
-        $abonosQuery = DB::table('abonos')
-            ->select([
-                'abonos.id_abono',
-                'abonos.fecha_pago',
-                'abonos.created_at',
-                DB::raw('conceptos.nombre as concepto_nombre'),
-                'abonos.monto_abono',
-                'abonos.saldo_posterior',
-                DB::raw('abonos.id_usuario'),
-                DB::raw('abonos.es_devolucion'),
-                DB::raw("'abono' as tipo_registro")
-            ])
-            ->join('conceptos', 'abonos.id_concepto', '=', 'conceptos.id')
-            ->where('abonos.id_credito', $this->record->id_credito);
-
-        $creditoQuery = DB::table('creditos')
-            ->select([
-                DB::raw('creditos.id_credito as id_abono'),
-                DB::raw('creditos.fecha_credito as fecha_pago'),
-                DB::raw('creditos.fecha_credito as created_at'),
-                DB::raw("'Desembolso' as concepto_nombre"),
-                DB::raw('creditos.valor_credito as monto_abono'),
-                DB::raw('(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior'),
-                DB::raw('NULL as id_usuario'),
-                DB::raw('false as es_devolucion'),
-                DB::raw("'credito' as tipo_registro")
-            ])
-            ->where('creditos.id_credito', $this->record->id_credito);
-
-        $union = $abonosQuery->unionAll($creditoQuery);
-
-        return (int) DB::query()->fromSub($union, 'historial')->count();
+        return $query;
     }
 
     protected function getTableColumns(): array
