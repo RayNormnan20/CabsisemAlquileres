@@ -258,7 +258,7 @@
                                 <div class="abono-body">
                                     <div class="abono-info">
                                         <span class="abono-label">Saldo</span>
-                                        <span class="abono-value">S/{{ number_format($record->saldo_posterior, 2) }}</span>
+                                        <span class="abono-value">S/{{ number_format($this->calcularSaldoHasta($record), 2) }}</span>
                                     </div>
                                     @if($record->tipos_concepto)
                                     <div class="abono-info">

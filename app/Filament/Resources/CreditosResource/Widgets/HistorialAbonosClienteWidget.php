@@ -151,5 +151,48 @@ class HistorialAbonosClienteWidget extends Widget
         return $query;
     }
 
+    private function calcularSaldoHasta($recordActual)
+    {
+        $credito = $this->getCreditoActivo();
+        if (!$credito) {
+            return 0;
+        }
+
+        if ($credito->es_adicional) {
+            $saldoBase = (float) $credito->saldo_actual;
+            if ($recordActual->tipo_registro === 'credito') {
+                return (float) $credito->valor_credito;
+            }
+            $abonosDespues = Abonos::where('id_credito', $credito->id_credito)
+                ->where('es_devolucion', false)
+                ->where(function($query) use ($recordActual) {
+                    $query->where('fecha_pago', '>', $recordActual->fecha_pago)
+                          ->orWhere(function($subQuery) use ($recordActual) {
+                              $subQuery->where('fecha_pago', '=', $recordActual->fecha_pago)
+                                       ->where('id_abono', '>', $recordActual->id_abono);
+                          });
+                })
+                ->sum('monto_abono');
+            return $saldoBase + $abonosDespues;
+        } else {
+            $montoTotalConIntereses = (float) $credito->valor_credito * (1 + ((float) $credito->porcentaje_interes / 100));
+            $descuentoAplicado = (float) ($credito->descuento_aplicado ?? 0);
+            if ($recordActual->tipo_registro === 'credito') {
+                return $montoTotalConIntereses - $descuentoAplicado;
+            }
+            $abonosHasta = Abonos::where('id_credito', $credito->id_credito)
+                ->where('es_devolucion', false)
+                ->where(function($query) use ($recordActual) {
+                    $query->where('fecha_pago', '<', $recordActual->fecha_pago)
+                          ->orWhere(function($subQuery) use ($recordActual) {
+                              $subQuery->where('fecha_pago', '=', $recordActual->fecha_pago)
+                                       ->where('id_abono', '<=', $recordActual->id_abono);
+                          });
+                })
+                ->sum('monto_abono');
+            return $montoTotalConIntereses - $descuentoAplicado - $abonosHasta;
+        }
+    }
+
 
 }
