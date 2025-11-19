@@ -26,6 +26,6 @@ class ListLogActividads extends ListRecords
     // Fix: Return a large integer instead of 'all' string
     protected function getDefaultTableRecordsPerPageSelectOption(): int
     {
-        return 100; // Use 25 by default for faster loads
+        return 200; // Use 25 by default for faster loads
     }
 }
