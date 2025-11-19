@@ -77,15 +77,27 @@ class CreateAbonos extends CreateRecord
             // Para créditos adicionales, la cuota es el porcentaje_interes (cuota diaria)
             $cuotaAMostrar = $credito->es_adicional ? $credito->porcentaje_interes : $credito->valor_cuota;
             
+            // Calcular saldo según tipo de crédito
+            if ($credito->es_adicional) {
+                $saldoMostrar = (float) $credito->saldo_actual;
+            } else {
+                $montoTotalConIntereses = (float) $credito->valor_credito * (1 + ((float) $credito->porcentaje_interes / 100));
+                $descuentoAplicado = (float) ($credito->descuento_aplicado ?? 0);
+                $totalAbonosNoDevolucion = (float) \App\Models\Abonos::where('id_credito', $credito->id_credito)
+                    ->where('es_devolucion', false)
+                    ->sum('monto_abono');
+                $saldoMostrar = $montoTotalConIntereses - $descuentoAplicado - $totalAbonosNoDevolucion;
+            }
+
             $formData = [
                 'id_cliente' => $clienteId,
                 'id_credito' => $credito->id_credito,
                 'cliente_nombre' => $cliente->nombre,
                 'fecha_credito' => $credito->fecha_credito->format('d/m/Y'),
                 'fecha_vencimiento' => $credito->fecha_vencimiento->format('d/m/Y'),
-                'saldo_anterior' => $credito->saldo_actual,
-                'monto_abono' => $cuotaAMostrar,
-                'valor_cuota' => $cuotaAMostrar,
+                'saldo_anterior' => number_format($saldoMostrar, 2, '.', ''),
+                'monto_abono' => number_format($cuotaAMostrar, 2, '.', ''),
+                'valor_cuota' => number_format($cuotaAMostrar, 2, '.', ''),
                 'cuota' => $credito->cuota_diaria,
                 'nombre_yape' => $nombreYape,
                 'id_yape_cliente' => null, // Asegurar que no hay YapeCliente seleccionado por defecto
@@ -138,7 +150,7 @@ class CreateAbonos extends CreateRecord
         }
 
        // $id_ruta = $this->obtenerIdRutaUsuario();
-        $montoAbono = $data['monto_abono'] ?? 0;
+        $montoAbono = round((float) ($data['monto_abono'] ?? 0), 2);
 
         // Obtener el concepto "Abono" de la tabla conceptos
         $conceptoAbono = Concepto::where('nombre', 'Abono')->first();
@@ -154,14 +166,29 @@ class CreateAbonos extends CreateRecord
         $data['id_credito'] = $credito->id_credito;
         $data['id_ruta'] = $this->currentRutaId;
         $data['id_usuario'] = auth()->id(); // Asignar el usuario autenticado
-        $data['saldo_anterior'] = $credito->saldo_actual;
+        // Recalcular saldo anterior usando la misma fórmula del historial para coherencia
+        if ($credito->es_adicional) {
+            $saldoAnterior = (float) $credito->saldo_actual;
+        } else {
+            $montoTotalConIntereses = (float) $credito->valor_credito * (1 + ((float) $credito->porcentaje_interes / 100));
+            $descuentoAplicado = (float) ($credito->descuento_aplicado ?? 0);
+            $totalAbonosNoDevolucion = (float) \App\Models\Abonos::where('id_credito', $credito->id_credito)
+                ->where('es_devolucion', false)
+                ->sum('monto_abono');
+            $saldoAnterior = $montoTotalConIntereses - $descuentoAplicado - $totalAbonosNoDevolucion;
+        }
+        $data['saldo_anterior'] = round($saldoAnterior, 2);
         
         // Si es devolución, no descontar del saldo del crédito
         $esDevolucion = $data['es_devolucion'] ?? false;
         if ($esDevolucion) {
-            $data['saldo_posterior'] = $credito->saldo_actual; // Mantener el mismo saldo
+            $data['saldo_posterior'] = round($saldoAnterior, 2);
         } else {
-            $data['saldo_posterior'] = $credito->saldo_actual - $montoAbono; // Descontar normalmente
+            // Validar que el abono no supere el saldo
+            if ($montoAbono > $saldoAnterior + 0.0001) {
+                throw new \Exception('El abono no puede superar el saldo actual');
+            }
+            $data['saldo_posterior'] = round(max(0, $saldoAnterior - $montoAbono), 2);
         }
         
         $data['fecha_pago'] = now();

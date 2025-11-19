@@ -345,6 +345,13 @@ class EditCreditos extends EditRecord
             ->title('Crédito actualizado exitosamente')
             ->success()
             ->send();
+
+        try {
+            \Illuminate\Support\Facades\Session::forget('creditos_cliente_id');
+            \Illuminate\Support\Facades\Session::forget('abonos_cliente_id');
+            \Illuminate\Support\Facades\Session::forget('abonos_mostrar_creditos');
+            \Illuminate\Support\Facades\Session::forget('creditos_mostrar_solo_activos');
+        } catch (\Throwable $e) {}
     }
 
    protected function getActions(): array

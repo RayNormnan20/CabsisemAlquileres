@@ -97,6 +97,14 @@ class CreditoController extends Controller
             $credito->save();
             
             DB::commit();
+
+            // Limpiar selección de cliente en sesión tras bajo de cuenta/actualización
+            try {
+                \Illuminate\Support\Facades\Session::forget('creditos_cliente_id');
+                \Illuminate\Support\Facades\Session::forget('abonos_cliente_id');
+                \Illuminate\Support\Facades\Session::forget('abonos_mostrar_creditos');
+                \Illuminate\Support\Facades\Session::forget('creditos_mostrar_solo_activos');
+            } catch (\Throwable $se) {}
             
             return response()->json([
                 'message' => 'Datos del crédito actualizados correctamente',
@@ -633,6 +641,14 @@ class CreditoController extends Controller
             );
 
             DB::commit();
+
+            // Limpiar selección de cliente en sesión tras renovación
+            try {
+                \Illuminate\Support\Facades\Session::forget('creditos_cliente_id');
+                \Illuminate\Support\Facades\Session::forget('abonos_cliente_id');
+                \Illuminate\Support\Facades\Session::forget('abonos_mostrar_creditos');
+                \Illuminate\Support\Facades\Session::forget('creditos_mostrar_solo_activos');
+            } catch (\Throwable $se) {}
 
             return response()->json([
                 'message' => 'Crédito renovado correctamente. Nuevo crédito creado' .

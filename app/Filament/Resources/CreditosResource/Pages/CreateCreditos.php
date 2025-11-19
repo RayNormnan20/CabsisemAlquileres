@@ -284,6 +284,8 @@ class CreateCreditos extends CreateRecord
         return 'Crédito creado exitosamente';
     }
 
+    
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
@@ -436,6 +438,13 @@ class CreateCreditos extends CreateRecord
                 'fecha_credito' => $this->record->fecha_credito->format('Y-m-d'),
             ]
         );
+
+        try {
+            \Illuminate\Support\Facades\Session::forget('creditos_cliente_id');
+            \Illuminate\Support\Facades\Session::forget('abonos_cliente_id');
+            \Illuminate\Support\Facades\Session::forget('abonos_mostrar_creditos');
+            \Illuminate\Support\Facades\Session::forget('creditos_mostrar_solo_activos');
+        } catch (\Throwable $e) {}
     }
 
     protected function getFormActions(): array

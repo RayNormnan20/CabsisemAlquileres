@@ -291,6 +291,11 @@ class AbonosResource extends Resource
                                 ->required()
                                 ->prefix('S/')
                                 ->reactive()
+                                ->minValue(0.01)
+                                ->maxValue(function (callable $get) {
+                                    $esDevolucion = (bool) ($get('es_devolucion') ?? false);
+                                    return $esDevolucion ? null : (float) ($get('saldo_anterior') ?? 0);
+                                })
                                 ->extraInputAttributes([
                                     'class' => 'bg-cyan-100 text-cyan-900',
                                     'style' => 'background-color:rgb(114, 237, 241) !important; color:rgb(0, 0, 0) !important;'
@@ -303,6 +308,13 @@ class AbonosResource extends Resource
                                     $set('conceptosabonos', $conceptos);
                                 })
                                 ->afterStateUpdated(function ($state, callable $get, callable $set) {
+                                    $state = round((float)$state, 2);
+                                    $esDevolucion = (bool) ($get('es_devolucion') ?? false);
+                                    $saldo = (float) ($get('saldo_anterior') ?? 0);
+                                    if (!$esDevolucion && $state > $saldo) {
+                                        $state = $saldo;
+                                        $set('monto_abono', $saldo);
+                                    }
                                     $conceptos = $get('conceptosabonos') ?? [];
                                     foreach ($conceptos as $i => $item) {
                                         $conceptos[$i]['monto'] = $state;
