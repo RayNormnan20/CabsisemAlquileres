@@ -204,8 +204,8 @@ $cliente->loadMissing('creditos');
         <h2 class="text-2xl font-bold text-gray-800">{{ $cliente->nombre_completo }}</h2>
 
         <div x-data="{
-                    open: false,
-                    showDeactivationModal: false,
+            open: false,
+            showDeactivationModal: false,
                     // Nuevos estados para cancelación con modal
                     showCancelModal: false,
                     showCancelResultModal: false,
@@ -216,10 +216,10 @@ $cliente->loadMissing('creditos');
                     // Modal de horarios removido, se gestiona en Configuración
 
                     deactivatingCreditId: null,
-                    isRenewal: false,
-                    mostrarRenovacionCompleta: false,
-                    isShowingRenovacionSteps: false, // New variable to control steps
-                    isShowingBajoCuentaSteps: false, // New variable to control bajo cuenta steps
+            isRenewal: {{ request()->query('accion') === 'renovacion' ? 'true' : 'false' }},
+            mostrarRenovacionCompleta: false,
+            isShowingRenovacionSteps: {{ request()->query('accion') === 'renovacion' ? 'true' : 'false' }},
+            isShowingBajoCuentaSteps: false, // New variable to control bajo cuenta steps
 
                     // Missing variables that need to be added:
                     fechaActualEditable: '',
@@ -896,7 +896,7 @@ $cliente->loadMissing('creditos');
                 <div class="relative inline-block text-left z-20">
                     <div>
                         <button type="button" @click="open = !open"
-                            class="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            class="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                             id="menu-button" aria-expanded="true" aria-haspopup="true">
                             Acciones
                             <svg class="-mr-1 ml-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg"
@@ -926,6 +926,7 @@ $cliente->loadMissing('creditos');
                                 </a>
                                 @endif
 
+                                @if(request()->query('accion') !== 'renovacion')
                                 <a href="#" @click.prevent="setDeactivationCredit(
                                         {{ $creditoActivo->id_credito }},
                                         {
@@ -945,6 +946,7 @@ $cliente->loadMissing('creditos');
                                 <a href="#" @click.prevent="confirmCancellation()"
                                     class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem"
                                     tabindex="-1" id="menu-item-2">Cancelado</a>
+                                @endif
                                 <a href="#" @click.prevent="setDeactivationCredit(
                                             {{ $creditoActivo->id_credito }},
                                             {

@@ -27,9 +27,25 @@
             <x-filament::layouts.app.topbar.breadcrumbs :breadcrumbs="$breadcrumbs" />
 
             @livewire('filament.core.global-search')
-
-            @livewire('filament.core.notifications')
             
+            <div class="relative">
+                @livewire('filament.core.notifications')
+                @php
+                    $rutaId = session('selected_ruta_id');
+                    $query = \App\Models\Clientes::query();
+                    if ($rutaId) {
+                        $query->deRuta($rutaId);
+                    }
+                    $count = $query->whereHas('creditos', function ($q) {
+                        $q->where('por_renovar', true);
+                    })->count();
+                @endphp
+                @if ($count > 0)
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {{ $count }}
+                    </span>
+                @endif
+            </div>
 
             <x-filament::layouts.app.topbar.user-menu />
         </div>

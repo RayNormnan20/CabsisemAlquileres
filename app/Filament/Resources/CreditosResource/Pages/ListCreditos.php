@@ -40,6 +40,15 @@ class ListCreditos extends ListRecords
     {
         parent::mount();
 
+        $clienteIdFromQuery = request()->query('cliente_id');
+        if ($clienteIdFromQuery) {
+            $parsedId = (int) $clienteIdFromQuery;
+            if ($parsedId > 0) {
+                \Illuminate\Support\Facades\Session::put('creditos_cliente_id', $parsedId);
+                \Illuminate\Support\Facades\Session::put('creditos_mostrar_solo_activos', false);
+            }
+        }
+
         if (Session::has('selected_ruta_id')) {
             $this->currentRutaId = Session::get('selected_ruta_id');
             $this->currentRutaName = Session::get('selected_ruta_name');
