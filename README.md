@@ -1,4 +1,4 @@
-# Project Management
+# Cabsisem
 
 <p align="center">
     <a href="https://laravel.com"><img alt="Laravel v9.x" src="https://img.shields.io/badge/Laravel-v9.x-FF2D20?style=for-the-badge&logo=laravel"></a>
@@ -29,11 +29,7 @@
 
 ![logo](readme-logo.png)
 
-Helper, is a great tool if you want to manage your projects, tickets and be here for your clients
-
-It comes also with more than 60 languages ready to use.
-
-All this made with the best technologies.
+Plataforma de gestión de cobranzas y alquileres, construida con Laravel 9, Filament v2 y Livewire. Incluye módulos de créditos, abonos, rutas de cobradores, Yape, alquileres e inventario, con soporte para tiempo real (WebSockets), exportaciones (Excel/PDF) e internacionalización.
 
 ## Prerequisites
 
@@ -72,9 +68,9 @@ All this made with the best technologies.
     <img src="github-contents/26.png" width="20%"></img> 
 </div>
 
-## Documentation
+## Documentación
 
-Full documentation can be viewed online: [Docs](https://devaslanphp.github.io/project-management)
+Consulta la documentación local en `docs/Cabsisem/00-index.md` para instalación, configuración, rutas y módulos.
 
 ## Work in progress
 
