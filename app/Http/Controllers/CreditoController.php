@@ -256,6 +256,25 @@ class CreditoController extends Controller
                 $cuotaDiaria = ($request->nueva_cuenta + $interesCalculado) / $diasPago;
                 $fechaCredito = now();
 
+                // BLOQUEAR creación si el cliente tiene créditos con saldo pendiente
+                $creditosPendientes = Creditos::where('id_cliente', $credito->id_cliente)
+                    ->where('saldo_actual', '>', 0)
+                    ->get();
+
+                if ($creditosPendientes->count() > 0) {
+                    $detalles = $creditosPendientes->map(function ($c) {
+                        $fecha = optional($c->fecha_credito)->format('d/m/Y');
+                        $saldo = number_format((float)$c->saldo_actual, 2);
+                        return "ID {$c->id_credito} - Fecha {$fecha} - Saldo S/ {$saldo}";
+                    })->implode("\n");
+
+                    DB::rollBack();
+                    return response()->json([
+                        'error' => 'No se puede crear el crédito',
+                        'message' => "El cliente tiene créditos con saldo pendiente.\n\n" . $detalles . "\n\nDebe cancelar o renovar antes de crear uno nuevo.",
+                    ], 422);
+                }
+
                 // Crear nuevo crédito con los nuevos valores
                 $nuevoCredito = Creditos::create([
                     'id_cliente' => $credito->id_cliente,
@@ -509,8 +528,27 @@ class CreditoController extends Controller
             // Calcular cuota diaria basada en los días de pago (valor + interés)
             $cuotaDiaria = round(($request->valor_credito + $interesCalculado) / $diasPago, 2);
 
-            // Usar la fecha editada si se proporciona, sino usar la fecha actual
-            $fechaCredito = $request->fecha_credito ? $request->fecha_credito : now();
+                // Usar la fecha editada si se proporciona, sino usar la fecha actual
+                $fechaCredito = $request->fecha_credito ? $request->fecha_credito : now();
+
+            // BLOQUEAR creación si el cliente tiene créditos con saldo pendiente
+            $creditosPendientes = Creditos::where('id_cliente', $credito->id_cliente)
+                ->where('saldo_actual', '>', 0)
+                ->get();
+
+            if ($creditosPendientes->count() > 0) {
+                $detalles = $creditosPendientes->map(function ($c) {
+                    $fecha = optional($c->fecha_credito)->format('d/m/Y');
+                    $saldo = number_format((float)$c->saldo_actual, 2);
+                    return "ID {$c->id_credito} - Fecha {$fecha} - Saldo S/ {$saldo}";
+                })->implode("\n");
+
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'No se puede crear el crédito',
+                    'message' => "El cliente tiene créditos con saldo pendiente.\n\n" . $detalles . "\n\nDebe cancelar o renovar antes de crear uno nuevo.",
+                ], 422);
+            }
 
             // Crear nuevo crédito con los valores de renovación
             $nuevoCredito = Creditos::create([

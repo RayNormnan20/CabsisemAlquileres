@@ -95,6 +95,44 @@ class CreateCreditos extends CreateRecord
         // Primero ejecutar la validación de suma de conceptos
         $this->validateCreditSumBeforeCreate($data);
 
+        // BLOQUEAR creación si el cliente tiene créditos con saldo pendiente
+        try {
+            $clienteId = $data['id_cliente'] ?? null;
+            if ($clienteId) {
+                $creditosPendientes = Creditos::where('id_cliente', $clienteId)
+                    ->where('saldo_actual', '>', 0)
+                    ->get();
+
+                if ($creditosPendientes->count() > 0) {
+                    $detalles = $creditosPendientes->map(function ($c) {
+                        $fecha = optional($c->fecha_credito)->format('d/m/Y');
+                        $saldo = number_format((float)$c->saldo_actual, 2);
+                        return "ID {$c->id_credito} - Fecha {$fecha} - Saldo S/ {$saldo}";
+                    })->implode("\n");
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('No se puede crear el crédito')
+                        ->body("El cliente tiene créditos con saldo pendiente.\n\n" . $detalles . "\n\nDebe cancelar o renovar antes de crear uno nuevo.")
+                        ->danger()
+                        ->duration(7000)
+                        ->send();
+                    $this->halt();
+                }
+            }
+        } catch (\Filament\Support\Exceptions\Halt $e) {
+            // No capturar el Halt: re-lanzar para evitar doble notificación
+            throw $e;
+        } catch (\Throwable $e) {
+            // Si falla la validación por algún motivo, preferimos detener la creación para evitar inconsistencias
+            \Filament\Notifications\Notification::make()
+                ->title('Error de validación de saldo')
+                ->body('Ocurrió un problema verificando saldos del cliente. Intente nuevamente.')
+                ->danger()
+                ->duration(5000)
+                ->send();
+            $this->halt();
+        }
+
         // Validación estricta de distribución Yape cuando hay múltiples nombres
         $this->validateYapeDistributionStrict($data);
 
