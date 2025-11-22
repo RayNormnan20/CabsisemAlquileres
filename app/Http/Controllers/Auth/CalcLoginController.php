@@ -107,15 +107,22 @@ class CalcLoginController extends Controller
      */
     private function needsPhoneValidation(Request $request): bool
     {
+        // MODO SOLO CONTRASEÑA: si está activo en .env, no requiere celular
+        // Mantiene el comportamiento original comentado más abajo.
+        if (env('LOGIN_PASSWORD_ONLY')) {
+            return false;
+        }
+
         // Verificar si hay información de login diario en sesión
         $storedPhone = $request->session()->get('daily_login_phone');
         $storedDate = $request->session()->get('daily_login_date');
         $today = Carbon::today()->toDateString();
 
         // Si no hay celular almacenado o la fecha no es de hoy, necesita celular
-        if (!$storedPhone || !$storedDate || $storedDate !== $today) {
-            return true;
-        }
+        // ORIGINAL:
+        // if (!$storedPhone || !$storedDate || $storedDate !== $today) {
+        //     return true;
+        // }
 
         // Si ya hizo login con celular hoy, solo necesita contraseña
         return false;

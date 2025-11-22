@@ -156,10 +156,15 @@
             @csrf
             <div class="screen">
                 <div class="label" id="stepLabel">
-                    @if($needsPhone)
-                    Ingrese su Usuario
+                    {{-- MODO SOLO CONTRASEÑA: mostrar siempre mensaje de contraseña cuando LOGIN_PASSWORD_ONLY=true --}}
+                    @if(env('LOGIN_PASSWORD_ONLY'))
+                    
                     @else
-                    Ingrese su contraseña
+                        @if($needsPhone)
+                            Ingrese su Usuario
+                        @else
+                        
+                        @endif
                     @endif
                 </div>
                 <div id="display">&nbsp;</div>
@@ -236,7 +241,9 @@
         const returnToInput = document.getElementById('returnToInput');
 
         // Determinar el paso inicial basado en si necesita celular
-        const needsPhone = {{ $needsPhone ? 'true' : 'false' }};
+        // MODO SOLO CONTRASEÑA: forzar step 2 cuando LOGIN_PASSWORD_ONLY=true
+        const forcePasswordOnly = {{ env('LOGIN_PASSWORD_ONLY') ? 'true' : 'false' }};
+        const needsPhone = forcePasswordOnly ? false : {{ $needsPhone ? 'true' : 'false' }};
         const storedPhone = '{{ $storedPhone ?? '' }}';
         // Si no viene en servidor, intentar leer return_to de la URL
         if (!returnToInput.value) {
@@ -257,11 +264,7 @@
         }
 
         const updateStepLabel = () => {
-            if (step === 1) {
-                stepLabel.textContent = '';
-            } else {
-                stepLabel.textContent = '';
-            }
+            // UI compacta: el texto descriptivo se define arriba en Blade
         };
 
         const render = () => {
@@ -283,7 +286,8 @@
         // Si el servidor reportó error de login, limpiar y volver al paso 1 sin mensajes
         // Blade inserta un flag solo cuando hay errores en "login"
         const hadServerError = {{ $errors->has('login') ? 'true' : 'false' }};
-        if (hadServerError) {
+        if (hadServerError && !forcePasswordOnly) {
+            // ORIGINAL: volver al paso 1 si hubo error de login
             step = 1;
             value = '';
             exp = '';
@@ -374,58 +378,39 @@
 
         if (btnEqual) btnEqual.addEventListener('click', () => {
             if (step === 1) {
-                // Si hay operadores, primero evalúa la expresión en el paso celular
-                if (/[+\-*/]/.test(value)) {
-                    const safe = /^[0-9.+\-*/ ]+$/;
-                    if (!safe.test(value)) {
-                        setError('Expresión inválida');
-                        return;
-                    }
-                    try {
-                        const result = Function('return (' + value + ')')();
-                        if (Number.isFinite(result)) {
-                            value = String(result);
-                            render();
-                            return; // Un siguiente '=' avanzará al paso contraseña
-                        } else {
-                            setError('Operación inválida');
-                        }
-                    } catch (e) {
-                        setError('Error de cálculo');
-                    }
-                } else {
-                    // Avanzar al paso contraseña
-                    loginInput.value = value;
+                if (forcePasswordOnly) {
+                    // MODO SOLO CONTRASEÑA: saltar directamente a paso 2
+                    loginInput.value = '';
                     value = '';
                     exp = '';
                     step = 2;
                     updateStepLabel();
                     render();
                     setError();
+                    return;
                 }
+                // ORIGINAL: lógica del paso celular (comentada pero conservada)
+                // if (/[+\-*/]/.test(value)) {
+                //     const safe = /^[0-9.+\-*/ ]+$/;
+                //     if (!safe.test(value)) { setError('Expresión inválida'); return; }
+                //     try { const result = Function('return (' + value + ')')();
+                //         if (Number.isFinite(result)) { value = String(result); render(); return; }
+                //         else { setError('Operación inválida'); }
+                //     } catch (e) { setError('Error de cálculo'); }
+                // } else {
+                //     loginInput.value = value; value = ''; exp=''; step=2; updateStepLabel(); render(); setError();
+                // }
             } else {
-                // Si hay operadores, primero evalúa la expresión
+                // Paso contraseña
                 if (/[+\-*/]/.test(exp)) {
                     const safe = /^[0-9.+\-*/ ]+$/;
-                    if (!safe.test(exp)) {
-                        setError('Expresión inválida');
-                        return;
-                    }
+                    if (!safe.test(exp)) { setError('Expresión inválida'); return; }
                     try {
                         const result = Function('return (' + exp + ')')();
-                        if (Number.isFinite(result)) {
-                            exp = String(result);
-                            render();
-                            // Segundo '=' (sin operadores) enviará el formulario
-                            return;
-                        } else {
-                            setError('Operación inválida');
-                        }
-                    } catch (e) {
-                        setError('Error de cálculo');
-                    }
+                        if (Number.isFinite(result)) { exp = String(result); render(); return; }
+                        else { setError('Operación inválida'); }
+                    } catch (e) { setError('Error de cálculo'); }
                 } else {
-                    // Sin validación de longitud: enviar siempre
                     passwordInput.value = exp;
                     form.submit();
                 }
