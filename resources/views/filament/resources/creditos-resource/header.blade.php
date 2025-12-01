@@ -19,6 +19,7 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
             open: false,
             search: '',
             selectedClienteId: @entangle('clienteId'),
+            clientesActivos: @js($clientesActivos),
             get filteredClientes() {
                 if (!this.search) return @js($clientes);
                 const clientes = @js($clientes);
@@ -49,7 +50,8 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
             <!-- Input/Button principal -->
             <button @click="open = !open" type="button"
                 class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-left text-sm text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
-                <span x-text="selectedClienteName" class="block truncate"></span>
+                <span x-text="selectedClienteName" class="block truncate"
+                    :class="selectedClienteId && !clientesActivos[selectedClienteId] ? 'text-red-600 dark:text-red-400' : ''"></span>
                 <svg class="w-4 h-4 text-gray-400 dark:text-gray-300" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -79,7 +81,7 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
                         <button @click="selectCliente(id, nombre)" type="button"
                             class="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
                             :class="{ 'bg-primary-50 dark:bg-primary-900 text-primary-600 dark:text-primary-400': selectedClienteId == id }">
-                            <span x-text="nombre"></span>
+                            <span x-text="nombre" :class="!clientesActivos[id] ? 'text-red-600 dark:text-red-400' : ''"></span>
                         </button>
                     </template>
 
@@ -201,7 +203,10 @@ $cliente->loadMissing('creditos');
 <div class="bg-white rounded-lg shadow border border-gray-200 mb-6">
     {{-- Encabezado con nombre y botones --}}
     <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 class="text-2xl font-bold text-gray-800">{{ $cliente->nombre_completo }}</h2>
+        @php
+            $tieneActivo = $cliente->creditos->where('saldo_actual', '>', 0)->isNotEmpty();
+        @endphp
+        <h2 class="text-2xl font-bold {{ $tieneActivo ? 'text-gray-800 dark:text-gray-200' : 'text-red-600 dark:text-red-400' }}">{{ $cliente->nombre_completo }}</h2>
 
         <div x-data="{
             open: false,

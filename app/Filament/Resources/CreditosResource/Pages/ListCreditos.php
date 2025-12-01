@@ -272,14 +272,24 @@ class ListCreditos extends ListRecords
     {
         $selectedRutaId = session('selected_ruta_id');
 
-        $clientesQuery = Clientes::where('activo', true);
+        $clientesQuery = Clientes::where('activo', true)
+            ->with(['creditos' => function ($q) {
+                $q->where('saldo_actual', '>', 0);
+            }]);
 
         if ($selectedRutaId) {
             $clientesQuery->where('id_ruta', $selectedRutaId);
         }
 
+        $clientesLista = $clientesQuery->get();
+        $clientes = $clientesLista->pluck('nombre_completo', 'id_cliente');
+        $clientesActivos = $clientesLista->mapWithKeys(function ($c) {
+            return [$c->id_cliente => $c->creditos->isNotEmpty()];
+        });
+
         return view('filament.resources.creditos-resource.header', [
-            'clientes' => $clientesQuery->get()->pluck('nombre_completo', 'id_cliente'),
+            'clientes' => $clientes,
+            'clientesActivos' => $clientesActivos,
             'clienteId' => $this->clienteId,
             'cliente' => $this->clienteId ? Clientes::with('creditos')->find($this->clienteId) : null,
             'mostrarSoloActivos' => $this->mostrarSoloActivos, // Pasar el estado al header

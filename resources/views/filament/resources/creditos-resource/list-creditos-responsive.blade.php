@@ -198,6 +198,10 @@
                         <span class="credito-label">Fecha:</span>
                         <span class="credito-value">{{ $record->fecha_credito->format('d/m/Y') }}</span>
                     </div>
+                    <div class="credito-info">
+                        <span class="credito-label">Días transcurridos:</span>
+                        <span class="credito-value">{{ $record->fecha_credito->diffInDays(now()) }}</span>
+                    </div>
                     <div class="credito-info-grid">
                         <div class="credito-info">
                             <span class="credito-label">Valor:</span>
