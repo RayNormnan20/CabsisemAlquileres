@@ -881,6 +881,12 @@ class CreditosResource extends Resource
                     ->date('d/m/Y')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('dias_transcurridos')
+                    ->label('Días')
+                    ->getStateUsing(function ($record) {
+                        return $record->fecha_credito ? $record->fecha_credito->diffInDays(now()) : null;
+                    }),
+
                Tables\Columns\TextColumn::make('usuarioCreador.name')
                     ->label('Creado por')
                     ->searchable()
