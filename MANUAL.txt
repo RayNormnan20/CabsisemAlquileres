@@ -131,3 +131,14 @@ sudo supervisorctl restart laravel-websockets
 
 # Ver logs
 sudo tail -f /var/log/laravel-websockets.log
+
+
+
+
+- Trabaja y hace commits en test .
+- Cuando esté validado:
+- git checkout main
+- git pull
+- git merge --no-ff test
+- git push origin main
+- Cierra la rama: git branch -d test y git push origin --delete test

@@ -14,6 +14,9 @@
                     <p class="text-sm text-gray-600">
                         <strong>Fecha de Crédito:</strong> {{ $record->fecha_credito?->format('d M Y') ?? 'N/D' }}
                     </p>
+                    <p class="text-sm text-gray-600">
+                        <strong>Días Transcurridos:</strong> {{ $record->fecha_credito ? $record->fecha_credito->diffInDays(now()) : 'N/D' }}
+                    </p>
                     <!--
                     <p class="text-sm text-gray-600">
                         <strong>Teléfono:</strong> {{ $record->cliente->celular ?? $record->cliente->telefono ?? 'N/D' }}
