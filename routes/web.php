@@ -65,11 +65,11 @@ Route::post('/mobile-logout', function () {
     // Preservar cliente seleccionado en pantallas de créditos/abonos
     $creditosClienteId = request()->session()->get('creditos_cliente_id');
     $abonosClienteId = request()->session()->get('abonos_cliente_id');
-    
+
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    
+
     // Restaurar los datos de login diario después del logout
     if ($dailyLoginPhone && $dailyLoginDate) {
         request()->session()->put('daily_login_phone', $dailyLoginPhone);
@@ -121,11 +121,11 @@ Route::post('/filament/logout', function () {
     // Preservar cliente seleccionado en pantallas de créditos/abonos
     $creditosClienteId = request()->session()->get('creditos_cliente_id');
     $abonosClienteId = request()->session()->get('abonos_cliente_id');
-    
+
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    
+
     // Restaurar los datos de login diario después del logout
     if ($dailyLoginPhone && $dailyLoginDate) {
         request()->session()->put('daily_login_phone', $dailyLoginPhone);
@@ -225,36 +225,57 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
             },
             'inquilino'
         ])->find($alquilerId);
-        
+
         if (!$alquiler) {
             return response()->json(['error' => 'Alquiler no encontrado'], 404);
         }
-        
+
         $pagosRealizados = $alquiler->pagos;
-        
+
         // Generar pagos mensuales como en el componente original
         $fechaInicio = \Carbon\Carbon::parse($alquiler->fecha_inicio);
+        $realFechaInicio = \Carbon\Carbon::parse($alquiler->fecha_inicio);
         $fechaActual = \Carbon\Carbon::now();
         $fechaFin = $alquiler->fecha_fin ? \Carbon\Carbon::parse($alquiler->fecha_fin) : null;
         $pagosMensuales = [];
         $totalAbonos = 0;
         $totalGenerado = 0;
-        
+
         $fechaLimite = $fechaFin && $fechaFin->lt($fechaActual) ? $fechaFin : $fechaActual;
         $fechaInicio = $fechaInicio->copy()->startOfMonth();
         $fechaMes = $fechaInicio->copy();
-        
+
         while ($fechaMes->lte($fechaLimite->startOfMonth())) {
             $nombreMes = $fechaMes->locale('es')->isoFormat('MMMM YYYY');
-            
+
             // Calcular la suma de abonos para este mes específico
             $abonosDelMes = $pagosRealizados->where('mes_correspondiente', $fechaMes->month)
                 ->where('ano_correspondiente', $fechaMes->year)
                 ->sum('monto_pagado');
-            
+
             $estado = 'PENDIENTE';
             if ($abonosDelMes > 0) {
-                if ($abonosDelMes >= $alquiler->precio_mensual) {
+                // Comparar contra total prorrateado del mes
+                $totalDelMesTmp = (float) $alquiler->precio_mensual;
+                $diasBaseTmp = 30;
+                $esPrimerMesTmp = $fechaMes->isSameMonth($realFechaInicio);
+                $esUltimoMesTmp = $fechaFin && $fechaMes->isSameMonth($fechaFin);
+
+                if ($esPrimerMesTmp) {
+                    $diaInicioTmp = $realFechaInicio->day;
+                    $diasCobrarTmp = max(0, $diasBaseTmp - ($diaInicioTmp - 1));
+                    $totalDelMesTmp = round(($alquiler->precio_mensual / $diasBaseTmp) * $diasCobrarTmp, 2);
+                } elseif ($esUltimoMesTmp) {
+                    $diaFinTmp = $fechaFin->day;
+                    $diasCobrarTmp = min($diaFinTmp, $diasBaseTmp);
+                    $totalDelMesTmp = round(($alquiler->precio_mensual / $diasBaseTmp) * $diasCobrarTmp, 2);
+                } elseif ($fechaMes->isSameMonth(\Carbon\Carbon::now())) {
+                    $diasTranscurridosTmp = \Carbon\Carbon::now()->day;
+                    $totalDelMesTmp = round(($alquiler->precio_mensual / $diasBaseTmp) * $diasTranscurridosTmp, 2);
+                }
+                $totalDelMesTmp = min($totalDelMesTmp, (float) $alquiler->precio_mensual);
+
+                if ($abonosDelMes >= $totalDelMesTmp) {
                     $estado = 'CANCELADO';
                 } else {
                     $estado = 'PAGO PARCIAL';
@@ -264,11 +285,21 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
                     $estado = 'DEUDA PENDIENTE';
                 }
             }
-            
-            // Prorrateo para mes actual (base 30 días) y tope por precio mensual
+
             $totalDelMes = (float) $alquiler->precio_mensual;
-            if ($fechaMes->isSameMonth(\Carbon\Carbon::now())) {
-                $diasBase = 30;
+            $diasBase = 30;
+            $esPrimerMes = $fechaMes->isSameMonth($realFechaInicio);
+            $esUltimoMes = $fechaFin && $fechaMes->isSameMonth($fechaFin);
+
+            if ($esPrimerMes) {
+                $diaInicio = $realFechaInicio->day;
+                $diasCobrar = max(0, $diasBase - ($diaInicio - 1));
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasCobrar, 2);
+            } elseif ($esUltimoMes) {
+                $diaFin = $fechaFin->day;
+                $diasCobrar = min($diaFin, $diasBase);
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasCobrar, 2);
+            } elseif ($fechaMes->isSameMonth(\Carbon\Carbon::now())) {
                 $diasTranscurridos = \Carbon\Carbon::now()->day;
                 $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasTranscurridos, 2);
             }
@@ -284,10 +315,10 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
 
             $totalAbonos += (float) $abonosDelMes;
             $totalGenerado += (float) $totalDelMes;
-            
+
             $fechaMes->addMonth();
         }
-        
+
         // Calcular detalles de pagos
         $detallesPagos = [];
         foreach ($pagosRealizados as $pago) {
@@ -304,7 +335,7 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
                 'cobrador_nombre' => $pago->usuarioRegistro->name ?? 'N/A'
             ];
         }
-        
+
         return response()->json([
             'success' => true,
             'alquilerId' => $alquilerId,
@@ -314,7 +345,7 @@ Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alq
             'totalAbonos' => $totalAbonos,
             'totalGenerado' => $totalGenerado
         ]);
-        
+
     } catch (\Exception $e) {
         Log::error('Error obteniendo datos de resumen de alquiler: ' . $e->getMessage());
         return response()->json(['error' => 'Error interno del servidor', 'message' => $e->getMessage()], 500);

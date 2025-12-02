@@ -186,6 +186,7 @@ class CreatePagosAlquiler extends CreateRecord
     private function loadPagosMensuales($alquiler)
     {
         $fechaInicio = Carbon::parse($alquiler->fecha_inicio);
+        $realFechaInicio = Carbon::parse($alquiler->fecha_inicio);
         $fechaActual = Carbon::now();
         $fechaFin = $alquiler->fecha_fin ? Carbon::parse($alquiler->fecha_fin) : null;
         $pagosMensuales = [];
@@ -205,9 +206,30 @@ class CreatePagosAlquiler extends CreateRecord
                 ->where('ano_correspondiente', $fechaMes->year)
                 ->sum('monto_pagado');
 
+            // Calcular total prorrateado del mes (base 30 días) y tope
+            $totalDelMes = (float) $alquiler->precio_mensual;
+            $diasBase = 30;
+            $esPrimerMes = $fechaMes->isSameMonth($realFechaInicio);
+            $esUltimoMes = $fechaFin && $fechaMes->isSameMonth($fechaFin);
+
+            if ($esPrimerMes) {
+                $diaInicio = $realFechaInicio->day;
+                $diasCobrar = max(0, $diasBase - ($diaInicio - 1));
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasCobrar, 2);
+            } elseif ($esUltimoMes) {
+                $diaFin = $fechaFin->day;
+                $diasCobrar = min($diaFin, $diasBase);
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasCobrar, 2);
+            } elseif ($fechaMes->isSameMonth(Carbon::now())) {
+                $diasTranscurridos = Carbon::now()->day;
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasTranscurridos, 2);
+            }
+            $totalDelMes = min($totalDelMes, (float) $alquiler->precio_mensual);
+
+            // Determinar estado comparando contra el total prorrateado
             $estado = 'PENDIENTE';
             if ($abonosDelMes > 0) {
-                if ($abonosDelMes >= $alquiler->precio_mensual) {
+                if ($abonosDelMes >= $totalDelMes) {
                     $estado = 'CANCELADO';
                 } else {
                     $estado = 'PAGO PARCIAL';
@@ -217,15 +239,6 @@ class CreatePagosAlquiler extends CreateRecord
                     $estado = 'DEUDA PENDIENTE';
                 }
             }
-
-            // Calcular total del mes con prorrateo para el mes actual (base 30 días) y tope
-            $totalDelMes = (float) $alquiler->precio_mensual;
-            if ($fechaMes->isSameMonth(Carbon::now())) {
-                $diasBase = 30;
-                $diasTranscurridos = Carbon::now()->day;
-                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasTranscurridos, 2);
-            }
-            $totalDelMes = min($totalDelMes, (float) $alquiler->precio_mensual);
 
             $pagosMensuales[] = [
                 'mes' => $nombreMes,

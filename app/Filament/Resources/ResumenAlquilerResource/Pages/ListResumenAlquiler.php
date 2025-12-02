@@ -112,6 +112,7 @@ class ListResumenAlquiler extends ListRecords
     private function loadPagosMensuales($alquiler)
     {
         $fechaInicio = Carbon::parse($alquiler->fecha_inicio);
+        $realFechaInicio = Carbon::parse($alquiler->fecha_inicio);
         $fechaActual = Carbon::now();
         $fechaFin = $alquiler->fecha_fin ? Carbon::parse($alquiler->fecha_fin) : null;
         $pagosMensuales = [];
@@ -139,8 +140,30 @@ class ListResumenAlquiler extends ListRecords
                 ->sum('monto_pagado');
 
             $estado = 'PENDIENTE';
+            // El estado debe compararse contra el total prorrateado del mes
+            // para considerar primer/último mes y mes actual
             if ($abonosDelMes > 0) {
-                if ($abonosDelMes >= $alquiler->precio_mensual) {
+                // Determinar total prorrateado del mes antes de evaluar el estado
+                $totalDelMesTmp = (float) $alquiler->precio_mensual;
+                $diasBaseTmp = 30;
+                $esPrimerMesTmp = $fechaMes->isSameMonth($realFechaInicio);
+                $esUltimoMesTmp = $fechaFin && $fechaMes->isSameMonth($fechaFin);
+
+                if ($esPrimerMesTmp) {
+                    $diaInicioTmp = $realFechaInicio->day;
+                    $diasCobrarTmp = max(0, $diasBaseTmp - ($diaInicioTmp - 1));
+                    $totalDelMesTmp = round(($alquiler->precio_mensual / $diasBaseTmp) * $diasCobrarTmp, 2);
+                } elseif ($esUltimoMesTmp) {
+                    $diaFinTmp = $fechaFin->day;
+                    $diasCobrarTmp = min($diaFinTmp, $diasBaseTmp);
+                    $totalDelMesTmp = round(($alquiler->precio_mensual / $diasBaseTmp) * $diasCobrarTmp, 2);
+                } elseif ($fechaMes->isSameMonth(Carbon::now())) {
+                    $diasTranscurridosTmp = Carbon::now()->day;
+                    $totalDelMesTmp = round(($alquiler->precio_mensual / $diasBaseTmp) * $diasTranscurridosTmp, 2);
+                }
+                $totalDelMesTmp = min($totalDelMesTmp, (float) $alquiler->precio_mensual);
+
+                if ($abonosDelMes >= $totalDelMesTmp) {
                     $estado = 'CANCELADO';
                 } else {
                     $estado = 'PAGO PARCIAL';
@@ -150,12 +173,21 @@ class ListResumenAlquiler extends ListRecords
                 $estado = 'DEUDA PENDIENTE';
             }
 
-            // Calcular el total del mes. Para el mes actual se prorratea
-            // según los días transcurridos del mes (sobre una base de 30 días).
             $totalDelMes = (float) $alquiler->precio_mensual;
-            if ($fechaMes->isSameMonth(Carbon::now())) {
-                $diasBase = 30; // Requerimiento: dividir entre 30 días del mes
-                $diasTranscurridos = Carbon::now()->day; // día actual (1..31)
+            $diasBase = 30;
+            $esPrimerMes = $fechaMes->isSameMonth($realFechaInicio);
+            $esUltimoMes = $fechaFin && $fechaMes->isSameMonth($fechaFin);
+
+            if ($esPrimerMes) {
+                $diaInicio = $realFechaInicio->day;
+                $diasCobrar = max(0, $diasBase - ($diaInicio - 1));
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasCobrar, 2);
+            } elseif ($esUltimoMes) {
+                $diaFin = $fechaFin->day;
+                $diasCobrar = min($diaFin, $diasBase);
+                $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasCobrar, 2);
+            } elseif ($fechaMes->isSameMonth(Carbon::now())) {
+                $diasTranscurridos = Carbon::now()->day;
                 $totalDelMes = round(($alquiler->precio_mensual / $diasBase) * $diasTranscurridos, 2);
             }
             // Asegurar que nunca supere el precio mensual
