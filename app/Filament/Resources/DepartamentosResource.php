@@ -270,6 +270,17 @@ class DepartamentosResource extends Resource
                         'class' => 'hover:bg-primary-50 rounded-full'
                     ]),
 
+                Tables\Actions\Action::make('historial')
+                    ->label('')
+                    ->icon('heroicon-o-clipboard-list')
+                    ->color('secondary')
+                    ->size('lg')
+                    ->url(fn ($record): string => static::getUrl('historial', ['record' => $record]))
+                    ->extraAttributes([
+                        'title' => 'Historial',
+                        'class' => 'hover:bg-secondary-50 rounded-full'
+                    ]),
+
                // Tables\Actions\ViewAction::make(),
               // Tables\Actions\DeleteAction::make(),
             ])
@@ -307,6 +318,14 @@ class DepartamentosResource extends Resource
             'create' => Pages\CreateDepartamentos::route('/create'),
             'edit' => Pages\EditDepartamentos::route('/{record}/edit'),
             'listado' => Pages\ListDepartamentos::route('/listado'),
+            'historial' => Pages\HistorialAlquileres::route('/{record}/historial'),
+        ];
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\DepartamentosResource\RelationManagers\AlquileresRelationManager::class,
         ];
     }
 

@@ -65,6 +65,11 @@
                                 </svg>
                             </div>
 
+                            <div class="absolute inset-x-0 bottom-0 h-6 bg-black/20 text-white text-[11px] leading-6 font-medium tracking-wide cursor-pointer rounded-b-lg"
+                                onclick="openHistorial(event, {{ json_encode($departamento) }})">
+                                Historial
+                            </div>
+
                             <!-- Tooltip -->
                             <div
                                 class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[99999] whitespace-nowrap">
@@ -319,5 +324,13 @@
             closeDepartmentModal();
         }
     });
+
+    function openHistorial(e, departamento) {
+        if (e) e.stopPropagation();
+        const id = departamento.id_departamento || departamento.id;
+        if (id) {
+            window.location.href = `/departamentos/${id}/historial`;
+        }
+    }
     </script>
 </x-filament::page>
