@@ -15,7 +15,10 @@
                         <strong>Fecha de Crédito:</strong> {{ $record->fecha_credito?->format('d M Y') ?? 'N/D' }}
                     </p>
                     <p class="text-sm text-gray-600">
-                        <strong>Días Transcurridos:</strong> {{ $record->fecha_credito ? $record->fecha_credito->diffInDays(now()) : 'N/D' }}
+                        <strong>Días Transcurridos:</strong>
+                        <span class="{{ now()->gt($record->fecha_vencimiento) ? 'text-red-600 font-semibold' : '' }}">
+                            {{ $record->fecha_credito ? $record->fecha_credito->diffInDays(now()) : 'N/D' }}
+                        </span>
                     </p>
                     <!--
                     <p class="text-sm text-gray-600">
@@ -41,12 +44,14 @@
                     @if($record->es_adicional ?? false)
                     <p class="text-sm text-gray-600">
                         <strong>Cuota diaria:</strong>
-                        <span class="text-primary-600 font-semibold">S/ {{ number_format($record->porcentaje_interes, 2, '.', ',') }}</span>
+                        <span class="text-primary-600 font-semibold">S/
+                            {{ number_format($record->porcentaje_interes, 2, '.', ',') }}</span>
                     </p>
                     @else
                     <p class="text-sm text-gray-600">
                         <strong>Interés:</strong>
-                        <span class="text-primary-600 font-semibold">{{ number_format($record->porcentaje_interes, 2) }}%</span>
+                        <span
+                            class="text-primary-600 font-semibold">{{ number_format($record->porcentaje_interes, 2) }}%</span>
                     </p>
                     @endif
 

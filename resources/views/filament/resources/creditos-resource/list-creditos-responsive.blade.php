@@ -200,7 +200,8 @@
                     </div>
                     <div class="credito-info">
                         <span class="credito-label">Días transcurridos:</span>
-                        <span class="credito-value">{{ $record->fecha_credito->diffInDays(now()) }}</span>
+                        <span
+                            class="credito-value {{ now()->gt($record->fecha_vencimiento) ? 'fecha-vencida' : '' }}">{{ $record->fecha_credito->diffInDays(now()) }}</span>
                     </div>
                     <div class="credito-info-grid">
                         <div class="credito-info">

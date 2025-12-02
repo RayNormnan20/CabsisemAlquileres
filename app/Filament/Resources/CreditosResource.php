@@ -885,6 +885,12 @@ class CreditosResource extends Resource
                     ->label('Días')
                     ->getStateUsing(function ($record) {
                         return $record->fecha_credito ? $record->fecha_credito->diffInDays(now()) : null;
+                    })
+                    ->color(function ($record) {
+                        return now()->gt($record->fecha_vencimiento) ? 'danger' : null;
+                    })
+                    ->weight(function ($record) {
+                        return now()->gt($record->fecha_vencimiento) ? 'bold' : null;
                     }),
 
                Tables\Columns\TextColumn::make('usuarioCreador.name')
