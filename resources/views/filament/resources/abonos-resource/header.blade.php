@@ -410,6 +410,11 @@
                                     <span class="text-gray-900 dark:text-gray-100">{{ $record->tipoPago->nombre }}</span>
                                 </div>
                                 @endif
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-300">Usuario:</span>
+                        <span
+                            class="text-gray-900 dark:text-gray-100">{{ optional($record->usuarioCreador)->name ?? 'Sin usuario' }}</span>
+                    </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Vencimiento:</span>
                                     <span class="text-gray-900 dark:text-gray-100 {{ $record->fecha_vencimiento ? (now()->gt($record->fecha_vencimiento) ? 'text-red-600' : 'text-green-600') : '' }}">

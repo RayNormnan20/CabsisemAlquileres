@@ -35,6 +35,7 @@ class ListCreditos extends ListRecords
     public $fechaDesde;
     public $fechaHasta;
     public $fechaPeriodo = 'hoy';
+    public string $tipoFecha = 'created_at';
 
     public function mount(): void
     {
@@ -109,7 +110,7 @@ class ListCreditos extends ListRecords
                 $cliente = \App\Models\Clientes::where('id_cliente', $persistedClienteId)
                     ->where('id_ruta', $this->currentRutaId)
                     ->first();
-                
+
                 if ($cliente) {
                     $this->clienteId = (int) $persistedClienteId;
                     // Al tener cliente, mostrar todos los créditos (no solo activos)
@@ -228,7 +229,7 @@ class ListCreditos extends ListRecords
         $query = parent::getTableQuery();
 
         // MANTENER EAGER LOADING para evitar N+1 queries
-        $query->with(['cliente', 'ruta', 'tipoPago', 'abonos', 'conceptosCredito']);
+        $query->with(['cliente', 'ruta', 'tipoPago', 'abonos', 'conceptosCredito', 'usuarioCreador']);
 
         $query->join('clientes', 'creditos.id_cliente', '=', 'clientes.id_cliente');
 
@@ -248,11 +249,13 @@ class ListCreditos extends ListRecords
         } else {
             // Sin cliente seleccionado: aplicar filtros de fecha para todos los créditos
             if ($this->fechaDesde) {
-                $query->whereDate('creditos.fecha_credito', '>=', $this->fechaDesde);
+                $campoFecha = $this->tipoFecha === 'fecha_credito' ? 'creditos.fecha_credito' : 'creditos.created_at';
+                $query->whereDate($campoFecha, '>=', $this->fechaDesde);
             }
 
             if ($this->fechaHasta) {
-                $query->whereDate('creditos.fecha_credito', '<=', $this->fechaHasta);
+                $campoFecha = $this->tipoFecha === 'fecha_credito' ? 'creditos.fecha_credito' : 'creditos.created_at';
+                $query->whereDate($campoFecha, '<=', $this->fechaHasta);
             }
         }
 
@@ -340,6 +343,12 @@ class ListCreditos extends ListRecords
         }
     }
 
+    public function updatedTipoFecha($value): void
+    {
+        $this->tipoFecha = in_array($value, ['created_at', 'fecha_credito']) ? $value : 'created_at';
+        $this->resetPage();
+    }
+
     protected function shouldPersistTableFiltersInSession(): bool
     {
         return true;
@@ -385,7 +394,7 @@ class ListCreditos extends ListRecords
 
         // Buscar el cliente para obtener su información
         $cliente = Clientes::find($this->clienteId);
-        
+
         if (!$cliente) {
             $this->notify('danger', 'Cliente no encontrado.');
             return;
@@ -437,7 +446,7 @@ class ListCreditos extends ListRecords
     {
         try {
             $credito = Creditos::findOrFail($creditoId);
-            
+
             // Verificar que el crédito no tenga abonos
             if ($credito->abonos()->exists()) {
                 Notification::make()

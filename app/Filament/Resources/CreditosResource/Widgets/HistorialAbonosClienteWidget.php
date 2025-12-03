@@ -108,6 +108,7 @@ class HistorialAbonosClienteWidget extends Widget
                 'abonos.monto_abono',
                 'abonos.saldo_posterior',
                 'abonos.id_usuario',
+                DB::raw('users.name as usuario_nombre'),
                 'abonos.es_devolucion',
                 'abonos.id_credito',
                 DB::raw("'abono' as tipo_registro"),
@@ -115,6 +116,7 @@ class HistorialAbonosClienteWidget extends Widget
             ])
             ->join('conceptos', 'abonos.id_concepto', '=', 'conceptos.id')
             ->leftJoin('conceptos_abono', 'abonos.id_abono', '=', 'conceptos_abono.id_abono')
+            ->leftJoin('users', 'abonos.id_usuario', '=', 'users.id')
             ->where('abonos.id_credito', $creditoActivo->id_credito) // Solo del crédito específico
             ->groupBy([
                 'abonos.id_abono',
@@ -124,11 +126,13 @@ class HistorialAbonosClienteWidget extends Widget
                 'abonos.monto_abono',
                 'abonos.saldo_posterior',
                 'abonos.id_usuario',
+                DB::raw('users.name'),
                 'abonos.es_devolucion',
                 'abonos.id_credito'
             ])
             ->union(
                 DB::table('creditos')
+                    ->leftJoin('users', 'creditos.id_usuario_creador', '=', 'users.id')
                     ->select([
                         'creditos.id_credito as id_abono',
                         'creditos.fecha_credito as fecha_pago',
@@ -136,7 +140,8 @@ class HistorialAbonosClienteWidget extends Widget
                         DB::raw("'Desembolso' as concepto_nombre"),
                         DB::raw("(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as monto_abono"),
                         DB::raw("(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior"),
-                        DB::raw("NULL as id_usuario"),
+                        DB::raw('creditos.id_usuario_creador as id_usuario'),
+                        DB::raw('users.name as usuario_nombre'),
                         DB::raw("false as es_devolucion"),
                         'creditos.id_credito',
                         DB::raw("'credito' as tipo_registro"),

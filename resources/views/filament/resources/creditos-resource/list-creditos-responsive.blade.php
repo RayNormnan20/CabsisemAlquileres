@@ -195,8 +195,15 @@
                 </div>
                 <div class="credito-body">
                     <div class="credito-info">
-                        <span class="credito-label">Fecha:</span>
+                        <span class="credito-label">Fecha Inicio:</span>
                         <span class="credito-value">{{ $record->fecha_credito->format('d/m/Y') }}</span>
+                    </div>
+                    <div class="credito-info">
+                        <span class="credito-label">Vencimiento:</span>
+                        <span
+                            class="credito-value {{ now()->gt($record->fecha_vencimiento) ? 'fecha-vencida' : 'fecha-normal' }}">
+                            {{ $record->fecha_vencimiento->format('d/m/Y') }}
+                        </span>
                     </div>
                     <div class="credito-info">
                         <span class="credito-label">Días transcurridos:</span>
@@ -229,19 +236,18 @@
                             <span class="credito-value"> {{ number_format($record->porcentaje_interes) }} %</span>
                         </div>
                     </div>
-                    <div class="credito-info">
-                        <span class="credito-label">Vencimiento:</span>
-                        <span
-                            class="credito-value {{ now()->gt($record->fecha_vencimiento) ? 'fecha-vencida' : 'fecha-normal' }}">
-                            {{ $record->fecha_vencimiento->format('d/m/Y') }}
-                        </span>
+
+                    <div class="credito-info-grid">
+                        <div class="credito-info">
+                            <span class="credito-label">Tipo:</span>
+                            <span class="credito-value">{{ $record->tipoPago->nombre ?? '---' }}</span>
+                        </div>
+                        <div class="credito-info">
+                            <span class="credito-label">Usuario:</span>
+                            <span
+                                class="credito-value">{{ optional($record->usuarioCreador)->name ?? 'Sin usuario' }}</span>
+                        </div>
                     </div>
-                    @if($record->tipoPago)
-                    <div class="credito-info">
-                        <span class="credito-label">Tipo:</span>
-                        <span class="credito-value">{{ $record->tipoPago->nombre }}</span>
-                    </div>
-                    @endif
                     @if($record->conceptosCredito && $record->conceptosCredito->count() > 0)
                     <div class="credito-detalle">
                         <strong>Detalle:</strong>
