@@ -8,6 +8,7 @@
             open: false,
             search: '',
             selectedClienteId: @entangle('clienteId'),
+            clientesActivos: @js($clientesActivos ?? []),
             get filteredClientes() {
                 if (!this.search) return @js($clientes);
                 const clientes = @js($clientes);
@@ -33,7 +34,8 @@
                 <!-- Input/Button principal -->
                 <button @click="open = !open" type="button"
                     class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-left focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                    <span x-text="selectedClienteName" class="block truncate"></span>
+                    <span x-text="selectedClienteName" class="block truncate"
+                        :class="selectedClienteId && !clientesActivos[selectedClienteId] ? 'text-red-600 dark:text-red-400' : ''"></span>
                     <svg class="w-4 h-4 text-gray-400 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
@@ -62,7 +64,7 @@
                             <button @click="selectCliente(id, nombre)" type="button"
                                 class="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
                                 :class="{ 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400': selectedClienteId == id }">
-                                <span x-text="nombre"></span>
+                                <span x-text="nombre" :class="!clientesActivos[id] ? 'text-red-600 dark:text-red-400' : ''"></span>
                             </button>
                         </template>
 
@@ -268,8 +270,9 @@
 
                     <!-- Nueva opción: Abono no Reg. -->
                     <div class="py-1" role="none">
-                        <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'ABONO NO REGISTRADO']) }}"
-                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100">
+                        <a href="{{ ($clienteId ?? null) ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono no Registrado']) : '#' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            wire:navigate @if(!($clienteId ?? null)) onclick="return false;" @endif>
                             Abono no Registrado
                         </a>
                     </div>

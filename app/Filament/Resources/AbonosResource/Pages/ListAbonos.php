@@ -259,14 +259,24 @@ class ListAbonos extends ListRecords
 
         $rutaId = session('selected_ruta_id');
 
-        $clientesQuery = \App\Models\Clientes::where('activo', true);
+        $clientesQuery = \App\Models\Clientes::where('activo', true)
+            ->with(['creditos' => function ($q) {
+                $q->where('saldo_actual', '>', 0);
+            }]);
 
         if ($rutaId) {
             $clientesQuery->where('id_ruta', $rutaId);
         }
 
+        $clientesLista = $clientesQuery->get();
+        $clientes = $clientesLista->pluck('nombre_completo', 'id_cliente');
+        $clientesActivos = $clientesLista->mapWithKeys(function ($c) {
+            return [$c->id_cliente => $c->creditos->isNotEmpty()];
+        });
+
         return view('filament.resources.abonos-resource.header', [
-            'clientes' => $clientesQuery->get()->pluck('nombre_completo', 'id_cliente'),
+            'clientes' => $clientes,
+            'clientesActivos' => $clientesActivos,
             'rutas' => Ruta::all()->pluck('nombre', 'id_ruta'),
             'fechaDesde' => $this->fechaDesde,
             'fechaHasta' => $this->fechaHasta,
