@@ -241,6 +241,10 @@
                                     <div style="font-size: 0.8rem; color: #7f8c8d;">
                                         {{ $record->fecha_pago->format('d M Y') }}
                                     </div>
+                <div class="abono-info" style="margin-top: 0.25rem;">
+                    <span class="abono-label">Usuario</span>
+                    <span class="abono-value">{{ $record->usuario_nombre ?? 'Sin usuario' }}</span>
+                </div>
                                 </div>
                             </div>
                         @else
@@ -267,7 +271,11 @@
                                     </div>
                                     @endif
                                     <div class="abono-info">
-                                        <span class="abono-label">{{ $record->fecha_pago->format('d M Y') }} • {{ $record->fecha_pago->format('H:i') }}</span>
+                                        <span class="abono-label">Usuario</span>
+                                        <span class="abono-value">{{ $record->usuario_nombre ?? 'Sin usuario' }}</span>
+                                </div>
+                <div class="abono-info">
+                    <span class="abono-label">{{ $record->fecha_pago->format('d M Y') }} • {{ $record->fecha_pago->format('H:i') }}</span>
                                         <span class="abono-value"></span>
                                     </div>
                                 </div>

@@ -199,10 +199,10 @@ class PagosAlquilerResource extends Resource
                     ->default('S/N'),
 
                 TextColumn::make('alquiler.inquilino.nombre_completo')
-                    ->label('Inquilino')
+                    ->label('Cliente')
                     ->searchable(['alquiler.inquilino.nombre', 'alquiler.inquilino.apellido'])
                     ->sortable()
-                    ->default('Sin inquilino'),
+                    ->default('Sin cliente'),
 
                 TextColumn::make('usuarioRegistro.name')
                     ->label('Registrado por')

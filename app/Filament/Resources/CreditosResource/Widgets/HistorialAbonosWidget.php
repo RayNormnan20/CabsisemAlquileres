@@ -43,7 +43,7 @@ class HistorialAbonosWidget extends BaseWidget
                 DB::raw("'Desembolso' as concepto_nombre"),
                 DB::raw('creditos.valor_credito as monto_abono'),
                 DB::raw('(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior'),
-                DB::raw('NULL as id_usuario'),
+                DB::raw('creditos.id_usuario_creador as id_usuario'),
                 DB::raw('false as es_devolucion'),
                 DB::raw("'credito' as tipo_registro")
             ])
@@ -120,7 +120,7 @@ class HistorialAbonosWidget extends BaseWidget
                 DB::raw("'Desembolso' as concepto_nombre"),
                 DB::raw('creditos.valor_credito as monto_abono'),
                 DB::raw('(creditos.valor_credito * (1 + creditos.porcentaje_interes/100)) as saldo_posterior'),
-                DB::raw('NULL as id_usuario'),
+                DB::raw('creditos.id_usuario_creador as id_usuario'),
                 DB::raw('false as es_devolucion'),
                 DB::raw("'credito' as tipo_registro")
             ])
@@ -164,6 +164,14 @@ class HistorialAbonosWidget extends BaseWidget
                     }
                     return null;
                 }),
+
+            Tables\Columns\TextColumn::make('usuario')
+                ->label('Usuario')
+                ->formatStateUsing(function ($record) {
+                    $user = \App\Models\User::find($record->id_usuario);
+                    return $user?->name ?? 'Sin usuario';
+                })
+                ->sortable(),
 
             Tables\Columns\BadgeColumn::make('tipo_abono')
                 ->label('Tipo')

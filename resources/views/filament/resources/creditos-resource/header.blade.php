@@ -139,6 +139,16 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
                 </select>
             </div>
 
+            <!-- Tipo de fecha -->
+            <div>
+                <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tipo de fecha:</label>
+                <select wire:model="tipoFecha"
+                    class="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
+                    <option value="created_at">Creación Crédito</option>
+                    <option value="fecha_credito">Fecha Crédito</option>
+                </select>
+            </div>
+
             <!-- Rango de fechas -->
             <div>
                 <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Rango personalizado:</label>

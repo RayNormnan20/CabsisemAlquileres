@@ -698,6 +698,7 @@ class CreditosResource extends Resource
                                                         'Efectivo' => 'Efectivo',
                                                         'Yape' => 'Yape',
                                                         'Caja' => 'Caja',
+                                                        'Caja Dueño' => 'Caja Dueño',
                                                         'Saldo renovación' => 'Saldo renovación',
                                                         'Abono para completar préstamo' => 'Abono para completar préstamo',
                                                     ])
