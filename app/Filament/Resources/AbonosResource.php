@@ -396,6 +396,7 @@ class AbonosResource extends Resource
                                             'Yape' => 'Yape',
                                             'Abono completar p.' => 'Abono completar p.',
                                             'Abono sin firma Chis' => 'Abono sin firma Chis',
+                                            'Abono no Registrado' => 'Abono no Registrado',
                                         ];
                                     }
 
@@ -413,7 +414,7 @@ class AbonosResource extends Resource
                                         'Entrega Caja COBRADOR' => 'Entrega Caja COBRADOR',
                                         'Abono de Descuento' => 'Abono de Descuento',
                                         'ENTREGA E.',
-                                        'ABONO NO REGISTRADO'
+                                        'Abono no Registrado' => 'Abono no Registrado',
                                     ];
                                 })
                                 ->required()
@@ -461,7 +462,7 @@ class AbonosResource extends Resource
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg']) // <- formatos aceptados
                             ->directory('comprobantes/abonos')
                             ->disk('public')
-                            ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo']))
+                            ->visible(fn ($get) => in_array($get('tipo_concepto'), ['Yape', 'Efectivo', 'Abono no Registrado']))
                             ->required(fn ($get) => $get('tipo_concepto') === 'Yape')
                             ->columnSpan(2),
 

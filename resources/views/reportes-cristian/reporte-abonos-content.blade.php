@@ -25,7 +25,7 @@ $ordenEspecifico = [
     'Devolucion (Yape)',
     'Devolucion (Efectivo)',
     'ENTREGA E.',
-    'ABONO NO REGISTRADO',
+    'Abono no Registrado',
 ];
 
 // Obtener todos los conceptos únicos de la base de datos
