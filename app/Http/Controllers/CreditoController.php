@@ -774,6 +774,11 @@ class CreditoController extends Controller
                 ]
             );
             DB::commit();
+            try {
+                session()->forget('creditos_cliente_id');
+                session()->forget('creditos_mostrar_solo_activos');
+            } catch (\Throwable $e) {}
+
             return response()->json([
                 'success' => true,
                 'message' => 'Crédito cancelado correctamente.',

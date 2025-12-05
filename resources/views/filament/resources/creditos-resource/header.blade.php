@@ -855,6 +855,9 @@ $cliente->loadMissing('creditos');
                                 this.showCancelResultModal = true;
                                 // Guardar posible URL de redirección
                                 this.cancelRedirectUrl = data.redirect_url || this.cancelRedirectUrl;
+                                if (window.Livewire) {
+                                    Livewire.emit('clearClienteSeleccionado');
+                                }
                             } else {
                                 alert(data.error || 'Error al cancelar el crédito.');
                             }
@@ -1510,7 +1513,7 @@ $cliente->loadMissing('creditos');
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-white text-base font-medium hover:bg-primary-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
                                 Aceptar
                             </button>
-                            <button type="button" @click="showCancelResultModal = false; location.reload();"
+                            <button type="button" @click="showCancelResultModal = false; if (window.Livewire) { Livewire.emit('clearClienteSeleccionado'); } location.reload();"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
                                 Cancelar
                             </button>

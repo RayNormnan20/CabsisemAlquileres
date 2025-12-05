@@ -25,7 +25,8 @@ class ListCreditos extends ListRecords
 
     protected $listeners = [
         'globalRouteChanged' => 'applyRouteFilter',
-        'eliminarCredito' => 'eliminarCredito'
+        'eliminarCredito' => 'eliminarCredito',
+        'clearClienteSeleccionado' => 'clearClienteSeleccionado'
     ];
 
     public ?int $clienteId = null;
@@ -205,6 +206,15 @@ class ListCreditos extends ListRecords
     {
         $this->mostrarSoloActivos = !$this->mostrarSoloActivos;
         Session::put('creditos_mostrar_solo_activos', $this->mostrarSoloActivos);
+        $this->resetPage();
+    }
+
+    public function clearClienteSeleccionado(): void
+    {
+        $this->clienteId = null;
+        Session::forget('creditos_cliente_id');
+        $this->mostrarSoloActivos = true;
+        Session::put('creditos_mostrar_solo_activos', true);
         $this->resetPage();
     }
 
