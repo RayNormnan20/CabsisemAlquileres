@@ -21,6 +21,10 @@ class CreateAlquileres extends CreateRecord
     {
         parent::mount();
         $this->currentRutaId = Session::get('selected_ruta_id');
+        $prefillDepartamento = request()->get('prefillDepartamento');
+        if ($prefillDepartamento) {
+            $this->form->fill(['id_departamento' => (int) $prefillDepartamento]);
+        }
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
