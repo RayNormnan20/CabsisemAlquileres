@@ -156,6 +156,10 @@
                                                 <span class="resumen-value">S/ {{ number_format($pago['total'], 2) }}</span>
                                             </div>
                                             <div class="resumen-info">
+                                                <span class="resumen-label">Cliente:</span>
+                                                <span class="resumen-value" style="font-weight: 700;">{{ $pago['cliente'] ?? 'N/A' }}</span>
+                                            </div>
+                                            <div class="resumen-info">
                                                 <span class="resumen-label">Pagado:</span>
                                                 <span class="resumen-value" style="color: #27ae60; font-weight: 700;">S/ {{ number_format($pago['pagado'], 2) }}</span>
                                             </div>
@@ -188,6 +192,9 @@
                                                     MES
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                    CLIENTE
+                                                </th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                     TOTAL
                                                 </th>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -203,6 +210,9 @@
                                             <tr>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                                     {{ $pago['mes'] }}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                                                    {{ $pago['cliente'] ?? 'N/A' }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                                     S/ {{ number_format($pago['total'], 2) }}
@@ -232,7 +242,7 @@
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                                     No hay datos disponibles
                                                 </td>
                                             </tr>
@@ -243,6 +253,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                                     TOTAL
                                                 </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white"></td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                                     S/ {{ number_format($totalGenerado ?? 0, 2) }}
                                                 </td>
@@ -476,38 +487,42 @@
                 
                 // Generar HTML para pagos mensuales
                 let pagosMensualesHTML = '';
-                data.pagosMensuales.forEach(pago => {
-                    
-                    const estadoClass = pago.estado === 'CANCELADO' ? 'bg-green-100 text-green-800' :
-                                       pago.estado === 'PAGO PARCIAL' ? 'bg-yellow-100 text-yellow-800' :
-                                       pago.estado === 'DEUDA PENDIENTE' ? 'bg-red-100 text-red-800' :
-                                       'bg-gray-100 text-gray-800';
-                    
-                    // Usar los datos correctos del servidor
-                    const mesNombre = pago.mes || 'Mes desconocido';
-                    const totalMes = pago.total ? parseFloat(pago.total) : 0;
-                    const pagadoMes = pago.pagado ? parseFloat(pago.pagado) : 0;
-                    const estado = pago.estado || 'DEUDA PENDIENTE';
-                    
-                    pagosMensualesHTML += `
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                ${mesNombre}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-bold">
-                                S/ ${totalMes.toFixed(2)}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-bold">
-                                S/ ${pagadoMes.toFixed(2)}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${estadoClass}">
-                                    ${estado}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                });
+                    data.pagosMensuales.forEach(pago => {
+                        
+                        const estadoClass = pago.estado === 'CANCELADO' ? 'bg-green-100 text-green-800' :
+                                           pago.estado === 'PAGO PARCIAL' ? 'bg-yellow-100 text-yellow-800' :
+                                           pago.estado === 'DEUDA PENDIENTE' ? 'bg-red-100 text-red-800' :
+                                           'bg-gray-100 text-gray-800';
+                        
+                        // Usar los datos correctos del servidor
+                        const mesNombre = pago.mes || 'Mes desconocido';
+                        const totalMes = pago.total ? parseFloat(pago.total) : 0;
+                        const pagadoMes = pago.pagado ? parseFloat(pago.pagado) : 0;
+                        const estado = pago.estado || 'DEUDA PENDIENTE';
+                        const clienteNombre = pago.cliente || 'N/A';
+                        
+                        pagosMensualesHTML += `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                    ${mesNombre}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                                    ${clienteNombre}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-bold">
+                                    S/ ${totalMes.toFixed(2)}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-bold">
+                                    S/ ${pagadoMes.toFixed(2)}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${estadoClass}">
+                                        ${estado}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    });
 
                 // Agregar fila de TOTAL en la tabla (PC)
                 if (data.pagosMensuales && data.pagosMensuales.length > 0) {
@@ -522,6 +537,7 @@
                     pagosMensualesHTML += `
                         <tr class="bg-gray-100 dark:bg-gray-800 font-bold">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">TOTAL</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white"></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">S/ ${totalGenerado.toFixed(2)}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">S/ ${totalAbonosTabla.toFixed(2)}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-700 dark:text-red-300">DEUDA: S/ ${deudaTotal.toFixed(2)}</td>
@@ -605,6 +621,10 @@
                                     <div class="resumen-info">
                                         <span class="resumen-label">Total del Mes:</span>
                                         <span class="resumen-value">S/ ${parseFloat(pago.total).toFixed(2)}</span>
+                                    </div>
+                                    <div class="resumen-info">
+                                        <span class="resumen-label">Cliente:</span>
+                                        <span class="resumen-value" style="font-weight: 700;">${pago.cliente || 'N/A'}</span>
                                     </div>
                                     <div class="resumen-info">
                                         <span class="resumen-label">Pagado:</span>
@@ -780,13 +800,14 @@
                                                 <thead class="bg-gray-50 dark:bg-gray-800">
                                                     <tr>
                                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">MES</th>
+                                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CLIENTE</th>
                                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">TOTAL</th>
                                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">PAGADO</th>
                                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ESTADO</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                                                    ${pagosMensualesHTML || '<tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No hay datos de pagos mensuales</td></tr>'}
+                                                    ${pagosMensualesHTML || '<tr><td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No hay datos de pagos mensuales</td></tr>'}
                                                 </tbody>
                                             </table>
                                         </div>

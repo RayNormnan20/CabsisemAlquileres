@@ -240,11 +240,21 @@ class CreatePagosAlquiler extends CreateRecord
                 }
             }
 
+            $clienteNombre = 'Cliente';
+            if ($alquiler && $alquiler->inquilino) {
+                $nombre = trim((string)($alquiler->inquilino->nombre ?? ''));
+                $apellido = trim((string)($alquiler->inquilino->apellido ?? ''));
+                $clienteNombre = trim($nombre . ' ' . $apellido);
+                if ($clienteNombre === '') {
+                    $clienteNombre = $alquiler->inquilino->nombre_completo ?? 'Cliente';
+                }
+            }
             $pagosMensuales[] = [
                 'mes' => $nombreMes,
                 'total' => $totalDelMes,
                 'pagado' => $abonosDelMes,
-                'estado' => $estado
+                'estado' => $estado,
+                'cliente' => $clienteNombre
             ];
 
             $totalAbonos += $abonosDelMes;

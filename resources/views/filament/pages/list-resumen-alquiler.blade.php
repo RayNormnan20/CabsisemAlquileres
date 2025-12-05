@@ -158,6 +158,11 @@
                         font-weight: 600;
                     }
 
+                    .resumen-value-cliente {
+                        font-weight: 700;
+                        color: #1f2937;
+                    }
+
                     .resumen-total-card {
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         color: white;
@@ -272,6 +277,10 @@
                                             <span class="resumen-value">S/ {{ number_format($pago['total'], 2) }}</span>
                                         </div>
                                         <div class="resumen-info">
+                                            <span class="resumen-label">Cliente:</span>
+                                            <span class="resumen-value resumen-value-cliente">{{ $pago['cliente'] }}</span>
+                                        </div>
+                                        <div class="resumen-info">
                                             <span class="resumen-label">Pagado:</span>
                                             <span class="resumen-value">S/ {{ number_format($pago['pagado'], 2) }}</span>
                                         </div>
@@ -328,6 +337,10 @@
                                     </th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        CLIENTE
+                                    </th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         TOTAL
                                     </th>
                                     <th
@@ -347,6 +360,9 @@
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                         {{ $pago['mes'] }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
+                                        {{ $pago['cliente'] ?? 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-bold">
                                         S/ {{ number_format($pago['total'], 2) }}
@@ -380,7 +396,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                         No hay datos disponibles para la selección actual
                                     </td>
                                 </tr>
@@ -391,6 +407,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                         TOTAL
                                     </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white"></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                         S/ {{ number_format($this->totalGenerado, 2) }}
                                     </td>
@@ -404,7 +421,7 @@
                                 @endif
                                 @else
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                         Selecciona un edificio y departamento para ver los datos
                                     </td>
                                 </tr>

@@ -193,12 +193,22 @@ class ListResumenAlquiler extends ListRecords
             // Asegurar que nunca supere el precio mensual
             $totalDelMes = min($totalDelMes, (float) $alquiler->precio_mensual);
 
+            $clienteNombre = 'Cliente';
+            if ($alquiler && $alquiler->inquilino) {
+                $nombre = trim((string)($alquiler->inquilino->nombre ?? ''));
+                $apellido = trim((string)($alquiler->inquilino->apellido ?? ''));
+                $clienteNombre = trim($nombre . ' ' . $apellido);
+                if ($clienteNombre === '') {
+                    $clienteNombre = $alquiler->inquilino->nombre_completo ?? 'Cliente';
+                }
+            }
             $pagosMensuales[] = [
                 'mes' => ucfirst($nombreMes),
                 'total' => $totalDelMes,
                 'pagado' => $abonosDelMes,
                 'estado' => $estado,
-                'fecha' => $fechaMes->copy()
+                'fecha' => $fechaMes->copy(),
+                'cliente' => $clienteNombre
             ];
 
             // Acumular el total programado por mes (prorrateado para el mes actual)
