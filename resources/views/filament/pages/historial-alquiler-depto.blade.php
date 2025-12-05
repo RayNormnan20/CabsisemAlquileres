@@ -64,7 +64,7 @@
             </div>
         </x-filament::card>
 
-        @if(!empty($this->pagosCliente))
+        @if($this->alquilerSeleccionadoId)
         <x-filament::card>
             <div class="px-4 pt-4">
                 <h3 class="text-md font-semibold">Abonos del Cliente</h3>
@@ -86,7 +86,7 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($this->pagosCliente as $pago)
+                        @forelse($this->pagosCliente as $pago)
                         <tr>
                             <td class="px-4 py-2 text-sm text-gray-900">
                                 {{ \Carbon\Carbon::parse($pago['fecha_pago'])->format('d/m/Y') }}</td>
@@ -111,7 +111,11 @@
                                 @endif
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">Sin abonos</td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

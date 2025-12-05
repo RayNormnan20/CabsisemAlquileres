@@ -34,6 +34,18 @@ class HistorialAlquileres extends Page
         $this->tieneActivo = Alquiler::where('id_departamento', $record)
             ->where('estado_alquiler', 'activo')
             ->exists();
+
+        // Preseleccionar un alquiler si viene como parámetro en la URL
+        $alquilerId = request()->query('alquilerId');
+        if ($alquilerId) {
+            // Verificar que el alquiler pertenezca a este departamento
+            $alquilerPertenece = Alquiler::where('id_alquiler', $alquilerId)
+                ->where('id_departamento', $record)
+                ->exists();
+            if ($alquilerPertenece) {
+                $this->verPagos((int) $alquilerId);
+            }
+        }
     }
 
     public function verPagos(int $alquilerId): void

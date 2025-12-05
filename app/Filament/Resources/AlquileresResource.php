@@ -219,7 +219,11 @@ class AlquileresResource extends Resource
                 TextColumn::make('inquilino.nombre_completo')
                     ->label('Inquilino')
                     ->searchable(['inquilino.nombre', 'inquilino.apellido'])
-                    ->sortable(),
+                    ->sortable()
+                    ->url(fn ($record) => url("/departamentos/{$record->id_departamento}/historial?alquilerId={$record->id_alquiler}"))
+                    ->openUrlInNewTab(false)
+                    ->color('primary')
+                    ->tooltip('Ver historial del departamento'),
 
                 TextColumn::make('fecha_inicio')
                     ->label('Inicio')
