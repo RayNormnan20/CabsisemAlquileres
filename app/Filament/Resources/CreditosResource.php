@@ -136,13 +136,21 @@ class CreditosResource extends Resource
                     // Grid para dividir en dos columnas
                     Forms\Components\Grid::make(2)
                         ->schema([
-                            Hidden::make('es_adicional')
-                            ->default(fn () => request()->query('tipo') === 'adicional')
-                            ->reactive(),
+                            
                             // Columna izquierda (Datos de entrada)
                             Forms\Components\Group::make([
                                 Forms\Components\Section::make('')
                                     ->schema([
+                                        Forms\Components\Toggle::make('es_adicional')
+                                            ->label('Crédito Adicional')
+                                            ->default(fn () => request()->query('tipo') === 'adicional')
+                                            ->inline(false)
+                                            ->reactive()
+                                            ->afterStateUpdated(function ($state, callable $set) {
+                                                if ($state) {
+                                                    $set('forma_pago', \App\Models\TipoPago::where('nombre', 'Diario')->value('id_forma_pago'));
+                                                }
+                                            }),
                                         Select::make('id_cliente')
                                             ->label('Cliente')
                                             ->options(function () {
@@ -236,7 +244,7 @@ class CreditosResource extends Resource
                                             ->default(function () {
                                                 return TipoPago::where('nombre', 'Diario')->value('id_forma_pago');
                                             })
-                                            ->disabled($isAdicional)
+                                            ->disabled(fn (callable $get) => $get('es_adicional'))
                                             ->required()
                                             ->searchable()
                                             ->columnSpanFull()
