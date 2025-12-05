@@ -397,6 +397,12 @@ class EditCreditos extends EditRecord
 
     protected function getRedirectUrl(): string
     {
+        if (session('return_to_credito_view') && session('credito_id_return')) {
+            $creditoId = session('credito_id_return');
+            session()->forget(['return_to_credito_view', 'credito_id_return']);
+            return CreditosResource::getUrl('view', ['record' => $creditoId]);
+        }
+
         return $this->getResource()::getUrl('index');
     }
 

@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Livewire\Traits\RouteValidation;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use App\Models\LogActividad;
 
 class ListAbonos extends ListRecords
 {
@@ -606,7 +607,7 @@ public function updated($name)
             DB::transaction(function () use ($abono) {
                 $credito = $abono->credito;
                 if ($credito) {
-                    $credito->saldo_actual = ($credito->saldo_actual ?? 0) + ($abono->monto ?? 0);
+                    $credito->saldo_actual = ($credito->saldo_actual ?? 0) + ($abono->monto_abono ?? 0);
                     $credito->save();
                 }
 
@@ -616,6 +617,25 @@ public function updated($name)
                         ->performedOn($abono)
                         ->event('deleted')
                         ->log('Abono eliminado desde vista responsive');
+                }
+                // Registrar log de actividad con detalles, como en HistorialAbonosWidget
+                try {
+                    $clienteNombre = ($abono->cliente?->nombre . ' ' . $abono->cliente?->apellido) ?: 'Cliente desconocido';
+                    $rutaNombre = $abono->ruta?->nombre ?? 'Ruta desconocida';
+
+                    LogActividad::registrar(
+                        'Abonos',
+                        "Eliminó un abono de la ruta {$rutaNombre} para el cliente {$clienteNombre} del día " . $abono->fecha_pago->format('d M Y') . " por S/" . number_format($abono->monto_abono, 2),
+                        [
+                            'abono_id' => $abono->id_abono,
+                            'cliente_id' => $abono->id_cliente,
+                            'ruta_id' => $abono->id_ruta,
+                            'fecha_pago' => $abono->fecha_pago->format('Y-m-d'),
+                            'monto_abono' => $abono->monto_abono,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    // Silenciar errores de log para no afectar la eliminación
                 }
 
                 $abono->delete();

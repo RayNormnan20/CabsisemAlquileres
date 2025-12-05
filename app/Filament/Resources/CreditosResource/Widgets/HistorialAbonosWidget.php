@@ -52,7 +52,7 @@ class HistorialAbonosWidget extends BaseWidget
         $union = $abonosQuery->unionAll($creditoQuery);
 
         $tempModel = new class extends \Illuminate\Database\Eloquent\Model {
-            protected $table = 'historial_abonos_temp';
+            protected $table = 'historial';
             protected $primaryKey = 'id_abono';
             public $timestamps = false;
             protected $fillable = [
@@ -332,7 +332,7 @@ class HistorialAbonosWidget extends BaseWidget
                     }
                     return null;
                 })
-                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0 && auth()->user()->can('Actualizar Abonos')),
+                ->visible(fn ($record) => $record->tipo_registro === 'abono' && auth()->user()->can('Actualizar Abonos') && ($this->record->saldo_actual > 0 || !$this->clienteTieneOtroCreditoActivo())),
 
             Tables\Actions\Action::make('delete')
                 ->label('')
@@ -357,29 +357,9 @@ class HistorialAbonosWidget extends BaseWidget
                         if (! $credito) {
                             throw new \Exception('Crédito asociado no encontrado.');
                         }
-                        
-                        if ($credito->es_adicional) {
-                            // Para créditos adicionales, recalcular el saldo correctamente
-                            $diasTranscurridos = now()->diffInDays($credito->fecha_credito);
-                            $cuotasDiariasAcumuladas = $diasTranscurridos * $credito->porcentaje_interes;
 
-                            // Calcular total de abonos restantes (excluyendo el que se va a eliminar)
-                            // Excluir devoluciones del cálculo
-                            $totalAbonosRestantes = Abonos::where('id_credito', $credito->id_credito)
-                                ->where('id_abono', '!=', $abono->id_abono)
-                                ->where('es_devolucion', false)
-                                ->sum('monto_abono');
-
-                            $credito->saldo_actual = $credito->valor_credito + $cuotasDiariasAcumuladas - $totalAbonosRestantes;
-                        } else {
-                            // Para créditos normales:
-                            // - Si es devolución, no modificar saldo
-                            // - Si es abono normal, sumar el monto al saldo (revirtiendo el abono eliminado)
-                            if (!$abono->es_devolucion) {
-                                $credito->saldo_actual += $abono->monto_abono;
-                            }
-                        }
-                        
+                        // Aplicar la misma lógica del listado de Abonos
+                        $credito->saldo_actual += $abono->monto_abono;
                         $credito->save();
 
                         // Registrar log de actividad antes de eliminar
@@ -396,8 +376,6 @@ class HistorialAbonosWidget extends BaseWidget
                         );
 
                         $abono->delete();
-                        // Recalcular saldo para asegurar consistencia (aplica interés y desc.)
-                        $credito->actualizarSaldo();
                     });
 
                     Notification::make()
@@ -405,13 +383,101 @@ class HistorialAbonosWidget extends BaseWidget
                         ->body('El abono ha sido eliminado correctamente.')
                         ->success()
                         ->send();
+
+                    try {
+                        $this->dispatch('refreshComponent');
+                        $this->dispatch('$refresh');
+                    } catch (\Throwable $e) {
+                        // Silenciar errores de refresco
+                    }
                 })
                 ->extraAttributes([
                     'title' => 'Eliminar',
                     'class' => 'hover:bg-danger-50 rounded-full'
                 ])
-                ->visible(fn ($record) => $record->tipo_registro === 'abono' && $this->record->saldo_actual > 0 && auth()->user()->can('Eliminar Abonos')),
+                ->visible(fn ($record) => $record->tipo_registro === 'abono' && auth()->user()->can('Eliminar Abonos') && ($this->record->saldo_actual > 0 || !$this->clienteTieneOtroCreditoActivo())),
+/*
+            Tables\Actions\Action::make('edit_credit')
+                ->label('')
+                ->icon('heroicon-o-pencil-alt')
+                ->color('primary')
+                ->tooltip('Editar Crédito')
+                ->url(function () {
+                    session([
+                        'return_to_credito_view' => true,
+                        'credito_id_return' => $this->record->id_credito,
+                    ]);
+                    return \App\Filament\Resources\CreditosResource::getUrl('edit', ['record' => $this->record->id_credito]);
+                })
+                ->visible(fn ($record) => $record->tipo_registro === 'credito' && auth()->user()->can('update', $this->record) && !$this->clienteTieneOtroCreditoActivo()),
+*/
+            Tables\Actions\Action::make('delete_credit')
+                ->label('')
+                ->icon('heroicon-o-trash')
+                ->color('danger')
+                ->button()
+                ->requiresConfirmation()
+                ->modalHeading('Eliminar Crédito')
+                ->modalSubheading('¿Está seguro que desea eliminar este crédito? Esta acción no se puede deshacer.')
+                ->modalButton('Sí, eliminar')
+                ->visible(fn ($record) => $record->tipo_registro === 'credito' && !$this->record->abonos()->exists() && auth()->user()->can('delete', $this->record))
+                ->action(function () {
+                    if ($this->record->abonos()->exists()) {
+                        Notification::make()
+                            ->title('No se puede eliminar el crédito')
+                            ->body('Este crédito tiene abonos realizados y no puede ser eliminado.')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    DB::transaction(function () {
+                        if ($this->record->yapeCliente) {
+                            $this->record->yapeCliente->forceDelete();
+                        }
+
+                        $clienteNombre = $this->record->cliente?->nombre . ' ' . $this->record->cliente?->apellido;
+                        $rutaNombre = $this->record->cliente?->ruta?->nombre ?? 'Ruta desconocida';
+
+                        \App\Models\LogActividad::registrar(
+                            'Créditos',
+                            "Eliminó el crédito de {$clienteNombre} de la ruta {$rutaNombre}",
+                            [
+                                'credito_id' => $this->record->id_credito,
+                                'cliente_id' => $this->record->id_cliente,
+                                'datos_eliminados' => $this->record->toArray(),
+                            ]
+                        );
+
+                        $this->record->delete();
+                    });
+
+                    Notification::make()
+                        ->title('Crédito eliminado')
+                        ->success()
+                        ->send();
+
+                    try {
+                        $this->dispatch('refreshComponent');
+                    } catch (\Throwable $e) {
+                        // Silenciar errores
+                    }
+
+                    $this->redirect(\App\Filament\Resources\CreditosResource::getUrl('index'));
+                }),
         ];
+    }
+
+    private function clienteTieneOtroCreditoActivo(): bool
+    {
+        $clienteId = $this->record->id_cliente ?? null;
+        if (!$clienteId) {
+            return false;
+        }
+        return Creditos::where('id_cliente', $clienteId)
+            ->where('saldo_actual', '>', 0)
+            ->where('id_credito', '!=', $this->record->id_credito)
+            ->exists();
     }
 
 
