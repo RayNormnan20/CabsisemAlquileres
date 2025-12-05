@@ -204,6 +204,14 @@
                             Abono sin firma Chis
                         </a>
                     </div>
+                     <!-- Nueva opción: Abono no Reg. -->
+                    <div class="py-1" role="none">
+                        <a href="{{ ($clienteId ?? null) ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono no Registrado']) : '#' }}"
+                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            wire:navigate @if(!($clienteId ?? null)) onclick="return false;" @endif>
+                            Abono no Registrado
+                        </a>
+                    </div>
                     <!-- Ejemplo para "otros egresos" -->
                     <div class="py-1" role="none">
                         <a href="{{ route('filament.resources.concepto-abonos.create', ['tipo' => 'OTROS EGRESOS']) }}"
@@ -268,14 +276,6 @@
                         </a>
                     </div>
 
-                    <!-- Nueva opción: Abono no Reg. -->
-                    <div class="py-1" role="none">
-                        <a href="{{ ($clienteId ?? null) ? route('filament.resources.abonos.create', ['cliente_id' => $clienteId, 'metodo_pago' => 'Abono no Registrado']) : '#' }}"
-                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 {{ !($clienteId ?? null) ? 'opacity-50 cursor-not-allowed' : '' }}"
-                            wire:navigate @if(!($clienteId ?? null)) onclick="return false;" @endif>
-                            Abono no Registrado
-                        </a>
-                    </div>
 
                 </div>
             </div>
