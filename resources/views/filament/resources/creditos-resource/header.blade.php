@@ -8,7 +8,8 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
 <div class="mb-6">
     <div class="flex items-center justify-center gap-4 mb-4">
         {{-- Botón anterior --}}
-        <button wire:click="$set('clienteId', {{ $anteriorId ?? 'null' }})"
+        <button type="button"
+            onclick="window.location.href='{{ route('filament.resources.creditos.index') }}{{ $anteriorId ? ('?cliente_id=' . $anteriorId) : '' }}'"
             class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-sm rounded-md disabled:opacity-50"
             @disabled($anteriorId===null)>
             ◀
@@ -40,6 +41,13 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
                 this.selectedClienteId = id === '' ? null : parseInt(id);
                 this.open = false;
                 this.search = '';
+                // Recargar la página con cliente_id para forzar render completo del bloque
+                const baseUrl = '{{ route('filament.resources.creditos.index') }}';
+                if (id && id !== '') {
+                    window.location.href = `${baseUrl}?cliente_id=${id}`;
+                } else {
+                    window.location.href = baseUrl;
+                }
             }
         }">
             <label for="clienteId"
@@ -81,7 +89,8 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
                         <button @click="selectCliente(id, nombre)" type="button"
                             class="w-full px-3 py-2 text-left text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
                             :class="{ 'bg-primary-50 dark:bg-primary-900 text-primary-600 dark:text-primary-400': selectedClienteId == id }">
-                            <span x-text="nombre" :class="!clientesActivos[id] ? 'text-red-600 dark:text-red-400' : ''"></span>
+                            <span x-text="nombre"
+                                :class="!clientesActivos[id] ? 'text-red-600 dark:text-red-400' : ''"></span>
                         </button>
                     </template>
 
@@ -95,7 +104,8 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
         </div>
 
         {{-- Botón siguiente --}}
-        <button wire:click="$set('clienteId', {{ $siguienteId ?? 'null' }})"
+        <button type="button"
+            onclick="window.location.href='{{ route('filament.resources.creditos.index') }}{{ $siguienteId ? ('?cliente_id=' . $siguienteId) : '' }}'"
             class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-sm rounded-md disabled:opacity-50"
             @disabled($siguienteId===null)>
             ▶
@@ -199,7 +209,7 @@ $siguienteId = isset($clienteIds[$currentIndex + 1]) ? $clienteIds[$currentIndex
             </svg>
             Historial
         </button>
-        
+
     </div>
 </div>
 
@@ -214,9 +224,11 @@ $cliente->loadMissing('creditos');
     {{-- Encabezado con nombre y botones --}}
     <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         @php
-            $tieneActivo = $cliente->creditos->where('saldo_actual', '>', 0)->isNotEmpty();
+        $tieneActivo = $cliente->creditos->where('saldo_actual', '>', 0)->isNotEmpty();
         @endphp
-        <h2 class="text-2xl font-bold {{ $tieneActivo ? 'text-gray-800 dark:text-gray-200' : 'text-red-600 dark:text-red-400' }}">{{ $cliente->nombre_completo }}</h2>
+        <h2
+            class="text-2xl font-bold {{ $tieneActivo ? 'text-gray-800 dark:text-gray-200' : 'text-red-600 dark:text-red-400' }}">
+            {{ $cliente->nombre_completo }}</h2>
 
         <div x-data="{
             open: false,
@@ -644,7 +656,12 @@ $cliente->loadMissing('creditos');
                                     console.log(data);
                                     this.limpiarMediosPago();
                                     this.showDeactivationModal = false;
-                                    location.reload(); // Recargar para ver los cambios
+                                    // Limpiar sesión de cliente y redirigir al índice sin cliente seleccionado
+                                    if (window.Livewire) {
+                                        Livewire.emit('clearClienteSeleccionado');
+                                    }
+                                    const baseUrl = `{{ route('filament.resources.creditos.index') }}`;
+                                    window.location.href = baseUrl;
                                 } else {
                                     alert(data.error || 'Error al renovar');
                                 }
@@ -715,7 +732,12 @@ $cliente->loadMissing('creditos');
                                     alert(data.message);
                                     this.limpiarMediosPago();
                                     this.showDeactivationModal = false;
-                                    location.reload(); // Recargar para ver los cambios
+                                    // Limpiar sesión de cliente y redirigir al índice sin cliente seleccionado
+                                    if (window.Livewire) {
+                                        Livewire.emit('clearClienteSeleccionado');
+                                    }
+                                    const baseUrl = `{{ route('filament.resources.creditos.index') }}`;
+                                    window.location.href = baseUrl;
                                 } else {
                                     alert(data.error || 'Error al actualizar');
                                 }
@@ -849,15 +871,12 @@ $cliente->loadMissing('creditos');
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                // Cerrar modal de confirmación y mostrar resultado con saldo 0
+                                // Mostrar modal de resultado para elegir crear/renovar o cancelar
                                 this.showCancelModal = false;
                                 this.cancelSaldoActual = 0;
                                 this.showCancelResultModal = true;
-                                // Guardar posible URL de redirección
-                                this.cancelRedirectUrl = data.redirect_url || this.cancelRedirectUrl;
-                                if (window.Livewire) {
-                                    Livewire.emit('clearClienteSeleccionado');
-                                }
+                                // Guardar posible URL de redirección para crear/renovar
+                                this.cancelRedirectUrl = data.redirect_url || `{{ route('filament.resources.creditos.create', ['cliente_id' => $cliente->id_cliente]) }}`;
                             } else {
                                 alert(data.error || 'Error al cancelar el crédito.');
                             }
@@ -1448,33 +1467,41 @@ $cliente->loadMissing('creditos');
                 x-transition:leave="ease-in duration-200"
                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+                aria-modal="true">
                 <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                     <div x-show="showCancelModal" x-transition:enter="ease-out duration-300"
                         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                         x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-                        aria-hidden="true" @click="showCancelModal = false"></div>
+                        x-transition:leave-end="opacity-0"
+                        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" aria-hidden="true"
+                        @click="showCancelModal = false"></div>
 
                     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
                     <div x-show="showCancelModal" x-transition:enter="ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                             <div class="sm:flex sm:items-start">
-                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                    <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.26-3.168 1.26-4.034 0L.436 4.673A1.875 1.875 0 012.007 2.25h14.536a1.875 1.875 0 011.571 2.423L12 9v3.75M10.125 15.75L12 21.75l-1.875-6zm-.825-4.725L12 11.25m0 0l-1.875-6z" />
+                                <div
+                                    class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M12 9v3.75m-9.303 3.376c-.866 1.26-3.168 1.26-4.034 0L.436 4.673A1.875 1.875 0 012.007 2.25h14.536a1.875 1.875 0 011.571 2.423L12 9v3.75M10.125 15.75L12 21.75l-1.875-6zm-.825-4.725L12 11.25m0 0l-1.875-6z" />
                                     </svg>
                                 </div>
                                 <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                                     <h2 class="text-lg font-semibold text-gray-900">Cancelar Crédito</h2>
-                                    <p class="mt-2 text-sm text-gray-700">Saldo actual: <span class="font-bold">S/ <span x-text="Number(cancelSaldoActual).toFixed(2)"></span></span></p>
-                                    <p class="mt-1 text-sm text-gray-600">¿Está seguro de que desea cancelar este crédito?</p>
+                                    <p class="mt-2 text-sm text-gray-700">Saldo actual: <span class="font-bold">S/ <span
+                                                x-text="Number(cancelSaldoActual).toFixed(2)"></span></span></p>
+                                    <p class="mt-1 text-sm text-gray-600">¿Está seguro de que desea cancelar este
+                                        crédito?</p>
                                 </div>
                             </div>
                         </div>
@@ -1496,16 +1523,29 @@ $cliente->loadMissing('creditos');
             <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300"
                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
                 <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                    <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" aria-hidden="true" @click="showCancelResultModal = false"></div>
+                    <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" aria-hidden="true"
+                        @click="showCancelResultModal = false"></div>
                     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                    <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                    <div x-show="showCancelResultModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
                         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                             <h2 class="text-lg font-semibold text-gray-900">Abono realizado!</h2>
-                            <p class="mt-2 text-sm text-gray-700">Saldo: <span class="font-bold">S/ <span x-text="Number(cancelSaldoActual).toFixed(2)"></span></span></p>
+                            <p class="mt-2 text-sm text-gray-700">Saldo: <span class="font-bold">S/ <span
+                                        x-text="Number(cancelSaldoActual).toFixed(2)"></span></span></p>
                             <p class="mt-2 text-sm text-gray-700">¿Desea renovar el crédito?</p>
                         </div>
                         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -1513,7 +1553,8 @@ $cliente->loadMissing('creditos');
                                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-white text-base font-medium hover:bg-primary-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
                                 Aceptar
                             </button>
-                            <button type="button" @click="showCancelResultModal = false; if (window.Livewire) { Livewire.emit('clearClienteSeleccionado'); } location.reload();"
+                            <button type="button"
+                                @click="showCancelResultModal = false; if (window.Livewire) { Livewire.emit('clearClienteSeleccionado'); } const baseUrl = `{{ route('filament.resources.creditos.index') }}`; window.location.href = baseUrl;"
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
                                 Cancelar
                             </button>
