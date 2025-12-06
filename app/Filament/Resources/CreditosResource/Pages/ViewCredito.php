@@ -17,6 +17,12 @@ class ViewCredito extends ViewRecord
         ];
     }
 
+    protected function getActions(): array
+    {
+        // Asegura que no se muestren acciones globales (como Editar)
+        return [];
+    }
+
     protected function getTitle(): string
     {
         return 'Historial de Abonos'; // Deja el título vacío
