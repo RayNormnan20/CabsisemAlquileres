@@ -44,6 +44,10 @@ Route::post('/login', [CalcLoginController::class, 'authenticate'])
     ->middleware(['web'])
     ->name('login.post');
 
+Route::post('/login/check', [CalcLoginController::class, 'checkLoginExists'])
+    ->middleware(['web'])
+    ->name('login.check');
+
 // Mobile logout route
 Route::post('/mobile-logout', function () {
     // Capturar la última vista para retorno post-login
@@ -126,11 +130,13 @@ Route::post('/filament/logout', function () {
     request()->session()->invalidate();
     request()->session()->regenerateToken();
 
-    // Restaurar los datos de login diario después del logout
-    if ($dailyLoginPhone && $dailyLoginDate) {
-        request()->session()->put('daily_login_phone', $dailyLoginPhone);
-        request()->session()->put('daily_login_date', $dailyLoginDate);
-    }
+    // Restaurar los datos de login diario después del logout (comentado para forzar celular en ingreso manual)
+    // if ($dailyLoginPhone && $dailyLoginDate) {
+    //     request()->session()->put('daily_login_phone', $dailyLoginPhone);
+    //     request()->session()->put('daily_login_date', $dailyLoginDate);
+    // }
+    // Marcar el tipo de logout como manual
+    request()->session()->put('last_logout_type', 'manual');
 
     // Restaurar la ruta seleccionada después del logout
     if (!is_null($selectedRutaId)) {

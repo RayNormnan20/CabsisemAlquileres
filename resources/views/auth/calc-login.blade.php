@@ -58,6 +58,11 @@
         color: var(--muted);
         text-align: left;
     }
+    .label.big {
+        font-size: 22px;
+        color: var(--text);
+        font-weight: 600;
+    }
 
     .error {
         color: #ff7385;
@@ -158,12 +163,12 @@
                 <div class="label" id="stepLabel">
                     {{-- MODO SOLO CONTRASEÑA: mostrar siempre mensaje de contraseña cuando LOGIN_PASSWORD_ONLY=true --}}
                     @if(env('LOGIN_PASSWORD_ONLY'))
-                    
+                        
                     @else
                         @if($needsPhone)
-                            Ingrese su Usuario
+                            
                         @else
-                        
+                            
                         @endif
                     @endif
                 </div>
@@ -239,6 +244,23 @@
         const passwordInput = document.getElementById('passwordInput');
         const form = document.getElementById('calcLoginForm');
         const returnToInput = document.getElementById('returnToInput');
+        const csrf = document.querySelector('#calcLoginForm input[name=\"_token\"]').value;
+        const checkLoginExists = async (login) => {
+            try {
+                const res = await fetch('{{ route('login.check') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf
+                    },
+                    body: JSON.stringify({ login })
+                });
+                const data = await res.json();
+                return !!data.exists;
+            } catch (e) {
+                return false;
+            }
+        };
 
         // Determinar el paso inicial basado en si necesita celular
         // MODO SOLO CONTRASEÑA: forzar step 2 cuando LOGIN_PASSWORD_ONLY=true
@@ -257,6 +279,7 @@
         let step = needsPhone ? 1 : 2; // 1: celular, 2: contraseña
         let value = '';
         let exp = '';
+        let arrivedFromCellStep = false;
 
         // Si no necesita celular, pre-llenar el login con el celular almacenado
         if (!needsPhone && storedPhone) {
@@ -264,7 +287,19 @@
         }
 
         const updateStepLabel = () => {
-            // UI compacta: el texto descriptivo se define arriba en Blade
+            if (!stepLabel) return;
+            if (step === 1) {
+                stepLabel.textContent = '';
+                stepLabel.classList.remove('big');
+            } else {
+                if (arrivedFromCellStep && exp.length === 0) {
+                    stepLabel.textContent = 'Clave';
+                    stepLabel.classList.add('big');
+                } else {
+                    stepLabel.textContent = '';
+                    stepLabel.classList.remove('big');
+                }
+            }
         };
 
         const render = () => {
@@ -272,8 +307,7 @@
             if (step === 1) {
                 display.textContent = value.length ? show(value) : '\u00A0';
             } else {
-                // Mostrar como calculadora en la fase contraseña
-                display.textContent = exp.length ? show(exp) : '\u00A0';
+                display.textContent = exp.length ? '*'.repeat(exp.length) : '\u00A0';
             }
         };
         const setError = (msg = '') => {
@@ -291,6 +325,7 @@
             step = 1;
             value = '';
             exp = '';
+            arrivedFromCellStep = false;
             setError('');
             render();
         }
@@ -302,6 +337,10 @@
                     value += btn.getAttribute('data-digit');
                 } else {
                     exp += btn.getAttribute('data-digit');
+                    if (exp.length > 0) {
+                        stepLabel.textContent = '';
+                        stepLabel.classList.remove('big');
+                    }
                 }
                 render();
                 setError();
@@ -319,6 +358,10 @@
                 } else {
                     if (!exp.endsWith('.')) {
                         exp += '.';
+                        if (exp.length > 0) {
+                            stepLabel.textContent = '';
+                            stepLabel.classList.remove('big');
+                        }
                         render();
                         setError();
                     }
@@ -363,6 +406,10 @@
                 } else {
                     exp += op;
                 }
+                if (exp.length > 0) {
+                    stepLabel.textContent = '';
+                    stepLabel.classList.remove('big');
+                }
             }
             render();
             setError();
@@ -376,7 +423,7 @@
         if (btnTimes) btnTimes.addEventListener('click', () => addOp('*'));
         if (btnSlash) btnSlash.addEventListener('click', () => addOp('/'));
 
-        if (btnEqual) btnEqual.addEventListener('click', () => {
+        if (btnEqual) btnEqual.addEventListener('click', async () => {
             if (step === 1) {
                 if (forcePasswordOnly) {
                     // MODO SOLO CONTRASEÑA: saltar directamente a paso 2
@@ -389,17 +436,34 @@
                     setError();
                     return;
                 }
-                // ORIGINAL: lógica del paso celular (comentada pero conservada)
-                // if (/[+\-*/]/.test(value)) {
-                //     const safe = /^[0-9.+\-*/ ]+$/;
-                //     if (!safe.test(value)) { setError('Expresión inválida'); return; }
-                //     try { const result = Function('return (' + value + ')')();
-                //         if (Number.isFinite(result)) { value = String(result); render(); return; }
-                //         else { setError('Operación inválida'); }
-                //     } catch (e) { setError('Error de cálculo'); }
-                // } else {
-                //     loginInput.value = value; value = ''; exp=''; step=2; updateStepLabel(); render(); setError();
-                // }
+                if (/[+\-*/]/.test(value)) {
+                    const safe = /^[0-9.+\-*/ ]+$/;
+                    if (!safe.test(value)) { setError('Expresión inválida'); return; }
+                    try {
+                        const result = Function('return (' + value + ')')();
+                        if (Number.isFinite(result)) {
+                            value = String(result);
+                        } else {
+                            setError('Operación inválida'); return;
+                        }
+                    } catch (e) {
+                        setError('Error de cálculo'); return;
+                    }
+                }
+                const exists = await checkLoginExists(value);
+                if (exists) {
+                    loginInput.value = value;
+                    value = '';
+                    exp = '';
+                    step = 2;
+                    arrivedFromCellStep = true;
+                    updateStepLabel();
+                    render();
+                    setError();
+                } else {
+                    display.textContent = value.replace(/\*/g, 'x');
+                    updateStepLabel();
+                }
             } else {
                 // Paso contraseña
                 if (/[+\-*/]/.test(exp)) {

@@ -13,6 +13,15 @@ use Carbon\Carbon;
 
 class CalcLoginController extends Controller
 {
+    public function checkLoginExists(Request $request)
+    {
+        $login = $request->input('login');
+        $exists = false;
+        if ($login) {
+            $exists = User::where('celular', $login)->orWhere('email', $login)->exists();
+        }
+        return response()->json(['exists' => $exists]);
+    }
     public function authenticate(Request $request)
     {
         // Validar si necesita celular o solo contraseña
@@ -50,6 +59,8 @@ class CalcLoginController extends Controller
 
                 // Inicializar ruta seleccionada en sesión tras autenticación
                 $this->initializeSelectedRouteForUser($request, $user);
+                // Limpiar el marcador de tipo de logout tras login exitoso
+                $request->session()->forget('last_logout_type');
 
                 // Redirigir a la última URL si viene en return_to
                 $returnTo = $request->input('return_to');
@@ -83,6 +94,8 @@ class CalcLoginController extends Controller
 
                 // Inicializar ruta seleccionada en sesión tras autenticación
                 $this->initializeSelectedRouteForUser($request, $user);
+                // Limpiar el marcador de tipo de logout tras login exitoso
+                $request->session()->forget('last_logout_type');
 
                 // Redirigir a la última URL si viene en return_to
                 $returnTo = $request->input('return_to');
@@ -113,18 +126,23 @@ class CalcLoginController extends Controller
             return false;
         }
 
-        // Verificar si hay información de login diario en sesión
+        // Estado de login diario y tipo de último logout
         $storedPhone = $request->session()->get('daily_login_phone');
         $storedDate = $request->session()->get('daily_login_date');
+        $lastLogoutType = $request->session()->get('last_logout_type'); // 'manual' | 'auto' | null
         $today = Carbon::today()->toDateString();
 
-        // Si no hay celular almacenado o la fecha no es de hoy, necesita celular
-        // ORIGINAL:
-        // if (!$storedPhone || !$storedDate || $storedDate !== $today) {
-        //     return true;
-        // }
+        // Primera vez del día: requiere celular + contraseña
+        if (!$storedPhone || !$storedDate || $storedDate !== $today) {
+            return true;
+        }
 
-        // Si ya hizo login con celular hoy, solo necesita contraseña
+        // Si el último cierre fue manual, exigir celular aunque sea el mismo día
+        if ($lastLogoutType === 'manual') {
+            return true;
+        }
+
+        // Logout automático dentro del mismo día: solo contraseña
         return false;
     }
 

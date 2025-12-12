@@ -60,6 +60,9 @@ class MobileSessionManager
                     $request->session()->put('daily_login_phone', $dailyLoginPhone);
                     $request->session()->put('daily_login_date', $dailyLoginDate);
                 }
+                
+                // Marcar el tipo de logout como automático
+                $request->session()->put('last_logout_type', 'auto');
 
                 // No restaurar la ruta seleccionada tras reingreso.
                 // La ruta inicial debe sincronizarse según el usuario autenticado
@@ -84,6 +87,7 @@ class MobileSessionManager
                     'preserved_ruta_name' => null,
                     'preserved_creditos_cliente_id' => $selectedCreditosClienteId ?? null,
                     'preserved_abonos_cliente_id' => $selectedAbonosClienteId ?? null,
+                    'last_logout_type' => 'auto',
                 ]);
 
                 return response()->json([
