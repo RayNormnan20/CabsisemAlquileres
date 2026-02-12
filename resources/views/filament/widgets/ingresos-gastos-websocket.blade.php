@@ -167,6 +167,38 @@
                                 window.location.reload();
                             }, 3000);
                         }, 500);
+                    })
+                    .listen('.credito.deleted', (e) => {
+                        console.log('🗑️ Crédito eliminado:', e);
+
+                        // Mostrar notificación de Filament
+                        if (typeof window.filament !== 'undefined' && window.filament.notify) {
+                            window.filament.notify({
+                                title: 'Movimiento Eliminado',
+                                body: e.message || 'Se ha eliminado un crédito',
+                                status: 'warning',
+                                duration: 4000
+                            });
+                        } else if (typeof $filament !== 'undefined' && $filament.notify) {
+                            $filament.notify('warning', e.message || 'Se ha eliminado un crédito');
+                        }
+
+                        // Actualizar la tabla inmediatamente
+                        Livewire.emit('refreshTable');
+                        
+                        // Intentar actualizar componentes específicos
+                        const wireElements = document.querySelectorAll('[wire\\:id]');
+                        wireElements.forEach(element => {
+                            const wireId = element.getAttribute('wire:id');
+                            if (wireId) {
+                                try {
+                                    const component = Livewire.find(wireId);
+                                    if (component) {
+                                        component.call('$refresh');
+                                    }
+                                } catch (error) {}
+                            }
+                        });
                     });
                     
                 // También suscribirse al canal específico de ingresos-gastos

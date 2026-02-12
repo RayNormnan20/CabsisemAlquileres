@@ -9,6 +9,7 @@ use App\Events\CreditoCreated;
 use App\Events\CreditoUpdated;
 use App\Events\MovimientoCreated;
 use App\Events\MovimientoUpdated;
+use App\Events\MovimientoDeleted;
 use App\Events\PlanillaRecaudadorCreated;
 use App\Events\PlanillaRecaudadorUpdated;
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CreditosResource\Pages;
 use App\Filament\Resources\CreditosResource;
 use App\Models\ConceptoCredito;
 use App\Models\LogActividad;
+use App\Events\CreditoDeleted;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
@@ -391,6 +392,19 @@ class EditCreditos extends EditRecord
                         ->title('Crédito eliminado exitosamente')
                         ->success()
                         ->send();
+
+                    // Disparar evento para actualización en tiempo real
+                    try {
+                        $record = $this->record;
+                        $idRuta = $record->id_ruta;
+                        if (!$idRuta && $record->cliente) {
+                            $idRuta = $record->cliente->id_ruta;
+                        }
+
+                        if ($idRuta) {
+                            event(new CreditoDeleted($idRuta, $record->toArray()));
+                        }
+                    } catch (\Throwable $e) {}
                 }),
         ];
     }

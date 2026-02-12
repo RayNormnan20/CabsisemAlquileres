@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CreditosResource\Pages;
 use App\Models\Clientes;
+use App\Events\CreditoDeleted;
 use App\Models\Creditos;
 use App\Models\OrdenCobro;
 use App\Models\TipoPago;
@@ -1160,11 +1161,26 @@ class CreditosResource extends Resource
                             ]
                         );
                     })
-                    ->after(function () {
+                    ->after(function ($record) {
                         \Filament\Notifications\Notification::make()
                             ->title('Crédito eliminado exitosamente')
                             ->success()
                             ->send();
+
+                        // Disparar evento para actualización en tiempo real
+                        try {
+                            $idRuta = $record->id_ruta;
+                            // Si no tiene id_ruta directo, intentar obtenerlo del cliente (si la relación es accesible)
+                            if (!$idRuta && $record->cliente) {
+                                $idRuta = $record->cliente->id_ruta;
+                            }
+
+                            if ($idRuta) {
+                                event(new CreditoDeleted($idRuta, $record->toArray()));
+                            }
+                        } catch (\Throwable $e) {
+                            // Ignorar errores al disparar evento de eliminación para no bloquear la UI
+                        }
                     })
                     ->extraAttributes([
                         'title' => 'Eliminar',

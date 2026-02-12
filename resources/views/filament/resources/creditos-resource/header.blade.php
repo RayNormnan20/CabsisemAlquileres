@@ -1607,3 +1607,124 @@ $cliente->loadMissing('creditos');
 
 </div>
 @endif
+
+<script>
+    // WebSocket listeners para actualizaciones en tiempo real de Créditos
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.Echo !== 'undefined') {
+            // Obtener la ruta del usuario desde la sesión
+            const rutaId = {!! json_encode(session('selected_ruta_id')) !!};
+
+            if (rutaId) {
+                console.log('🔌 Conectando WebSocket para Créditos en ruta:', rutaId);
+                
+                // Suscribirse al canal público de la ruta
+                const channel = window.Echo.channel(`ruta.${rutaId}`);
+
+                const handleUpdate = (data, type) => {
+                    console.log(`📡 Evento recibido (${type}):`, data);
+
+                    // 1. Mostrar notificación
+                    let message = data.message;
+                    let title = 'Crédito Actualizado';
+                    let status = 'info';
+
+                    if (type === 'created') {
+                        message = message || 'Nuevo crédito registrado';
+                        title = 'Nuevo Crédito';
+                        status = 'success';
+                    } else if (type === 'deleted') {
+                        message = message || 'Crédito eliminado';
+                        title = 'Crédito Eliminado';
+                        status = 'warning';
+                    } else if (type === 'updated') {
+                        message = message || 'Crédito actualizado';
+                    }
+
+                    if (typeof window.filament !== 'undefined' && window.filament.notify) {
+                        window.filament.notify({
+                            title: title,
+                            body: message,
+                            status: status,
+                            duration: 4000
+                        });
+                    } else if (typeof $filament !== 'undefined' && $filament.notify) {
+                        $filament.notify(status, message);
+                    }
+
+                    // 2. Actualizar tablas inmediatamente
+                    setTimeout(() => {
+                        console.log('🔄 Iniciando actualización de tablas de créditos...');
+                        
+                        if (typeof Livewire !== 'undefined') {
+                            // Método 1: Actualizar TODOS los componentes Livewire (más agresivo pero efectivo)
+                            if (Livewire.components && Livewire.components.componentsById) {
+                                Object.keys(Livewire.components.componentsById).forEach(componentId => {
+                                    const component = Livewire.components.componentsById[componentId];
+                                    if (component && component.call) {
+                                        // Intentar identificar si es una tabla o lista de registros
+                                        if (component.fingerprint && component.fingerprint.name && 
+                                           (component.fingerprint.name.includes('list') || component.fingerprint.name.includes('table'))) {
+                                            console.log('🔄 Actualizando componente de tabla:', component.fingerprint.name);
+                                            try {
+                                                component.call('$refresh');
+                                            } catch (error) { console.warn('Error refreshing component:', error); }
+                                        } else {
+                                            // Si no estamos seguros, intentar refrescar de todos modos si parece relevante
+                                            try {
+                                                component.call('$refresh');
+                                            } catch (e) {}
+                                        }
+                                    }
+                                });
+                            }
+
+                            // Método 2: Emitir eventos globales estándar
+                            Livewire.emit('refreshComponent');
+                            Livewire.emit('$refresh');
+                            Livewire.emit('refreshTable'); // Evento común
+                            
+                            // Método 3: Actualizar por selectores DOM específicos de Filament
+                            const tableComponents = document.querySelectorAll('[wire\\:id][class*="table"], [wire\\:id][class*="ListRecords"]');
+                            tableComponents.forEach(element => {
+                                const wireId = element.getAttribute('wire:id');
+                                if (wireId) {
+                                    try {
+                                        const component = Livewire.find(wireId);
+                                        if (component) {
+                                            component.call('$refresh');
+                                            console.log('📊 Tabla actualizada por ID:', wireId);
+                                        }
+                                    } catch (error) {}
+                                }
+                            });
+                            
+                            // Método 4: Buscar botones de refresh explícitos
+                            const refreshButtons = document.querySelectorAll('[wire\\:click*="refresh"], [wire\\:click="$refresh"]');
+                            refreshButtons.forEach(button => {
+                                try { button.click(); } catch (e) {}
+                            });
+                        } else {
+                            // Fallback si Livewire no está definido globalmente (raro en Filament)
+                            console.warn('Livewire no encontrado globalmente, recargando página...');
+                            window.location.reload();
+                        }
+                    }, 500);
+                };
+
+                // Escuchar eventos
+                channel.listen('.credito.created', (data) => handleUpdate(data, 'created'));
+                channel.listen('.credito.updated', (data) => handleUpdate(data, 'updated'));
+                channel.listen('.credito.deleted', (data) => handleUpdate(data, 'deleted'));
+                
+                // También escuchar eventos de abonos para actualizar saldos si es necesario
+                channel.listen('.abono.created', (data) => handleUpdate(data, 'abono_created'));
+
+            } else {
+                console.warn('No hay ruta seleccionada en sesión, WebSockets de créditos no activos.');
+            }
+        } else {
+            console.error('Echo no está disponible. Verifica la configuración de WebSockets (Laravel Echo).');
+        }
+    });
+</script>

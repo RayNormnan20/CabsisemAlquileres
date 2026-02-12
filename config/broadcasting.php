@@ -36,19 +36,11 @@ return [
             'secret' => env('PUSHER_APP_SECRET'),
             'app_id' => env('PUSHER_APP_ID'),
             'options' => [
-                'host' => env('PUSHER_HOST', env('APP_ENV') === 'production' ? 'cabsisem.net.pe' : '127.0.0.1'),
-                'port' => env('PUSHER_PORT', env('APP_ENV') === 'production' ? 6001 : 6001),
-                'scheme' => env('PUSHER_SCHEME', env('APP_ENV') === 'production' ? 'https' : 'http'),
-                'encrypted' => env('APP_ENV') === 'production',
-                'useTLS' => env('PUSHER_SCHEME', env('APP_ENV') === 'production' ? 'https' : 'http') === 'https',
-                'curl_options' => [
-                    CURLOPT_SSL_VERIFYHOST => env('APP_ENV') === 'production' ? 2 : 0,
-                    CURLOPT_SSL_VERIFYPEER => env('APP_ENV') === 'production' ? true : false,
-                ],
+                'cluster' => env('PUSHER_APP_CLUSTER'),
+                'useTLS' => true,
             ],
             'client_options' => [
-                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
-                'verify' => env('APP_ENV') === 'production',
+                // Guzzle client options: `https://docs.guzzlephp.org/en/stable/request-options.html`
             ],
         ],
 

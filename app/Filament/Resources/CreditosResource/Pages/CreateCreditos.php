@@ -10,6 +10,7 @@ use App\Models\Creditos;
 use App\Models\LogActividad;
 use App\Models\TipoPago;
 use App\Models\YapeCliente;
+use App\Events\CreditoCreated;
 use Carbon\Carbon;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
