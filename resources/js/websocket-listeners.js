@@ -8,7 +8,7 @@ export function initializeWebSocketListeners() {
     }
 
     // Escuchar canales públicos para todos los eventos
-    
+
     // Canal para eventos de clientes
     window.Echo.channel('clientes')
         .listen('.cliente.created', (data) => {
@@ -73,64 +73,64 @@ function setupWebSocketListeners() {
 function handleCreditoCreated(data) {
     // Mostrar notificación
     showNotification('success', data.message || 'Nuevo crédito creado');
-    
+
     // Actualizar tablas si están visibles
     refreshCreditosTable();
-    
+
     // Actualizar contadores/estadísticas
     updateDashboardStats();
-    
+
     // Si estamos en la página de créditos, agregar la nueva fila
     addCreditoToTable(data.credito);
 }
 
 function handleCreditoUpdated(data) {
     showNotification('info', data.message || 'Crédito actualizado');
-    
+
     // Actualizar la fila específica en la tabla
     updateCreditoInTable(data.credito);
-    
+
     // Actualizar estadísticas
     updateDashboardStats();
 }
 
 function handleClienteCreated(data) {
-    showNotification('success', data.message || 'Nuevo cliente registrado');
-    
+    // showNotification('success', data.message || 'Nuevo cliente registrado');
+
     // Actualizar tabla de clientes
     refreshClientesTable();
-    
+
     // Agregar cliente a la tabla si está visible
     addClienteToTable(data.cliente);
 }
 
 function handleClienteUpdated(data) {
-    showNotification('info', data.message || 'Cliente actualizado');
-    
+    //showNotification('info', data.message || 'Cliente actualizado');
+
     // Actualizar la fila del cliente
     updateClienteInTable(data.cliente);
 }
 
 function handleAbonoCreated(data) {
     showNotification('success', data.message || 'Nuevo abono registrado');
-    
+
     // Actualizar tablas relacionadas
     refreshAbonosTable();
     refreshCreditosTable(); // Los saldos pueden haber cambiado
-    
+
     // Actualizar estadísticas
     updateDashboardStats();
-    
+
     // Agregar abono a la tabla
     addAbonoToTable(data.abono);
 }
 
 function handleAbonoUpdated(data) {
     showNotification('info', data.message || 'Abono actualizado');
-    
+
     // Actualizar la fila del abono
     updateAbonoInTable(data.abono);
-    
+
     // Actualizar créditos relacionados
     refreshCreditosTable();
 }
@@ -161,7 +161,7 @@ function refreshCreditosTable() {
     if (typeof Livewire !== 'undefined') {
         Livewire.emit('refreshTable');
     }
-    
+
     // Si estamos usando DataTables
     if (typeof $.fn.DataTable !== 'undefined') {
         const table = $('#creditos-table').DataTable();
@@ -169,7 +169,7 @@ function refreshCreditosTable() {
             table.ajax.reload(null, false);
         }
     }
-    
+
     // Si estamos usando Filament
     if (window.filamentData) {
         // Trigger refresh en Filament
@@ -182,7 +182,7 @@ function refreshClientesTable() {
     if (typeof Livewire !== 'undefined') {
         // Refrescar todos los componentes de tabla de clientes
         Livewire.emit('refreshComponent');
-        
+
         // Buscar componentes específicos de clientes
         const clientesComponents = document.querySelectorAll('[wire\\:id*="clientes"], [wire\\:id*="cliente"]');
         clientesComponents.forEach(component => {
@@ -192,7 +192,7 @@ function refreshClientesTable() {
             }
         });
     }
-    
+
     // Para DataTables tradicionales
     if (typeof $.fn.DataTable !== 'undefined') {
         const table = $('#clientes-table').DataTable();
@@ -200,7 +200,7 @@ function refreshClientesTable() {
             table.ajax.reload(null, false);
         }
     }
-    
+
     // Disparar evento personalizado para otros listeners
     window.dispatchEvent(new CustomEvent('clientes-table-refresh'));
 }
@@ -209,7 +209,7 @@ function refreshAbonosTable() {
     if (typeof Livewire !== 'undefined') {
         Livewire.emit('refreshAbonosTable');
     }
-    
+
     if (typeof $.fn.DataTable !== 'undefined') {
         const table = $('#abonos-table').DataTable();
         if (table) {
@@ -223,7 +223,7 @@ function updateDashboardStats() {
     if (typeof Livewire !== 'undefined') {
         Livewire.emit('updateStats');
     }
-    
+
     // O hacer una llamada AJAX para obtener nuevas estadísticas
     fetch('/api/dashboard-stats')
         .then(response => response.json())
@@ -242,7 +242,7 @@ function updateStatsElements(stats) {
         'saldo-pendiente': stats.saldoPendiente,
         'clientes-activos': stats.clientesActivos
     };
-    
+
     Object.entries(elements).forEach(([id, value]) => {
         const element = document.getElementById(id);
         if (element) {
@@ -263,7 +263,7 @@ function updateCreditoInTable(credito) {
 function addClienteToTable(cliente) {
     // Para Filament, simplemente refrescar la tabla
     refreshClientesTable();
-    
+
     // Para DataTables, agregar fila dinámicamente si es posible
     if (typeof $.fn.DataTable !== 'undefined') {
         const table = $('#clientes-table').DataTable();
@@ -287,7 +287,7 @@ function addClienteToTable(cliente) {
 function updateClienteInTable(cliente) {
     // Para Filament, refrescar la tabla
     refreshClientesTable();
-    
+
     // Para DataTables, buscar y actualizar la fila específica
     if (typeof $.fn.DataTable !== 'undefined' && cliente) {
         const table = $('#clientes-table').DataTable();
