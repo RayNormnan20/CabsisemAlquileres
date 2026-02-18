@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Ruta;
 use App\Filament\Widgets\ClientesPorRenovarWidget;
 use App\Filament\Widgets\FinancialStatsWidget;
+use App\Filament\Widgets\DashboardWebSocketWidget;
 use App\Filament\Widgets\SegundoRecorridoWidget;
 use App\Filament\Widgets\YapeClientesTableWidget;
 use App\Filament\Widgets\YapesTotalesDelDiaWidget;
@@ -69,6 +70,7 @@ class Dashboard extends BasePage
     protected function getWidgets(): array
     {
         return [
+                   DashboardWebSocketWidget::class,
                    FinancialStatsWidget::class,
                    YapeClientesTableWidget::class,
                    ClientesPorRenovarWidget::class,
