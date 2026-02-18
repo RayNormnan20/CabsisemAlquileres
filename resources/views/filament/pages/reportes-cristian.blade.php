@@ -413,3 +413,53 @@
     }
     </style>
 </x-filament::page>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof window.Echo === 'undefined') {
+            return;
+        }
+
+        const refreshReportes = function () {
+            if (typeof window.Livewire !== 'undefined') {
+                window.Livewire.emit('refreshReportesCristian');
+                window.Livewire.emit('$refresh');
+            }
+        };
+
+        const rutaId = {!! json_encode(session('selected_ruta_id')) !!};
+        if (rutaId) {
+            const channel = window.Echo.channel(`ruta.${rutaId}`);
+            const eventosRuta = [
+                'abono.created',
+                'abono.updated',
+                'abono.deleted',
+                'credito.created',
+                'credito.updated',
+                'credito.deleted'
+            ];
+            eventosRuta.forEach(function (nombre) {
+                channel.listen('.' + nombre, function () {
+                    refreshReportes();
+                });
+            });
+        }
+
+        const eventosConceptos = [
+            'abono.created',
+            'abono.updated',
+            'abono.deleted',
+            'concepto-abono.created',
+            'concepto-abono.updated',
+            'concepto-abono.deleted'
+        ];
+
+        window.Echo.channel('conceptos-abonos');
+        const conceptosChannel = window.Echo.channel('conceptos-abonos');
+        eventosConceptos.forEach(function (nombre) {
+            conceptosChannel.listen('.' + nombre, function () {
+                refreshReportes();
+            });
+        });
+    });
+</script>

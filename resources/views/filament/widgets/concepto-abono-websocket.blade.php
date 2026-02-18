@@ -67,6 +67,34 @@
                                 });
                             }
                         }, 100);
+                    })
+                    .listen('.concepto-abono.deleted', (e) => {
+                        console.log('ConceptoAbono eliminado:', e);
+                        
+                        if (typeof window.filament !== 'undefined' && window.filament.notifications) {
+                            window.filament.notifications.send({
+                                title: 'Concepto de Abono Eliminado',
+                                body: e.message || 'Se ha eliminado un concepto de abono',
+                                status: 'warning',
+                                duration: 4000
+                            });
+                        }
+                        
+                        setTimeout(() => {
+                            if (typeof window.Livewire !== 'undefined') {
+                                window.Livewire.emit('refreshComponent');
+                                window.Livewire.emit('refreshConceptoAbonoTable');
+                                window.Livewire.emit('$refresh');
+                                
+                                const tables = document.querySelectorAll('[wire\\:id]');
+                                tables.forEach(table => {
+                                    const wireId = table.getAttribute('wire:id');
+                                    if (wireId && window.Livewire.find(wireId)) {
+                                        window.Livewire.find(wireId).call('$refresh');
+                                    }
+                                });
+                            }
+                        }, 100);
                     });
             } else {
                 console.warn('Echo no está disponible para ConceptoAbono WebSocket');

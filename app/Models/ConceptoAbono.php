@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Events\ConceptoAbonoCreated;
 use App\Events\ConceptoAbonoUpdated;
+use App\Events\ConceptoAbonoDeleted;
 
 class ConceptoAbono extends Model
 {
@@ -103,6 +104,11 @@ class ConceptoAbono extends Model
         static::updated(function ($conceptoAbono) {
             // Disparar evento WebSocket cuando se actualiza un concepto de abono
             ConceptoAbonoUpdated::dispatch($conceptoAbono);
+        });
+        
+        static::deleted(function ($conceptoAbono) {
+            // Disparar evento WebSocket cuando se elimina un concepto de abono
+            ConceptoAbonoDeleted::dispatch($conceptoAbono);
         });
     }
 

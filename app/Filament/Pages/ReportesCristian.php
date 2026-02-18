@@ -69,6 +69,10 @@ class ReportesCristian extends Page implements HasForms
     // Deuda de alquiler por edificio
     public $deudaAlquilerPorEdificio = [];
 
+    protected $listeners = [
+        'refreshReportesCristian' => 'cargarDatos',
+    ];
+
     // Modal de configuración de rutas
     public $mostrarModalRutas = false;
     public $rutasSeleccionadas = [];
