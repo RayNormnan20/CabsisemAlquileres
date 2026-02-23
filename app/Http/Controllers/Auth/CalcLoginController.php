@@ -61,17 +61,18 @@ class CalcLoginController extends Controller
                 $this->initializeSelectedRouteForUser($request, $user);
                 // Limpiar el marcador de tipo de logout tras login exitoso
                 $request->session()->forget('last_logout_type');
-
-                // Redirigir a la última URL si viene en return_to
-                $returnTo = $request->input('return_to');
-                if (!$returnTo) {
-                    $returnTo = $request->session()->pull('return_to');
+                $isMobile = $request->session()->get('is_mobile_device', false);
+                if ($isMobile) {
+                    $returnTo = $request->input('return_to');
+                    if (!$returnTo) {
+                        $returnTo = $request->session()->pull('return_to');
+                    }
+                    if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
+                        return redirect($returnTo);
+                    }
+                    return redirect()->intended('/');
                 }
-                if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
-                    return redirect($returnTo);
-                }
-
-                return redirect()->intended('/');
+                return redirect()->route('filament.pages.dashboard');
             }
 
             return back()
@@ -96,17 +97,18 @@ class CalcLoginController extends Controller
                 $this->initializeSelectedRouteForUser($request, $user);
                 // Limpiar el marcador de tipo de logout tras login exitoso
                 $request->session()->forget('last_logout_type');
-
-                // Redirigir a la última URL si viene en return_to
-                $returnTo = $request->input('return_to');
-                if (!$returnTo) {
-                    $returnTo = $request->session()->pull('return_to');
+                $isMobile = $request->session()->get('is_mobile_device', false);
+                if ($isMobile) {
+                    $returnTo = $request->input('return_to');
+                    if (!$returnTo) {
+                        $returnTo = $request->session()->pull('return_to');
+                    }
+                    if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
+                        return redirect($returnTo);
+                    }
+                    return redirect()->intended('/');
                 }
-                if ($returnTo && Str::startsWith($returnTo, '/') && !preg_match('/^https?:/i', $returnTo)) {
-                    return redirect($returnTo);
-                }
-
-                return redirect()->intended('/');
+                return redirect()->route('filament.pages.dashboard');
             }
 
             return back()
