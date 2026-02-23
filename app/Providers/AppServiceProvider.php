@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
+use Spatie\LaravelSettings\Exceptions\MissingSettings;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -100,7 +101,7 @@ class AppServiceProvider extends ServiceProvider
             Config::set('filament-socialite.enabled', $settings->enable_social_login ?? false);
             Config::set('system.login_form.is_enabled', $settings->enable_login_form ?? false);
             Config::set('services.oidc.is_enabled', $settings->enable_oidc_login ?? false);
-        } catch (QueryException $e) {
+        } catch (QueryException|MissingSettings $e) {
             // Error: No database configured yet
         }
     }

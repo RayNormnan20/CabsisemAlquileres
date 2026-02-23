@@ -32,10 +32,10 @@ class DiasNoLaborablesSeeder extends Seeder
         ];
 
         foreach ($feriados as $fecha => $motivo) {
-            DiaNoLaborable::firstOrCreate([
-                'fecha' => $fecha,
-                'motivo' => $motivo,
-            ]);
+            DiaNoLaborable::firstOrCreate(
+                ['fecha' => $fecha],
+                ['motivo' => $motivo]
+            );
         }
 
         // TODOS LOS DOMINGOS DEL AÑO ACTUAL
@@ -44,10 +44,10 @@ class DiasNoLaborablesSeeder extends Seeder
 
         while ($fecha->lte($finDeAnio)) {
             if ($fecha->isSunday()) {
-                DiaNoLaborable::firstOrCreate([
-                    'fecha' => $fecha->toDateString(),
-                    'motivo' => 'Domingo',
-                ]);
+                DiaNoLaborable::firstOrCreate(
+                    ['fecha' => $fecha->toDateString()],
+                    ['motivo' => 'Domingo']
+                );
             }
             $fecha->addDay();
         }
