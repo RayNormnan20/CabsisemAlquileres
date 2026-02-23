@@ -3,13 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Models\Ruta;
-use App\Filament\Widgets\ClientesPorRenovarWidget;
-use App\Filament\Widgets\FinancialStatsWidget;
 use App\Filament\Widgets\DashboardWebSocketWidget;
-use App\Filament\Widgets\SegundoRecorridoWidget;
-use App\Filament\Widgets\YapeClientesTableWidget;
-use App\Filament\Widgets\YapesTotalesDelDiaWidget;
-use App\Filament\Widgets\YapeUsuariosWidget;
+use App\Filament\Widgets\PagosAlquilerDashboardWidget;
 use Filament\Pages\Dashboard as BasePage;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Session;
@@ -71,6 +66,7 @@ class Dashboard extends BasePage
     {
         return [
             DashboardWebSocketWidget::class,
+            PagosAlquilerDashboardWidget::class,
         ];
     }
 }
