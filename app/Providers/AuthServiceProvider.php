@@ -2,17 +2,12 @@
 
 namespace App\Providers;
 
-use App\Filament\Pages\TrasladarClientes;
+// Eliminado: TrasladarClientes page
 use App\Filament\Resources\ReportesResource\Pages\PlanillaRecaudador;
-use App\Models\Abonos;
 use App\Models\Alquiler;
 use App\Models\ClienteAlquiler;
-use App\Models\Clientes;
 use App\Models\Concepto;
-use App\Models\ConceptoAbono;
-use App\Models\Creditos;
 use App\Models\Departamento;
-use App\Models\DiaNoLaborable;
 use App\Models\EstadoDepartamento;
 use App\Models\Edificio;
 use App\Models\Movimiento;
@@ -22,17 +17,12 @@ use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvid
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use App\Models\Ruta;
-use App\Models\YapeCliente;
-use App\Policies\AbonoPolicy;
+// Eliminados: modelos de créditos/abonos/clientes/días no laborables/YapeCliente
 use App\Policies\AlquilerPolicy;
 use App\Policies\ClienteAlquilerPolicy;
-use App\Policies\ClientesPolicy;
-use App\Policies\ConceptoAbonoPolicy;
 use App\Policies\LiquidacionPolicy;
 use App\Policies\ConceptoPolicy;
-use App\Policies\CreditosPolicy;
 use App\Policies\DepartamentoPolicy;
-use App\Policies\DiaNoLaborablePolicy;
 use App\Policies\EstadoDepartamentoPolicy;
 use App\Policies\EdificioPolicy;
 use App\Policies\MovimientoPolicy;
@@ -42,33 +32,25 @@ use App\Policies\PlanillaRecaudadorPolicy;
 use App\Policies\ReportesCristianoPolicy;
 use App\Policies\RutaPolicy;
 use App\Policies\TrasladarClientePolicy;
-use App\Policies\YapeClientePolicy;
 use Filament\Tables\Filters\TrashedFilter;
 
 class AuthServiceProvider extends ServiceProvider
 {
     protected $policies = [
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
-            Abonos::class => AbonoPolicy::class,
             Alquiler::class => AlquilerPolicy::class,
             ClienteAlquiler::class => ClienteAlquilerPolicy::class,
-            Clientes::class => ClientesPolicy::class,
             Concepto::class => ConceptoPolicy::class,
-            ConceptoAbono::class => ConceptoAbonoPolicy::class,
-            Creditos::class => CreditosPolicy::class,
             Departamento::class => DepartamentoPolicy::class,
-            DiaNoLaborable::class => DiaNoLaborablePolicy::class,
             EstadoDepartamento::class => EstadoDepartamentoPolicy::class,
             Edificio::class => EdificioPolicy::class,
             Movimiento::class => MovimientoPolicy::class,
-            TrasladarClientes::class => TrasladarClientePolicy::class,
             'Liquidacion' => LiquidacionPolicy::class,
             Oficina::class => OficinaPolicy::class,
             PagoAlquiler::class => PagoAlquilerPolicy::class,
             PlanillaRecaudador::class => PlanillaRecaudadorPolicy::class,
             'ReportesCristian' => ReportesCristianoPolicy::class,
             Ruta::class => RutaPolicy::class,
-            YapeCliente::class => YapeClientePolicy::class,
     ];
 
     public function boot()

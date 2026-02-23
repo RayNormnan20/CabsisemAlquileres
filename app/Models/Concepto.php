@@ -25,11 +25,6 @@ class Concepto extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function cliente()
-    {
-        return $this->belongsTo(Clientes::class);
-    }
-
     public function concepto()
     {
         return $this->belongsTo(Concepto::class, 'concepto_id');

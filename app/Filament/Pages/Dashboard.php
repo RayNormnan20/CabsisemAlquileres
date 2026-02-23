@@ -70,15 +70,7 @@ class Dashboard extends BasePage
     protected function getWidgets(): array
     {
         return [
-                   DashboardWebSocketWidget::class,
-                   FinancialStatsWidget::class,
-                   YapeClientesTableWidget::class,
-                   ClientesPorRenovarWidget::class,
-                   YapesTotalesDelDiaWidget::class,
-                   SegundoRecorridoWidget::class,
-                   YapeUsuariosWidget::class,
-                   
-
+            DashboardWebSocketWidget::class,
         ];
     }
 }

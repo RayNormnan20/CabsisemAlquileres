@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Auth;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use App\Http\Controllers\RoadMap\DataController;
 use App\Http\Controllers\Auth\OidcAuthController;
-use App\Http\Controllers\CreditoController;
+// Eliminado: CreditoController
 use App\Http\Controllers\RutaController;
-use App\Http\Controllers\YapeClienteController;
+// Eliminado: YapeClienteController
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Auth\CalcLoginController;
 use Illuminate\Support\Str;
@@ -197,29 +197,13 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-Route::post('/creditos/actualizar', [CreditoController::class, 'update'])->name('creditos.actualizar');
-Route::post('/creditos/renovar', [CreditoController::class, 'renovar'])->name('creditos.renovar');
-Route::post('/creditos/cancelar', [CreditoController::class, 'cancelar'])->name('creditos.cancelar');
-Route::post('/planilla-recaudador/renovacion', [\App\Filament\Resources\PlanillaRecaudadorResource\Pages\ListPlanillaRecaudadors::class, 'handleRenovacionAction'])->middleware(['auth'])->name('planilla-recaudador.renovacion');
-Route::get('/creditos/{credito}/yape-cliente', [CreditoController::class, 'getYapeCliente'])->name('creditos.yape-cliente');
-Route::get('/clientes/{cliente}/yape-cliente-completo', [CreditoController::class, 'getYapeClienteCompleto'])->name('clientes.yape-cliente-completo');
-Route::get('/clientes/{cliente}/yape-clientes', [CreditoController::class, 'getYapeClientes'])->name('clientes.yape-clientes');
+// Rutas de créditos y YapeCliente eliminadas
 
 // Guardar horarios de acceso del usuario autenticado
 Route::post('/usuarios/horario', [\App\Http\Controllers\UserAccessController::class, 'saveHours'])->middleware(['auth']);
 
 // NUEVAS RUTAS CON CACHÉ (SOLO AGREGAR)
-Route::get('/creditos/activos', [CreditoController::class, 'index'])->name('creditos.activos');
-Route::get('/creditos/vencidos', [CreditoController::class, 'vencidos'])->name('creditos.vencidos');
-Route::get('/creditos/estadisticas', [CreditoController::class, 'estadisticas'])->name('creditos.estadisticas');
-Route::get('/creditos/conceptos', [CreditoController::class, 'getConceptosConCache'])->name('creditos.conceptos');
-Route::post('/creditos/limpiar-cache', [CreditoController::class, 'limpiarCache'])->name('creditos.limpiar-cache');
-
-Route::get('/clientes/{id}', [YapeClienteController::class, 'getClienteInfo']);
-Route::get('/cobradores-por-ruta/{rutaId}', [YapeClienteController::class, 'getCobradoresPorRuta']);
-
-// Nueva ruta para generar PDF de pagos de Yape Cliente
-Route::get('/yape-cliente/{id}/pdf', [YapeClienteController::class, 'generarPDF'])->name('yape-cliente.pdf');
+// Rutas de créditos y YapeCliente eliminadas
 
 // Ruta API para obtener datos de resumen de alquiler
 Route::get('/admin/pagos-alquiler/get-resumen-data/{alquilerId}', function ($alquilerId) {

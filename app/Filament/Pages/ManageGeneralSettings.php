@@ -66,7 +66,7 @@ class ManageGeneralSettings extends SettingsPage
                                         ->default(fn() => config('app.name'))
                                         ->required(),
 
-                                    // Toggle::make('enable_registration')
+                                        // Toggle::make('enable_registration')
                                     //     ->label(__('Enable registration?'))
                                     //     ->helperText(__('If enabled, any user can create an account in this platform. But an administration need to give them permissions.')),
 
@@ -80,39 +80,7 @@ class ManageGeneralSettings extends SettingsPage
 
                                     // Toggle::make('enable_oidc_login')
                                     //     ->label(__('Enable OIDC login?'))
-                                    //     ->helperText(__('If enabled, an OIDC Connect button will be visible on the login page.')),
-
-                                    Toggle::make('enable_yape_filter')
-                                        ->label('Habilitar filtro de Yape en abonos')
-                                        ->helperText('Si está habilitado, se mostrará la opción "Mostrar solo nombres Yape completados o en exceso" en el formulario de abonos.'),
-
-                                    Toggle::make('enable_devolucion_filter')
-                                        ->label('Habilitar opción de devolución')
-                                        ->helperText('Si está habilitado, se mostrará la opción "Es Devolución" en el formulario de abonos para marcar registros como devolución.'),
-
-                                    Toggle::make('enable_segundo_recorrido_filter')
-                                        ->label('Mostrar campo "Activar Segundo Recorrido"')
-                                        ->helperText('Controla la visibilidad del checkbox "Activar Segundo Recorrido" en el formulario de abonos'),
-
-                                        Toggle::make('enable_renovacion_filter')
-                                        ->label('Habilitar opción de renovación')
-                                        ->helperText('Si está habilitado, se mostrará la opción "Habilitar Renovación" en la planilla del recaudador para créditos vencidos.'),
-
-                                    Toggle::make('mostrar_porcentaje_interes')
-                                        ->label('Mostrar columna Porcentaje de Interés')
-                                        ->helperText('Si está habilitado, se mostrará la columna "Porcentaje de Interés" en la tabla de créditos (solo para Administradores).'),
-
-                                    Toggle::make('mostrar_tipo_pago')
-                                        ->label('Mostrar columna Tipo de Pago')
-                                        ->helperText('Si está habilitado, se mostrará la columna "Tipo" en la tabla de créditos (solo para Administradores).'),
-
-                                    Toggle::make('mostrar_numero_cuotas')
-                                        ->label('Mostrar columna Número de Cuotas')
-                                        ->helperText('Si está habilitado, se mostrará la columna "Nr. cuotas" en la tabla de créditos (solo para Administradores).'),
-
-                                    Toggle::make('mostrar_usuario_creador')
-                                        ->label('Mostrar columna Usuario Creador')
-                                        ->helperText('Si está habilitado, se mostrará la columna "Creado por" en la tabla de créditos (solo para Administradores).'),
+                                    //  
 
                                     Select::make('site_language')
                                         ->label(__('Site language'))

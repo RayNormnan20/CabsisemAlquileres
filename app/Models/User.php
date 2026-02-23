@@ -116,14 +116,6 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     }
 
     /**
-     * Relación con clientes creados por este usuario (NUEVA)
-     */
-    public function clientesCreados()
-    {
-        return $this->hasMany(Clientes::class, 'id_usuario_creador');
-    }
-
-    /**
      * Relación con la oficina asignada
      */
     public function oficina()

@@ -36,6 +36,7 @@ class ConceptosResource extends Resource
     {
         return static::getNavigationLabel();
     }
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static function getNavigationGroup(): ?string
     {

@@ -13,19 +13,16 @@ use Illuminate\Support\Str;
 class PermissionsSeeder extends Seeder
 {
     private array $modules = [
-        'Permisos', 'Rol', 'Usuario', 'Clientes', 'Oficina', 'Ruta',
-        'Creditos', 'Abonos', 'Concepto', 'Planilla Recaudador', 'YapeCliente',
+        'Permisos', 'Rol', 'Usuario', 'Oficina', 'Ruta',
+        'Concepto',
         'Alquiler', 'Pagos Alquiler', 'Cliente Alquiler', 'Departamento', 'Estado Departamento',
-        'Edificio', 'Concepto Abono', 'Dia No Laborable', 'Movimiento', 'Liquidaciones', 'Trasladar Clientes', 'Clientes Por Renovar',
-        'Yapes Totales Del Dia', 'Segundo Recorrido', 'Usuarios Que Abonaron A Yape', 'Yape Clientes Control De Entregas'
+        'Edificio',
     ];
 
     // Módulos que solo deben tener permisos de 'Listar'
-    private array $listOnlyModules = [
-        'Liquidaciones', 'Trasladar Clientes', 'Clientes Por Renovar',
-        'Yapes Totales Del Dia', 'Segundo Recorrido', 'Usuarios Que Abonaron A Yape',
-        'Yape Clientes Control De Entregas', 'Planilla Recaudador'
-    ];
+   // private array $listOnlyModules = [
+      //  'Liquidaciones', 'Planilla Recaudador'
+    //];
 
     private array $pluralActions = [
         'Listar'
@@ -36,9 +33,7 @@ class PermissionsSeeder extends Seeder
     ];
 
     private array $extraPermissions = [
-        'Manage general settings', 'Import from Jira',
-        'List timesheet data', 'View timesheet dashboard',
-        'Ver Reportes Cristian'
+        'Manage general settings',
     ];
 
     private string $defaultRole = 'Administrador';
@@ -54,11 +49,11 @@ class PermissionsSeeder extends Seeder
             }
 
             // Solo crear permisos singulares si el módulo no está en la lista de solo-listar
-            if (!in_array($module, $this->listOnlyModules)) {
-                foreach ($this->singularActions as $action) {
-                    Permission::firstOrCreate(['name' => "$action $module"]);
-                }
-            }
+           // if (!in_array($module, $this->listOnlyModules)) {
+            //    foreach ($this->singularActions as $action) {
+              //      Permission::firstOrCreate(['name' => "$action $module"]);
+               // }
+            //}
         }
 
         // Crear permisos adicionales
@@ -77,19 +72,7 @@ class PermissionsSeeder extends Seeder
 
         // Rol Cobrador con permisos específicos
         $collectorRole = Role::firstOrCreate(['name' => 'Cobrador']);
-        $collectorPermissions = [
-            // Clientes
-            'Listar Clientes', 'Ver Clientes', 'Actualizar Clientes', 'Eliminar Clientes', 'Crear Clientes',
-
-            // Créditos
-            'Listar Creditos', 'Ver Creditos', 'Crear Creditos', 'Actualizar Creditos', 'Eliminar Creditos',
-
-            // Abonos
-            'Listar Abonos', 'Ver Abonos', 'Crear Abonos', 'Actualizar Abonos', 'Eliminar Abonos',
-
-            // YapeCliente
-            'Listar YapeClientes', 'Ver YapeCliente', 'Crear YapeCliente', 'Actualizar YapeCliente', 'Eliminar YapeCliente',
-        ];
+        $collectorPermissions = [];
 
         $collectorRole->syncPermissions($collectorPermissions);
 

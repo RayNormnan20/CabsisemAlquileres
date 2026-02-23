@@ -38,12 +38,12 @@ class Ruta extends Model
     }
 
 
-// Agrega esta relación al modelo
-public function usuarios()
-{
-    return $this->belongsToMany(User::class, 'usuario_ruta', 'id_ruta', 'user_id');
-}
-
+    public function usuarios()
+    {
+        return $this->belongsToMany(User::class, 'usuario_ruta', 'id_ruta', 'user_id')
+            ->withPivot(['es_principal'])
+            ->withTimestamps();
+    }
 
     // Relación con TipoDocumento
     public function tipoDocumento()
@@ -55,45 +55,6 @@ public function usuarios()
     public function tipoCobro()
     {
         return $this->belongsTo(TipoCobro::class, 'id_tipo_cobro', 'id_tipo_cobro');
-    }
-
-    /**
-     * Relación con los clientes a través de los créditos
-     * Obtiene todos los clientes que tienen créditos en esta ruta
-     */
-    public function clientes()
-    {
-        return $this->hasManyThrough(
-            Clientes::class,
-            Creditos::class,
-            'id_ruta', // Foreign key on Creditos table
-            'id_cliente', // Foreign key on Clientes table
-            'id_ruta', // Local key on Ruta table
-            'id_cliente' // Local key on Creditos table
-        )->distinct();
-    }
-
-    /**
-     * Relación directa con los créditos de esta ruta
-     */
-    public function creditos()
-    {
-        return $this->hasMany(Creditos::class, 'id_ruta');
-    }
-
-    /**
-     * Relación con abonos a través de créditos
-     */
-    public function abonos()
-    {
-        return $this->hasManyThrough(
-            Abonos::class,
-            Creditos::class,
-            'id_ruta', // FK en créditos
-            'id_credito', // FK en abonos
-            'id_ruta', // PK en ruta
-            'id_credito' // PK en créditos
-        );
     }
 
     /**

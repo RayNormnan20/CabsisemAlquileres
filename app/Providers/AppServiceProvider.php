@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Abonos;
-use App\Models\Clientes;
-use App\Models\Creditos;
+// Eliminados: modelos Abonos, Clientes, Creditos
 use App\Settings\GeneralSettings;
 use Filament\Facades\Filament;
 use Illuminate\Database\QueryException;
@@ -40,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureApp();
 
         // Registrar filtros globales para rutas
-        $this->registerGlobalScopes();
+        // Eliminados filtros globales para modelos de créditos/abonos/clientes
 
         // Register custom Filament theme
         Filament::serving(function () {
@@ -106,51 +104,5 @@ class AppServiceProvider extends ServiceProvider
         }
     }
 
-    /**
-     * Registra los global scopes para filtrar por rutas
-     */
-    private function registerGlobalScopes(): void
-    {
-        // Solo aplicar en entorno web (no en consola)
-        if (!app()->runningInConsole()) {
-            // Filtro para clientes
-            Clientes::addGlobalScope('ruta_usuario', function ($builder) {
-                $user = Auth::user();
-
-                if ($user && !$user->hasRole('admin')) {
-                    $builder->whereHas('ruta', function($query) use ($user) {
-                        $query->whereHas('usuarios', function($q) use ($user) {
-                            $q->where('users.id', $user->id);
-                        });
-                    });
-                }
-            });
-
-            // Filtro para créditos
-            Creditos::addGlobalScope('ruta_usuario', function ($builder) {
-                $user = Auth::user();
-
-                if ($user && !$user->hasRole('admin')) {
-                    $builder->whereHas('ruta', function($query) use ($user) {
-                        $query->whereHas('usuarios', function($q) use ($user) {
-                            $q->where('users.id', $user->id);
-                        });
-                    });
-                }
-            });
-
-            // Filtro para abonos (opcional)
-            Abonos::addGlobalScope('ruta_usuario', function ($builder) {
-                $user = Auth::user();
-
-                if ($user && !$user->hasRole('admin')) {
-                    $builder->whereHas('credito.ruta', function($query) use ($user) {
-                        $query->whereHas('usuarios', function($q) use ($user) {
-                            $q->where('users.id', $user->id);
-                        });
-                    });
-                }
-            });
-        }
-    }
+    // Eliminado: registerGlobalScopes para modelos de créditos/abonos/clientes
 }

@@ -22,11 +22,10 @@ class DatabaseSeeder extends Seeder
         $this->call(MonedaSeeder::class);
 
         $this->call(TipoPagoSeeder::class);
-        $this->call(OrdenCobroSeeder::class);
         $this->call(ConceptosSeeder::class);
 
-        $this->call(DiasNoLaborablesSeeder::class);
-        $this->call(EstadosDepartamentoSeeder::class);         
+        $this->call(EstadosDepartamentoSeeder::class);
+        $this->call(OficinaRutasSeeder::class);
 
 
 
