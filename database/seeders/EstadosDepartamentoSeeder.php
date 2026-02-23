@@ -42,11 +42,32 @@ class EstadosDepartamentoSeeder extends Seeder
             ]
         ];
 
-        foreach ($estados as $estado) {
-            DB::table('estados_departamento')->insert(array_merge($estado, [
-                'created_at' => now(),
-                'updated_at' => now()
-            ]));
+        $rutaIds = DB::table('ruta')->pluck('id_ruta');
+
+        if ($rutaIds->isEmpty()) {
+            foreach ($estados as $estado) {
+                DB::table('estados_departamento')->updateOrInsert(
+                    ['nombre' => $estado['nombre'], 'id_ruta' => null],
+                    array_merge($estado, [
+                        'id_ruta' => null,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ])
+                );
+            }
+        } else {
+            foreach ($rutaIds as $rutaId) {
+                foreach ($estados as $estado) {
+                    DB::table('estados_departamento')->updateOrInsert(
+                        ['nombre' => $estado['nombre'], 'id_ruta' => $rutaId],
+                        array_merge($estado, [
+                            'id_ruta' => $rutaId,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ])
+                    );
+                }
+            }
         }
     }
 }

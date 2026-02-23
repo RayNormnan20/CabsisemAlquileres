@@ -48,12 +48,9 @@ class PermissionsSeeder extends Seeder
                 Permission::firstOrCreate(['name' => "$action $plural"]);
             }
 
-            // Solo crear permisos singulares si el módulo no está en la lista de solo-listar
-           // if (!in_array($module, $this->listOnlyModules)) {
-            //    foreach ($this->singularActions as $action) {
-              //      Permission::firstOrCreate(['name' => "$action $module"]);
-               // }
-            //}
+            foreach ($this->singularActions as $action) {
+                Permission::firstOrCreate(['name' => "$action $module"]);
+            }
         }
 
         // Crear permisos adicionales
