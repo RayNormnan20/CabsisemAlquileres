@@ -66,6 +66,8 @@ class Dashboard extends BasePage
     {
         return [
             DashboardWebSocketWidget::class,
+            \App\Filament\Widgets\AlquilerStatsOverviewWidget::class,
+            \App\Filament\Widgets\IngresosAlquilerChart::class,
             PagosAlquilerDashboardWidget::class,
         ];
     }
